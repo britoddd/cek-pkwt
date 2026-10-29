@@ -300,7 +300,7 @@ Buka http://localhost:5173. Uji parser laporan dengan `python test_report.py` di
 Catatan:
 
 - **Draf email tidak dibuat di Gmail.** Komponen Composio terhubung ke satu akun, jadi draf dari semua pengunjung web akan masuk ke kotak surat pemilik aplikasi. Web app membuka aplikasi email pengguna sendiri lewat tautan `mailto:`. Alur draf Gmail tetap tersedia lewat IBM Bob.
-- **Laporan hanya ada di memori browser** dan hilang saat halaman dimuat ulang.
+- **Laporan, draf email, dan percakapan Tanya aturan disimpan sementara di `localStorage` browser** agar tidak hilang saat halaman dimuat ulang atau tab tertutup tidak sengaja. Data terhapus otomatis 30 menit setelah terakhir dibuka (`TTL_MINUTES` di `frontend/src/storage.ts`) dan bisa dihapus manual lewat tombol "Hapus sekarang" di laporan. Teks kontrak mentah tidak pernah disimpan karena masih berisi data pribadi. Tidak ada yang disimpan di server.
 - **Untuk produksi**, jalankan `npm run build` lalu sajikan `frontend/dist` dan backend dari satu domain, dengan reverse proxy `/api` ke backend.
 
 ## Contoh penggunaan

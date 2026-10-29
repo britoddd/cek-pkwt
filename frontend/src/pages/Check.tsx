@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { checkContract, getRegions, type CheckResult } from '../api'
 import { Icon, Loading, Steps } from '../components'
 import { redact } from '../redact'
+import { TTL_MINUTES } from '../storage'
 
 // Same limits as backend/app.py.
 const MIN_CHARS = 50
@@ -59,7 +60,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
     setLoading(true)
     try {
       const res = await checkContract(text, region && region !== OTHER ? region : null)
-      onChecked({ ...res, checkedAt: new Date() })
+      onChecked({ ...res, checkedAt: new Date().toISOString() })
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -139,7 +140,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
             <h2 id="data-title" className="card-title"><span style={{ color: 'var(--color-accent)', display: 'inline-flex' }}><Icon name="lock" /></span>Yang terjadi pada datamu</h2>
             <ul className="stack small" style={{ listStyle: 'none', padding: 0 }}>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Disamarkan sebelum dibaca AI</strong>NIK, NPWP, email, telepon, nomor rekening, serta baris nama, alamat, dan tempat/tanggal lahir.</li>
-              <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrakmu tidak disimpan</strong>Teks kontrak tidak dimasukkan ke basis data, dan laporan hilang saat halaman dimuat ulang.</li>
+              <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrakmu tidak disimpan</strong>Teks kontrak tidak masuk ke basis data kami. Laporannya disimpan sementara di browser ini selama {TTL_MINUTES} menit, lalu terhapus.</li>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrak dibaca sebagai data</strong>Kalimat di dalam kontrak yang mencoba memberi perintah ke AI tidak dijalankan dan dilaporkan di bagian Catatan.</li>
             </ul>
           </section>

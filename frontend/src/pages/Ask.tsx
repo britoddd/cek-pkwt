@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom'
 import icon from '../../../assets/logos/cekpkwt-logo-icon.svg'
 import { askQuestion } from '../api'
 import { Icon, Loading, Paragraphs } from '../components'
+import { useStoredState } from '../storage'
 
 const SUGGESTIONS = [
   'Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?',
@@ -12,6 +13,7 @@ const SUGGESTIONS = [
 ]
 
 const NOT_FOUND = /tidak menemukan jawabannya|could not find the answer/i
+const INTERRUPTED = 'Jawaban terputus karena halaman dimuat ulang atau ditinggalkan. Tanyakan lagi.'
 
 interface Turn {
   question: string
@@ -20,13 +22,18 @@ interface Turn {
 }
 
 export default function Ask() {
-  const [turns, setTurns] = useState<Turn[]>([])
+  const [turns, setTurns] = useStoredState<Turn[]>('chat', [])
   const [question, setQuestion] = useState('')
   const [error, setError] = useState('')
   const logRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const started = turns.length > 0
   const busy = turns.some((t) => t.answer === undefined && t.error === undefined)
+
+  // A question still loading when the page was reloaded or left lost its answer; say so instead of spinning forever.
+  useEffect(() => {
+    setTurns((ts) => ts.map((t) => (t.answer === undefined && t.error === undefined ? { ...t, error: INTERRUPTED } : t)))
+  }, [setTurns])
 
   // Keep the newest message in view (smooth scrolling is set in CSS and off for reduced motion).
   useEffect(() => {
@@ -100,7 +107,10 @@ export default function Ask() {
             <button type="submit" className="btn btn-primary btn-lg" disabled={busy}>Tanya<Icon name="arrowRight" size={18} /></button>
           </div>
           {error && <span className="alert" role="alert">{error}</span>}
-          <span id="pertanyaan-hint" className="hint">Satu pertanyaan dalam satu kalimat. Jawaban hanya dari pasal yang tersimpan di basis regulasi CekPKWT.</span>
+          <span id="pertanyaan-hint" className="hint">
+            Satu pertanyaan dalam satu kalimat. Jawaban hanya dari pasal yang tersimpan di basis regulasi CekPKWT.
+            {started && !busy && <>{' '}<button type="button" className="link-btn" onClick={() => confirm('Hapus percakapan ini dari browser?') && setTurns([])}>Hapus percakapan</button></>}
+          </span>
         </form>
       </section>
     </div>

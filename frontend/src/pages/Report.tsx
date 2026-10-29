@@ -1,5 +1,6 @@
 import type { CheckResult, Finding, Severity } from '../api'
 import { Citation, CitedText, CopyButton, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
+import { TTL_MINUTES } from '../storage'
 
 const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
   { level: 'tinggi', label: 'Tinggi', icon: 'octagonAlert' },
@@ -19,18 +20,18 @@ function jumpTo(id: string) {
 const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
-export default function Report({ result }: { result: CheckResult | null }) {
+export default function Report({ result, onClear }: { result: CheckResult | null; onClear: () => void }) {
   if (!result) {
     return (
       <EmptyState title="Belum ada laporan">
-        <p className="muted">Laporan tidak disimpan, jadi hilang saat halaman dimuat ulang. Tempel kontrakmu untuk memulai pemeriksaan.</p>
+        <p className="muted">Laporan disimpan di browser ini sampai {TTL_MINUTES} menit setelah terakhir dibuka, lalu terhapus otomatis. Tempel kontrakmu untuk memulai pemeriksaan.</p>
         <a href="#/cek" className="btn btn-highlight btn-lg" style={{ alignSelf: 'flex-start' }}>Tempel kontrakmu<Icon name="arrowRight" /></a>
       </EmptyState>
     )
   }
 
   const { report } = result
-  const checkedAt = result.checkedAt.toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const checkedAt = new Date(result.checkedAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const header = (
     <div className="row-between">
       <div className="stack-sm" style={{ gap: 6 }}>
@@ -97,7 +98,12 @@ export default function Report({ result }: { result: CheckResult | null }) {
               {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
               <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
             </div>
-            <p className="hint">Laporan ini tidak kami simpan. Simpan sendiri sebelum menutup halaman.</p>
+            <p className="hint">
+              Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
+              <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
+                Hapus sekarang
+              </button>
+            </p>
           </div>
 
           <div className="summary-notes">

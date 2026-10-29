@@ -21,6 +21,9 @@ a:hover { color: var(--color-secondary-hover); }
 img { display: block; max-width: 100%; height: auto; }
 .icon { flex: none; }
 .pre-line { white-space: pre-line; }
+/* A text-sized button for low-emphasis actions inside sentences; keeps the 24px minimum target (WCAG 2.2). */
+.link-btn { display: inline; min-height: 24px; padding: 0; border: 0; background: none; color: var(--color-link); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.link-btn:hover { color: var(--color-secondary-hover); }
 .balance { text-wrap: balance; }
 .muted { color: var(--color-text-muted); }
 .mono { font-family: var(--font-mono); }

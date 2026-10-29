@@ -3,6 +3,7 @@ import logo from '../../assets/logos/cekpkwt-logo-full-horizontal.svg'
 import logoReversed from '../../assets/logos/cekpkwt-logo-full-horizontal-reversed.svg'
 import type { CheckResult, HrDraft } from './api'
 import { Icon } from './components'
+import { clearStored, useStoredState } from './storage'
 import Ask from './pages/Ask'
 import Check from './pages/Check'
 import Home from './pages/Home'
@@ -14,9 +15,9 @@ const currentRoute = () => (location.hash.startsWith('#/') ? location.hash.slice
 
 export default function App() {
   const [route, setRoute] = useState(currentRoute)
-  // The report lives only in memory: contracts are never stored, so a reload clears it.
-  const [result, setResult] = useState<CheckResult | null>(null)
-  const [draft, setDraft] = useState<HrDraft | null>(null)
+  // Kept briefly in this browser so a reload or closed tab doesn't lose them (see storage.ts).
+  const [result, setResult] = useStoredState<CheckResult | null>('result', null)
+  const [draft, setDraft] = useStoredState<HrDraft | null>('draft', null)
   const shownRoute = useRef(route)
   const reportScroll = useRef(0)
 
@@ -38,14 +39,6 @@ export default function App() {
     document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true })
   }, [route])
 
-  // The report lives only in memory; ask before a reload or a closed tab throws it away.
-  useEffect(() => {
-    if (!result) return
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
-    addEventListener('beforeunload', warn)
-    return () => removeEventListener('beforeunload', warn)
-  }, [result])
-
   const onChecked = (r: CheckResult) => {
     setResult(r)
     setDraft(null)
@@ -53,10 +46,17 @@ export default function App() {
     location.hash = '#/laporan'
   }
 
+  // For shared computers: wipe the report, draft and chat from this browser now.
+  const onClear = () => {
+    clearStored()
+    setResult(null)
+    setDraft(null)
+  }
+
   let page
   switch (route) {
     case '/cek': page = <Check onChecked={onChecked} />; break
-    case '/laporan': page = <Report result={result} />; break
+    case '/laporan': page = <Report result={result} onClear={onClear} />; break
     case '/email-hr': page = <HrEmail result={result} draft={draft} onDraft={setDraft} />; break
     case '/tanya': page = <Ask />; break
     default: page = <Home />

@@ -28,7 +28,7 @@ export interface Report {
 export interface CheckResult {
   markdown: string
   report: Report | null
-  checkedAt: Date
+  checkedAt: string // ISO time; a string so the result survives JSON storage
 }
 
 export interface HrDraft {
