@@ -382,10 +382,6 @@
         },
         "dragging": false,
         "id": "ChatInput-gnd1u",
-        "measured": {
-          "height": 52,
-          "width": 192
-        },
         "position": {
           "x": 930.7989374793378,
           "y": 740.0168914346812
@@ -691,10 +687,6 @@
         },
         "dragging": false,
         "id": "ChatOutput-kYi3m",
-        "measured": {
-          "height": 52,
-          "width": 192
-        },
         "position": {
           "x": 1693.487596788142,
           "y": 498.47279923721334
@@ -740,7 +732,7 @@
             ],
             "frozen": false,
             "icon": "bot",
-            "last_updated": "2026-10-01T09:28:18.552Z",
+            "last_updated": "2026-10-02T15:26:53.202Z",
             "legacy": false,
             "lf_version": "1.12.4",
             "metadata": {
@@ -1550,10 +1542,6 @@
         },
         "dragging": false,
         "id": "Agent-Dsbuu",
-        "measured": {
-          "height": 431,
-          "width": 320
-        },
         "position": {
           "x": 1276.367870561476,
           "y": 328.0453262279558
@@ -1607,7 +1595,7 @@
             ],
             "frozen": false,
             "icon": "Gmail",
-            "last_updated": "2026-10-01T09:28:18.558Z",
+            "last_updated": "2026-10-02T15:28:04.360Z",
             "legacy": false,
             "lf_version": "1.12.4",
             "metadata": {
@@ -1631,7 +1619,7 @@
               {
                 "allows_loop": false,
                 "cache": true,
-                "display_name": "Table",
+                "display_name": "Toolset",
                 "group_outputs": false,
                 "hidden": null,
                 "loop_types": null,
@@ -2061,7 +2049,7 @@
                   "OAUTH2"
                 ],
                 "override_skip": false,
-                "placeholder": "Select auth mode",
+                "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
@@ -2588,6 +2576,7 @@
                 "type": "tools",
                 "value": [
                   {
+                    "_uniqueId": "GMAIL_ADD_LABEL_TO_EMAIL_Modify email labels_0",
                     "approval_actions": [],
                     "args": {
                       "add_label_ids": {
@@ -2631,6 +2620,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_BATCH_DELETE_MESSAGES_Batch delete Gmail messages_1",
                     "approval_actions": [],
                     "args": {
                       "messageIds": {
@@ -2659,6 +2649,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_BATCH_MODIFY_MESSAGES_Batch modify Gmail messages_2",
                     "approval_actions": [],
                     "args": {
                       "addLabelIds": {
@@ -2705,6 +2696,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_CREATE_EMAIL_DRAFT_Create email draft_3",
                     "approval_actions": [],
                     "args": {
                       "attachment": {
@@ -2788,6 +2780,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_CREATE_FILTER_Create Gmail filter_4",
                     "approval_actions": [],
                     "args": {
                       "action": {
@@ -2814,6 +2807,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_CREATE_LABEL_Create label_5",
                     "approval_actions": [],
                     "args": {
                       "background_color": {
@@ -2863,6 +2857,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_DELETE_DRAFT_Delete Draft_6",
                     "approval_actions": [],
                     "args": {
                       "draft_id": {
@@ -2888,6 +2883,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_DELETE_FILTER_Delete Gmail filter_7",
                     "approval_actions": [],
                     "args": {
                       "filter_id": {
@@ -2913,6 +2909,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_DELETE_LABEL_Delete label from account (permanent)_8",
                     "approval_actions": [],
                     "args": {
                       "label_id": {
@@ -2938,6 +2935,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_DELETE_MESSAGE_Delete message_9",
                     "approval_actions": [],
                     "args": {
                       "message_id": {
@@ -2963,6 +2961,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_DELETE_THREAD_Delete thread_10",
                     "approval_actions": [],
                     "args": {
                       "id": {
@@ -2988,6 +2987,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_FETCH_EMAILS_Fetch emails_11",
                     "approval_actions": [],
                     "args": {
                       "ids_only": {
@@ -3059,6 +3059,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID_Fetch message by message ID_12",
                     "approval_actions": [],
                     "args": {
                       "format": {
@@ -3090,6 +3091,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_FETCH_MESSAGE_BY_THREAD_ID_Fetch Message by Thread ID_13",
                     "approval_actions": [],
                     "args": {
                       "page_token": {
@@ -3121,6 +3123,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_FORWARD_MESSAGE_Forward email message_14",
                     "approval_actions": [],
                     "args": {
                       "additional_text": {
@@ -3178,6 +3181,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_ATTACHMENT_Get Gmail attachment_15",
                     "approval_actions": [],
                     "args": {
                       "attachment_id": {
@@ -3213,6 +3217,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_AUTO_FORWARDING_Get Auto-Forwarding Settings_16",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3233,6 +3238,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_CONTACTS_Get contacts_17",
                     "approval_actions": [],
                     "args": {
                       "include_other_contacts": {
@@ -3271,6 +3277,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_DRAFT_Get Draft_18",
                     "approval_actions": [],
                     "args": {
                       "draft_id": {
@@ -3302,6 +3309,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_FILTER_Get Gmail filter_19",
                     "approval_actions": [],
                     "args": {
                       "id": {
@@ -3327,6 +3335,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_LABEL_Get label details_20",
                     "approval_actions": [],
                     "args": {
                       "id": {
@@ -3352,6 +3361,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_LANGUAGE_SETTINGS_Get Language Settings_21",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3372,6 +3382,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_PEOPLE_Get People_22",
                     "approval_actions": [],
                     "args": {
                       "other_contacts": {
@@ -3434,6 +3445,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_PROFILE_Get Profile_23",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3454,6 +3466,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_GET_VACATION_SETTINGS_Get Vacation Settings_24",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3474,6 +3487,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_IMPORT_MESSAGE_Import message_25",
                     "approval_actions": [],
                     "args": {
                       "deleted": {
@@ -3523,6 +3537,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_INSERT_MESSAGE_Insert message into mailbox_26",
                     "approval_actions": [],
                     "args": {
                       "deleted": {
@@ -3560,6 +3575,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_CSE_IDENTITIES_List CSE identities_27",
                     "approval_actions": [],
                     "args": {
                       "page_size": {
@@ -3592,6 +3608,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_CSE_KEYPAIRS_List CSE key pairs_28",
                     "approval_actions": [],
                     "args": {
                       "page_size": {
@@ -3624,6 +3641,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_DRAFTS_List Drafts_29",
                     "approval_actions": [],
                     "args": {
                       "max_results": {
@@ -3656,12 +3674,13 @@
                     "display_name": "List Drafts",
                     "name": "gmail_list_drafts",
                     "readonly": true,
-                    "status": true,
+                    "status": false,
                     "tags": [
                       "GMAIL_LIST_DRAFTS"
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_FILTERS_List Gmail filters_30",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3682,6 +3701,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_FORWARDING_ADDRESSES_List forwarding addresses_31",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3702,6 +3722,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_HISTORY_List Gmail history_32",
                     "approval_actions": [],
                     "args": {
                       "history_types": {
@@ -3754,6 +3775,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_LABELS_List Gmail labels_33",
                     "approval_actions": [],
                     "args": {
                       "include_details": {
@@ -3780,6 +3802,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_MESSAGES_List Gmail messages (Deprecated)_34",
                     "approval_actions": [],
                     "args": {
                       "include_spam_trash": {
@@ -3833,6 +3856,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_SEND_AS_List send-as aliases_35",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -3853,6 +3877,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_SMIME_INFO_List S/MIME configs_36",
                     "approval_actions": [],
                     "args": {
                       "send_as_email": {
@@ -3878,6 +3903,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_LIST_THREADS_List threads_37",
                     "approval_actions": [],
                     "args": {
                       "max_results": {
@@ -3922,6 +3948,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_MODIFY_THREAD_LABELS_Modify thread labels_38",
                     "approval_actions": [],
                     "args": {
                       "add_label_ids": {
@@ -3965,6 +3992,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_MOVE_THREAD_TO_TRASH_Trash thread_39",
                     "approval_actions": [],
                     "args": {
                       "thread_id": {
@@ -3990,6 +4018,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_MOVE_TO_TRASH_Move to Trash_40",
                     "approval_actions": [],
                     "args": {
                       "message_id": {
@@ -4015,6 +4044,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_PATCH_LABEL_Patch Label_41",
                     "approval_actions": [],
                     "args": {
                       "color": {
@@ -4061,6 +4091,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_PATCH_SEND_AS_Patch send-as alias_42",
                     "approval_actions": [],
                     "args": {
                       "display_name": {
@@ -4120,6 +4151,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_REMOVE_LABEL_Remove label (Deprecated)_43",
                     "approval_actions": [],
                     "args": {
                       "label_id": {
@@ -4145,6 +4177,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_REPLY_TO_THREAD_Reply to email thread_44",
                     "approval_actions": [],
                     "args": {
                       "attachment": {
@@ -4221,6 +4254,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_SEARCH_PEOPLE_Search People_45",
                     "approval_actions": [],
                     "args": {
                       "other_contacts": {
@@ -4258,10 +4292,8 @@
                     ]
                   },
                   {
-                    "approval_actions": [
-                      "approve",
-                      "reject"
-                    ],
+                    "_uniqueId": "GMAIL_SEND_DRAFT_Send Draft_46",
+                    "approval_actions": [],
                     "args": {
                       "draft_id": {
                         "description": "The ID of the draft to send. Draft IDs are typically alphanumeric strings (e.g., 'r99885592323229922'). Important: Do not confuse draft_id with message_id - they are different identifiers. Use GMAIL_LIST_DRAFTS to retrieve valid draft IDs, or GMAIL_CREATE_EMAIL_DRAFT to create a new draft and get its ID. IMPORTANT: The draft MUST already have recipients (To, Cc, or Bcc) set - this action cannot add or override recipients. If the draft has no recipients, first create a new draft with recipients using GMAIL_CREATE_EMAIL_DRAFT, or use GMAIL_SEND_EMAIL to send a new email directly. Please provide a value of type string. This parameter is required.",
@@ -4286,10 +4318,8 @@
                     ]
                   },
                   {
-                    "approval_actions": [
-                      "approve",
-                      "reject"
-                    ],
+                    "_uniqueId": "GMAIL_SEND_EMAIL_Send Email_47",
+                    "approval_actions": [],
                     "args": {
                       "attachment": {
                         "default": null,
@@ -4372,6 +4402,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_SETTINGS_GET_IMAP_Get IMAP Settings_48",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -4392,6 +4423,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_SETTINGS_GET_POP_Get POP settings_49",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -4412,6 +4444,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_SETTINGS_SEND_AS_GET_Get send-as alias_50",
                     "approval_actions": [],
                     "args": {
                       "send_as_email": {
@@ -4437,6 +4470,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_STOP_WATCH_Stop watch notifications_51",
                     "approval_actions": [],
                     "args": {
                       "user_id": {
@@ -4457,6 +4491,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UNTRASH_MESSAGE_Untrash Message_52",
                     "approval_actions": [],
                     "args": {
                       "message_id": {
@@ -4482,6 +4517,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UNTRASH_THREAD_Untrash thread_53",
                     "approval_actions": [],
                     "args": {
                       "thread_id": {
@@ -4507,6 +4543,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_DRAFT_Update draft_54",
                     "approval_actions": [],
                     "args": {
                       "attachment": {
@@ -4595,6 +4632,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_IMAP_SETTINGS_Update IMAP settings_55",
                     "approval_actions": [],
                     "args": {
                       "autoExpunge": {
@@ -4639,6 +4677,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_LABEL_Update Label_56",
                     "approval_actions": [],
                     "args": {
                       "color": {
@@ -4686,6 +4725,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_LANGUAGE_SETTINGS_Update Language Settings_57",
                     "approval_actions": [],
                     "args": {
                       "display_language": {
@@ -4711,6 +4751,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_POP_SETTINGS_Update POP settings_58",
                     "approval_actions": [],
                     "args": {
                       "access_window": {
@@ -4743,6 +4784,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_SEND_AS_Update send-as alias_59",
                     "approval_actions": [],
                     "args": {
                       "display_name": {
@@ -4802,6 +4844,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_UPDATE_VACATION_SETTINGS_Update Vacation Settings_60",
                     "approval_actions": [],
                     "args": {
                       "enableAutoReply": {
@@ -4870,6 +4913,7 @@
                     ]
                   },
                   {
+                    "_uniqueId": "GMAIL_WHO_AM_I_Who Am I_61",
                     "approval_actions": [],
                     "args": {},
                     "description": "Return the identity (email, name) of the connected Gmail account.",
@@ -4938,23 +4982,20 @@
           "showNode": true,
           "type": "ext:composio:ComposioGmailAPIComponent@official"
         },
+        "dragging": false,
         "id": "ext:composio:ComposioGmailAPIComponent@official-g8pHE",
-        "measured": {
-          "height": 401,
-          "width": 320
-        },
         "position": {
-          "x": 809.8120399690002,
-          "y": 304.0498390145721
+          "x": 815.035343348777,
+          "y": 286.63882774864965
         },
-        "selected": false,
+        "selected": true,
         "type": "genericNode"
       }
     ],
     "viewport": {
-      "x": -584.5173417893697,
-      "y": 172.29523835981178,
-      "zoom": 1.1486983549970353
+      "x": -1002.5017991343891,
+      "y": -134.29995100577753,
+      "zoom": 1.515716566510398
     }
   },
   "description": "Menulis email pertanyaan untuk HR dari temuan pemeriksaan kontrak dan menyimpannya sebagai draf Gmail yang belum terkirim.",
