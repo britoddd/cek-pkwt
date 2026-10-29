@@ -74,11 +74,19 @@ export default function App() {
 
 function Header({ route, hasReport }: { route: string; hasReport: boolean }) {
   const home = route === '/'
+  // Once the page scrolls, the header lifts into a floating glass island (wide screens; see index.css).
+  const [island, setIsland] = useState(false)
+  useEffect(() => {
+    const onScroll = () => setIsland(scrollY > 8)
+    onScroll()
+    addEventListener('scroll', onScroll, { passive: true })
+    return () => removeEventListener('scroll', onScroll)
+  }, [])
   const link = (path: string, label: string) => (
     <a href={`#${path}`} aria-current={route === path ? 'page' : undefined}>{label}</a>
   )
   return (
-    <header className="site-header">
+    <header className={island ? 'site-header is-island' : 'site-header'}>
       <div className="container">
         <a href="#/" className="brand" aria-label="CekPKWT, beranda">
           <img src={logo} alt="" width={139} height={32} />
