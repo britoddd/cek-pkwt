@@ -1,0 +1,21 @@
+# systemd unit for the CekPKWT FastAPI backend.
+# Replace CHANGE_ME_user with your Linux username (3 places), then:
+#   sudo cp cekpkwt-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cekpkwt-api
+
+[Unit]
+Description=CekPKWT API (FastAPI backend)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+User=CHANGE_ME_user
+WorkingDirectory=/home/CHANGE_ME_user/apps/cek-pkwt/backend
+# Same start command as the repo README, bound to localhost so only nginx reaches it.
+ExecStart=/home/CHANGE_ME_user/apps/cek-pkwt/backend/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8000 --env-file ../.env --proxy-headers
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

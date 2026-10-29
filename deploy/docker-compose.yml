@@ -1,0 +1,62 @@
+# Langflow + PostgreSQL for the CekPKWT home server.
+# Based on the official Langflow Docker docs (docs.langflow.org/deployment-docker).
+#
+# First run, from this deploy/ folder:
+#   mkdir -p langflow-data && sudo chown -R 1000:0 langflow-data
+#   cp .env.example .env && chmod 600 .env   # then fill in the values
+#   docker compose up -d
+
+services:
+  langflow:
+    image: ${LANGFLOW_IMAGE:-langflowai/langflow}:${LANGFLOW_VERSION:-1.12.4}
+    container_name: cekpkwt-langflow
+    restart: unless-stopped
+    # Bound to localhost only: reachable by nginx and the FastAPI backend on this box,
+    # not by the rest of your LAN.
+    ports:
+      - "127.0.0.1:7860:7860"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      LANGFLOW_DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      LANGFLOW_CONFIG_DIR: /app/langflow
+      LANGFLOW_AUTO_LOGIN: "false"
+      LANGFLOW_SUPERUSER: ${LANGFLOW_SUPERUSER}
+      LANGFLOW_SUPERUSER_PASSWORD: ${LANGFLOW_SUPERUSER_PASSWORD}
+      LANGFLOW_SECRET_KEY: ${LANGFLOW_SECRET_KEY}
+      # New sign-ups stay inactive until you approve them.
+      LANGFLOW_NEW_USER_IS_ACTIVE: "false"
+      # Default is "*" (any origin). Restrict it.
+      LANGFLOW_CORS_ORIGINS: ${LANGFLOW_CORS_ORIGINS}
+      # The flows read these as Global Variables (see the repo README, "Variabel lingkungan").
+      LANGFLOW_STORE_ENVIRONMENT_VARIABLES: "true"
+      LANGFLOW_VARIABLES_TO_GET_FROM_ENVIRONMENT: ASTRA_DB_PKWT,COMPOSIO_PKWT,GOOGLE_API_KEY,OPENAI_API_KEY
+      ASTRA_DB_PKWT: ${ASTRA_DB_PKWT}
+      COMPOSIO_PKWT: ${COMPOSIO_PKWT}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    volumes:
+      # Holds the secret key and uploaded files so they survive container recreation.
+      - ./langflow-data:/app/langflow
+
+  postgres:
+    # Pinned Debian base, as the Langflow docs recommend (avoids collation warnings).
+    image: postgres:16-trixie
+    container_name: cekpkwt-langflow-postgres
+    restart: unless-stopped
+    # No ports published: only the langflow container can reach it.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - langflow-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  langflow-postgres:
