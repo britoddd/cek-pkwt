@@ -39,10 +39,14 @@ export interface HrDraft {
 
 const UNAVAILABLE = 'Layanan CekPKWT sedang tidak tersedia. Coba lagi beberapa saat lagi.'
 
+// Where the backend lives, e.g. https://cekpkwt-api.britod.my.id (set VITE_API_BASE at build time).
+// Empty = same domain, as in local dev where Vite forwards /api to the backend.
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/+$/, '')
+
 async function post<T>(path: string, body: unknown): Promise<T> {
   let res: Response
   try {
-    res = await fetch(path, {
+    res = await fetch(API_BASE + path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -65,4 +69,4 @@ export const askQuestion = (question: string) => post<{ answer: string }>('/api/
 
 export const draftHrEmail = (findings: string) => post<HrDraft>('/api/hr-draft', { findings })
 
-export const getRegions = (): Promise<string[]> => fetch('/api/regions').then((r) => (r.ok ? r.json() : []))
+export const getRegions = (): Promise<string[]> => fetch(API_BASE + '/api/regions').then((r) => (r.ok ? r.json() : []))
