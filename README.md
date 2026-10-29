@@ -4,6 +4,8 @@
 
 CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja waktu tertentu (PKWT) **sebelum** menandatanganinya. Pengguna cukup menempelkan teks kontrak ke **IBM Bob**. Bob lalu memanggil flow **IBM Langflow** lewat MCP untuk menyamarkan data pribadi, mengekstrak klausul penting, mencari pasal yang relevan dari basis regulasi resmi, dan menyusun laporan potensi masalah. Laporan itu memuat pasal rujukan beserta status berlakunya, tingkat keparahan, dan pertanyaan yang bisa diajukan ke HR.
 
+CekPKWT juga bisa dipakai tanpa IDE lewat **web app** di **https://cek-pkwt.briantedjo.my.id**.
+
 Tema: **Education & Future of Work**
 
 > ⚠️ **Bukan nasihat hukum.** Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas dan bisa keliru. Untuk masalah serius, hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat.
@@ -18,6 +20,7 @@ Tema: **Education & Future of Work**
 - [Setup](#setup)
 - [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow)
 - [Menjalankan web app](#menjalankan-web-app)
+- [Deploy](#deploy)
 - [Contoh penggunaan](#contoh-penggunaan)
 - [Hasil evaluasi](#hasil-evaluasi)
 - [Responsible AI](#responsible-ai)
@@ -100,6 +103,8 @@ CekPKWT:
 | Embedding | Google `models/gemini-embedding-001` |
 | Vector store | DataStax Astra DB: database `cek_pkwt`, koleksi `corpus_v1` |
 | Email | Composio Gmail (OAuth2) |
+| Web app | Frontend React + Vite + TypeScript di Vercel; backend FastAPI |
+| Server | Debian self-hosted: Docker Compose (Langflow + PostgreSQL), systemd, nginx, Cloudflare Tunnel |
 
 **Alur penggunaan**
 
@@ -110,6 +115,22 @@ CekPKWT:
 5. Laporan dikembalikan ke Bob, dan Bob menjelaskannya kepada pengguna.
 6. Pengguna bertanya lebih lanjut (`answer_labor_rule_question`) atau membuat draf email HR (`draft_hr_questions`).
 7. Pengguna meninjau draf di Gmail dan mengirimnya sendiri.
+
+**Alur lewat web app**
+
+```
+ Browser pengguna  (https://cek-pkwt.briantedjo.my.id)
+    │  frontend statis dari Vercel
+    ▼  fetch ke VITE_API_BASE (CORS hanya untuk domain frontend)
+ Cloudflare Tunnel ─► nginx (rate limit per pengunjung)
+    ▼
+ FastAPI backend/  (systemd, 127.0.0.1:8000, menyimpan API key Langflow)
+    ▼  /api/v1/run, sesi baru per permintaan
+ Langflow  (Docker, 127.0.0.1:7860) ─► PostgreSQL
+    └──► OpenAI · Gemini · Astra DB
+```
+
+Langflow tidak diekspos ke internet. Backend memanggilnya di dalam server, sedangkan editor Langflow dan IBM Bob mengaksesnya lewat SSH tunnel (lihat [Deploy](#deploy)).
 
 ## Penjelasan setiap flow
 
@@ -223,6 +244,8 @@ GOOGLE_API_KEY=     # Untuk embedding gemini-embedding-001
 OPENAI_API_KEY=     # Untuk Agent gpt-5.4-mini
 ```
 
+Variabel untuk backend web app (`LANGFLOW_URL`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_*`, `FRONTEND_ORIGINS`) dijelaskan di [Menjalankan web app](#menjalankan-web-app). Untuk server, kunci provider di atas diisi di `deploy/.env` (lihat [Deploy](#deploy)).
+
 Flow merujuk nama-nama variabel ini sebagai *Global Variables* Langflow, jadi nilainya tidak tersimpan di file JSON. Daftarkan variabelnya dengan salah satu cara berikut:
 
 - **Manual:** Settings → Global Variables, buat variabel dengan nama yang sama persis.
@@ -272,6 +295,14 @@ Langflow mengekspos flow dalam satu project sebagai **MCP server**, dan IBM Bob 
 
 Bob mengirim teks pengguna ke Chat Input setiap flow dan menerima Chat Output sebagai hasil tool. Logika workflow tetap berada di Langflow, sedangkan logika percakapan berada di Bob.
 
+**Memakai Langflow di server.** Langflow di server tidak diekspos ke internet. Buka SSH tunnel dari komputer yang menjalankan Bob, lalu biarkan terminalnya terbuka selama Bob dipakai:
+
+```bash
+ssh -N -L 7860:127.0.0.1:7860 <user>@<server>
+```
+
+Selama tunnel terbuka, URL `http://localhost:7860/...` di `mcp.json` mengarah ke Langflow di server. Pakai `PROJECT_ID` dan API key dari Langflow server, karena keduanya berbeda dari instance lokal.
+
 ## Menjalankan web app
 
 Selain lewat IBM Bob, CekPKWT bisa dipakai lewat web app yang terdiri dari dua bagian terpisah:
@@ -279,7 +310,9 @@ Selain lewat IBM Bob, CekPKWT bisa dipakai lewat web app yang terdiri dari dua b
 - **`backend/`**: FastAPI (Python). Memvalidasi input, menyimpan API key Langflow di server, lalu meneruskan permintaan ke ketiga flow lewat API `/api/v1/run`. Laporan Markdown dari flow diubah menjadi JSON (`backend/report.py`). Teks kontrak tidak dicatat di log dan tidak disimpan. Setiap permintaan memakai sesi Langflow baru, sehingga pesan satu pengguna tidak masuk ke memori agent pengguna lain.
 - **`frontend/`**: React + Vite + TypeScript. Lima halaman: beranda, tempel kontrak (dengan pratinjau penyamaran data pribadi), laporan, draf email HR, dan tanya aturan. Warna dan font diambil dari `assets/design-tokens.css` (sumbernya `docs/brand-guidelines.md`).
 
-Isi `LANGFLOW_URL` dan `LANGFLOW_API_KEY` di `.env` (lihat `.env.example`). Jika Langflow memberi ID baru saat flow diimpor, isi juga `LANGFLOW_FLOW_CHECK`, `LANGFLOW_FLOW_ASK`, dan `LANGFLOW_FLOW_HR`.
+Isi `LANGFLOW_URL` dan `LANGFLOW_API_KEY` di `.env` (lihat `.env.example`). Jika Langflow memberi ID baru saat flow diimpor, isi juga `LANGFLOW_FLOW_CHECK`, `LANGFLOW_FLOW_ASK`, dan `LANGFLOW_FLOW_HR`. ID yang ada di `.env.example` dan `backend/app.py` adalah ID dari file JSON, jadi ambil ID baru dari URL editor Langflow (`/flow/<ID>`) di instance tempat flow diimpor. API key Langflow juga hanya berlaku di instance yang membuatnya.
+
+Untuk pengembangan lokal, biarkan `VITE_API_BASE` (frontend, lihat `frontend/.env.example`) dan `FRONTEND_ORIGINS` (backend) kosong: Vite meneruskan `/api` ke backend di origin yang sama.
 
 ```bash
 # Terminal 1: backend di port 8000
@@ -301,7 +334,114 @@ Catatan:
 
 - **Draf email tidak dibuat di Gmail.** Komponen Composio terhubung ke satu akun, jadi draf dari semua pengunjung web akan masuk ke kotak surat pemilik aplikasi. Web app membuka jendela tulis Gmail di akun pengguna sendiri (tanpa login ke CekPKWT), aplikasi email lewat `mailto:`, atau WhatsApp lewat `wa.me`. Alur draf Gmail tetap tersedia lewat IBM Bob.
 - **Laporan, draf email, dan percakapan Tanya aturan disimpan sementara di `localStorage` browser** agar tidak hilang saat halaman dimuat ulang atau tab tertutup tidak sengaja. Data terhapus otomatis 30 menit setelah terakhir dibuka (`TTL_MINUTES` di `frontend/src/storage.ts`) dan bisa dihapus manual lewat tombol "Hapus sekarang" di laporan. Teks kontrak mentah tidak pernah disimpan karena masih berisi data pribadi. Tidak ada yang disimpan di server.
-- **Untuk produksi**, jalankan `npm run build` lalu sajikan `frontend/dist` dan backend dari satu domain, dengan reverse proxy `/api` ke backend.
+- **Untuk produksi**, frontend dan backend berjalan di domain berbeda. Lihat [Deploy](#deploy).
+
+## Deploy
+
+Versi produksi terdiri dari dua bagian:
+
+- **Frontend:** di-hosting di Vercel, di https://cek-pkwt.briantedjo.my.id.
+- **Backend dan Langflow:** berjalan di server Debian self-hosted. Hanya backend yang dapat diakses publik, lewat Cloudflare Tunnel dan nginx. Langflow dan PostgreSQL hanya mendengarkan di `127.0.0.1`.
+
+Semua berkas server ada di folder `deploy/`.
+
+### Frontend (Vercel)
+
+| Pengaturan | Nilai |
+|---|---|
+| Root directory | `frontend` |
+| Build command | `npm run build` |
+| Output directory | `dist` |
+| Environment variable | `VITE_API_BASE` = alamat backend, mis. `https://cekpkwt-api.<domain>` (tanpa `/api` di akhir) |
+
+`VITE_API_BASE` dibaca saat build, jadi deploy ulang setelah mengubahnya. Build mengimpor logo dari `../assets`, sehingga Vercel perlu mengakses seluruh repository, bukan hanya folder `frontend/`. Aplikasi memakai hash route (`#/cek`), jadi tidak perlu aturan rewrite.
+
+### Server
+
+Prasyarat: Docker dan Docker Compose, Python 3 dengan `venv`, nginx, serta Cloudflare Tunnel dengan hostname wildcard yang diarahkan ke nginx di port 80.
+
+1. **Clone repository** ke server, mis. `~/apps/cek-pkwt`. Seluruh repository diperlukan karena backend membaca `data/labor_corpus.csv`.
+2. **Jalankan Langflow dan PostgreSQL** (Langflow 1.12.4, versi tempat flow diekspor):
+
+   ```bash
+   cd ~/apps/cek-pkwt/deploy
+   mkdir -p langflow-data && sudo chown -R 1000:0 langflow-data
+   cp .env.example .env && chmod 600 .env   # isi password, secret key, dan kunci provider
+   docker compose up -d
+   ```
+
+   Kunci provider (`ASTRA_DB_PKWT`, `COMPOSIO_PKWT`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`) diteruskan ke Langflow sebagai Global Variables. Tentukan password PostgreSQL sejak awal, karena PostgreSQL hanya membacanya saat volume database pertama kali dibuat.
+3. **Siapkan flow.** Buka Langflow lewat SSH tunnel (lihat di bawah), impor keempat flow, uji di Playground, buat API key, dan catat ID ketiga flow yang dipakai backend. Jalankan `ingest_labor_corpus` hanya jika koleksi `corpus_v1` di Astra DB masih kosong, agar tidak ada entri ganda.
+4. **Jalankan backend** sebagai service systemd:
+
+   ```bash
+   cd ~/apps/cek-pkwt
+   cp .env.example .env && chmod 600 .env
+   # isi: LANGFLOW_URL=http://127.0.0.1:7860, LANGFLOW_API_KEY, LANGFLOW_FLOW_*,
+   #      FRONTEND_ORIGINS=https://cek-pkwt.briantedjo.my.id
+   cd backend
+   python3 -m venv .venv
+   .venv/bin/pip install -r requirements.txt
+   sed "s/CHANGE_ME_user/$USER/g" ../deploy/systemd/cekpkwt-api.service | sudo tee /etc/systemd/system/cekpkwt-api.service > /dev/null
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now cekpkwt-api
+   ```
+
+   Di server, kunci provider di `.env` root boleh dikosongkan karena hanya Langflow yang memakainya.
+5. **Pasang situs nginx.** Sesuaikan `server_name` di `deploy/nginx/cekpkwt-api.conf` dengan alamat backend Anda, lalu:
+
+   ```bash
+   sudo cp ~/apps/cek-pkwt/deploy/nginx/cekpkwt-api.conf /etc/nginx/sites-available/cekpkwt-api
+   sudo ln -s /etc/nginx/sites-available/cekpkwt-api /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+
+   Situs ini membatasi jumlah permintaan per pengunjung berdasarkan header `CF-Connecting-IP`, karena di balik Cloudflare Tunnel semua permintaan datang dari `cloudflared`.
+6. **Uji:**
+
+   ```bash
+   curl -s https://<alamat-backend>/api/regions
+   curl -s -X POST https://<alamat-backend>/api/ask \
+     -H "Content-Type: application/json" \
+     -d '{"question": "Apa itu kompensasi akhir PKWT?"}'
+   ```
+
+Backend, Langflow, dan PostgreSQL berjalan otomatis setelah server dinyalakan ulang: backend lewat `systemctl enable`, sedangkan kedua container lewat `restart: unless-stopped`.
+
+### Mengakses Langflow di server
+
+Langflow tidak punya alamat publik. Untuk membuka editor atau menghubungkan IBM Bob, buat SSH tunnel dari komputer Anda:
+
+```bash
+ssh -N -L 7860:127.0.0.1:7860 <user>@<server>
+```
+
+Terminal itu tampak diam selama tunnel aktif. Biarkan terbuka, lalu buka `http://localhost:7860`. Tekan Ctrl+C untuk menutupnya.
+
+### Memperbarui
+
+```bash
+cd ~/apps/cek-pkwt && git pull
+sudo systemctl restart cekpkwt-api      # perubahan di backend/
+cd deploy && docker compose up -d        # perubahan di deploy/
+```
+
+- Jika `backend/requirements.txt` berubah, jalankan `backend/.venv/bin/pip install -r backend/requirements.txt` sebelum restart.
+- Jika file flow berubah, impor ulang di Langflow dan periksa apakah ID-nya berubah.
+- Frontend di Vercel dibangun ulang dari repository; tidak ada langkah di server.
+
+### Log dan pemecahan masalah
+
+| Yang ingin dilihat | Perintah |
+|---|---|
+| Permintaan ke backend dan alasan error dari Langflow | `journalctl -u cekpkwt-api -f` |
+| Jalannya flow | `docker compose logs -f langflow` (dari folder `deploy/`) |
+| Permintaan yang ditolak rate limit | `sudo tail -f /var/log/nginx/error.log` |
+
+- **"Layanan CekPKWT sedang tidak tersedia" (502):** Langflow menolak permintaan. `journalctl` menunjukkan alasannya, biasanya API key yang salah (401/403) atau ID flow yang berubah (404).
+- **"Tidak bisa terhubung ke server" di browser:** biasanya CORS. Pastikan `FRONTEND_ORIGINS` sama persis dengan alamat frontend (dengan `https://`, tanpa path), lalu restart backend.
+- **Permintaan ke `/api/...` di domain frontend sendiri (404):** build frontend tidak memuat `VITE_API_BASE`. Periksa variabelnya di Vercel, lalu deploy ulang.
+- **Pemeriksaan kontrak yang panjang terputus (524):** setahu kami, Cloudflare memutus permintaan yang berjalan lebih dari sekitar 100 detik. Jika sering terjadi, turunkan `LANGFLOW_TIMEOUT` (default 180 detik) agar pengguna mendapat pesan error yang jelas.
 
 ## Contoh penggunaan
 
@@ -355,7 +495,9 @@ Catatan:
 - Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
 - Redaksi data pribadi berbasis regex dan bisa melewatkan format yang tidak umum.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
-- Bisa digunakan lewat IBM Bob (IDE), Playground Langflow, atau web app di `frontend/` dan `backend/`. Web app belum di-deploy dan belum memiliki pembatasan jumlah permintaan (rate limiting).
+- Bisa digunakan lewat IBM Bob (IDE), Playground Langflow, atau web app di https://cek-pkwt.briantedjo.my.id.
+- Backend dan Langflow berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
+- Pembatasan jumlah permintaan baru diterapkan di nginx per pengunjung. Belum ada kuota per pengguna atau autentikasi pengguna.
 
 ## Rencana pengembangan
 
@@ -364,7 +506,6 @@ Catatan:
 - **Jenis kontrak:** memperluas cakupan ke PKWTT, magang, dan outsourcing.
 - **Distribusi:** integrasi dengan platform lowongan kerja sebagai fitur "cek kontrak", serta lisensi untuk pusat karier kampus dan serikat pekerja.
 - **Pasar kedua:** pemeriksaan kepatuhan template kontrak untuk UMKM sebelum merekrut.
-- **Antarmuka:** men-deploy web app agar dapat digunakan tanpa IDE.
 
 ### Memperbarui korpus
 
@@ -376,19 +517,26 @@ Catatan:
 
 ```
 .
-├── .env.example                 # Template variabel lingkungan (tanpa nilai)
+├── .env.example                 # Template variabel lingkungan (tanpa nilai): kunci provider + backend
 ├── assets/                      # Logo (SVG) dan design token hasil brand guidelines
 ├── backend/                     # FastAPI: proxy ke Langflow + parser laporan
 ├── data/
 │   └── labor_corpus.csv         # Korpus regulasi (64 entri) beserta sumbernya
+├── deploy/                      # Berkas deploy server
+│   ├── docker-compose.yml       # Langflow 1.12.4 + PostgreSQL
+│   ├── .env.example             # Template variabel khusus server
+│   ├── nginx/
+│   │   └── cekpkwt-api.conf     # Situs nginx untuk backend, dengan rate limit
+│   └── systemd/
+│       └── cekpkwt-api.service  # Service systemd untuk backend
 ├── docs/
-│   └── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
-├── frontend/                    # React + Vite + TypeScript
+│   ├── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
+│   └── screenshots/             # Bukti alur: Bob, Langflow, Gmail
+├── frontend/                    # React + Vite + TypeScript (di-hosting di Vercel)
+│   └── .env.example             # Template VITE_API_BASE
 └── langflow/                    # Ekspor JSON flow (berisi prompt lengkap)
     ├── answer_labor_rule_question.json
     ├── check_work_contract.json
     ├── draft_hr_questions.json
     └── ingest_labor_corpus.json
-├── docs/
-│   └── screenshots/             # Bukti alur: Bob, Langflow, Gmail
 ```
