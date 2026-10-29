@@ -56,6 +56,10 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
 
   const to = EMAIL.test(hrEmail.trim()) ? hrEmail.trim() : ''
   const mailto = draft && `mailto:${to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
+  // Gmail's compose window in the browser's signed-in account; no Google login or API access needed.
+  const gmail = draft && `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
+  // WhatsApp asks which chat to send to; many HR teams reply there rather than by email.
+  const whatsapp = draft && `https://wa.me/?text=${encodeURIComponent(draft.body)}`
 
   return (
     <div className="container page" style={{ gap: 28 }}>
@@ -83,7 +87,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
           <div className="banner" role="status">
             <Icon name="info" size={22} />
             <strong>Teks email siap disalin</strong>
-            <span>Draf ini belum dikirim ke siapa pun. Tinjau, edit, lalu kirim sendiri dari email kamu.</span>
+            <span>Draf ini belum dikirim ke siapa pun. Tinjau, edit, lalu kirim sendiri lewat email atau WhatsApp.</span>
           </div>
 
           <div className="two-col">
@@ -92,7 +96,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
                 <label htmlFor="hr-email" className="label">Email HR <span className="muted" style={{ fontWeight: 500 }}>(opsional)</span></label>
                 <input id="hr-email" type="email" className="input" autoComplete="off" placeholder="hr@perusahaan.co.id"
                   value={hrEmail} onChange={(e) => setHrEmail(e.target.value)} aria-describedby="hr-email-hint" />
-                <span id="hr-email-hint" className="hint">Hanya dipakai untuk membuka aplikasi email kamu. Tidak dikirim ke server CekPKWT.</span>
+                <span id="hr-email-hint" className="hint">Hanya dipakai untuk membuka Gmail atau aplikasi email kamu. Tidak dikirim ke server CekPKWT.</span>
               </div>
               <div className="field">
                 <label htmlFor="subjek" className="label">Subjek</label>
@@ -105,7 +109,9 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
                 <span id="isi-hint" className="hint"><mark className="mono">[Nama Anda]</mark> Ganti dengan namamu sebelum mengirim.</span>
               </div>
               <div className="row">
-                <a href={mailto ?? undefined} className="btn btn-primary btn-lg"><Icon name="mail" />Buka di aplikasi email</a>
+                <a href={gmail ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-lg"><Icon name="mail" />Buka di Gmail</a>
+                <a href={whatsapp ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-lg"><Icon name="messageCircle" />Kirim lewat WhatsApp</a>
+                <a href={mailto ?? undefined} className="btn btn-secondary btn-lg">Buka di aplikasi email</a>
                 <CopyButton text={`Subjek: ${draft.subject}\n\n${draft.body}`} label="Salin teks" className="btn btn-secondary btn-lg" />
               </div>
             </section>
