@@ -5,6 +5,9 @@
 *, *::before, *::after { box-sizing: border-box; }
 /* Home nav links ("#cara-kerja") glide to their section; route changes jump instantly (App.tsx). */
 html { scroll-behavior: smooth; }
+/* Always reserve the scrollbar's space so pages don't shift sideways when it appears (e.g. the
+   contract preview growing on Cek kontrak) or between scrolling pages and the fixed-height chat. */
+html { scrollbar-gutter: stable; }
 body {
   margin: 0;
   background: var(--color-background);
