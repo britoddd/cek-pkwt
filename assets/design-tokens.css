@@ -1,0 +1,157 @@
+/* Design Tokens - Auto-generated */
+/* Do not edit directly - modify tokens.json instead */
+
+/* === PRIMITIVES === */
+:root {
+  --primitive-color-tinta-50: #EEF0F7;
+  --primitive-color-tinta-100: #DCE0EE;
+  --primitive-color-tinta-200: #B4BCD9;
+  --primitive-color-tinta-300: #8591BC;
+  --primitive-color-tinta-400: #56649A;
+  --primitive-color-tinta-500: #36437A;
+  --primitive-color-tinta-600: #283466;
+  --primitive-color-tinta-700: #1F2A55;
+  --primitive-color-tinta-800: #171F42;
+  --primitive-color-tinta-900: #0F1530;
+  --primitive-color-stabilo-50: #FFFBEA;
+  --primitive-color-stabilo-100: #FFF4C2;
+  --primitive-color-stabilo-200: #FFEA8A;
+  --primitive-color-stabilo-300: #FFE066;
+  --primitive-color-stabilo-400: #FFD84D;
+  --primitive-color-stabilo-500: #F5C518;
+  --primitive-color-stabilo-600: #D9A800;
+  --primitive-color-pasal-50: #F3F6FE;
+  --primitive-color-pasal-100: #E8EEFC;
+  --primitive-color-pasal-200: #C9D6F7;
+  --primitive-color-pasal-300: #9AB1EF;
+  --primitive-color-pasal-400: #6585E0;
+  --primitive-color-pasal-500: #2F54C8;
+  --primitive-color-pasal-600: #2443A8;
+  --primitive-color-pasal-700: #1C3586;
+  --primitive-color-pasal-800: #172B6B;
+  --primitive-color-kertas-0: #FFFFFF;
+  --primitive-color-kertas-50: #FAF8F3;
+  --primitive-color-kertas-100: #F3F0E8;
+  --primitive-color-kertas-200: #E7E3D8;
+  --primitive-color-kertas-500: #5B6178;
+  --primitive-color-merah-100: #FEE4E2;
+  --primitive-color-merah-300: #FDA29B;
+  --primitive-color-merah-700: #B42318;
+  --primitive-color-merah-950: #55160C;
+  --primitive-color-oranye-100: #FEF0C7;
+  --primitive-color-oranye-300: #FEC84B;
+  --primitive-color-oranye-700: #B54708;
+  --primitive-color-oranye-950: #4E1D09;
+  --primitive-color-hijau-100: #DCFAE6;
+  --primitive-color-hijau-300: #75E0A7;
+  --primitive-color-hijau-700: #067647;
+  --primitive-color-hijau-950: #053321;
+  --primitive-color-abu-100: #F2F4F7;
+  --primitive-color-abu-300: #D0D5DD;
+  --primitive-color-abu-600: #475467;
+  --primitive-color-abu-800: #1D2939;
+  --primitive-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --primitive-font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --primitive-font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+
+/* === SEMANTIC === */
+:root {
+  --color-background: #FAF8F3;
+  --color-surface: #FFFFFF;
+  --color-surface-sunken: #F3F0E8;
+  --color-border: #E7E3D8;
+  --color-text: #171F42;
+  --color-text-muted: #5B6178;
+  --color-primary: #1F2A55;
+  --color-primary-hover: #171F42;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #2F54C8;
+  --color-secondary-hover: #2443A8;
+  --color-accent: #FFD84D;
+  --color-accent-hover: #F5C518;
+  --color-on-accent: #1F2A55;
+  --color-highlight: #FFEA8A;
+  --color-link: #2F54C8;
+  --color-focus-ring: #2F54C8;
+  --color-success: #067647;
+  --color-warning: #B54708;
+  --color-error: #B42318;
+  --color-info: #2F54C8;
+  --color-severity-high: #B42318;
+  --color-severity-high-bg: #FEE4E2;
+  --color-severity-medium: #B54708;
+  --color-severity-medium-bg: #FEF0C7;
+  --color-severity-low: #2F54C8;
+  --color-severity-low-bg: #E8EEFC;
+  --color-severity-ok: #067647;
+  --color-severity-ok-bg: #DCFAE6;
+  --color-severity-unchecked: #475467;
+  --color-severity-unchecked-bg: #F2F4F7;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-quote: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 2px rgba(15, 21, 48, 0.06), 0 4px 12px rgba(15, 21, 48, 0.06);
+}
+
+/* === COMPONENTS === */
+:root {
+  --button-primary-bg: #1F2A55;
+  --button-primary-bg-hover: #171F42;
+  --button-primary-text: #FFFFFF;
+  --button-highlight-bg: #FFD84D;
+  --button-highlight-bg-hover: #F5C518;
+  --button-highlight-text: #1F2A55;
+  --button-secondary-bg-hover: #1F2A551A;
+  --button-secondary-text: #1F2A55;
+  --button-secondary-border: #1F2A55;
+  --button-radius: 10px;
+  --card-bg: #FFFFFF;
+  --card-border: #E7E3D8;
+  --card-radius: 16px;
+  --badge-radius: 9999px;
+  --citation-bg: #F3F6FE;
+  --citation-text: #1C3586;
+  --citation-border: #C9D6F7;
+  --citation-radius: 6px;
+  --quote-highlight: #FFEA8A;
+  --quote-rule: #1F2A55;
+}
+
+/* === DARK MODE === */
+.dark {
+  --color-background: #0F1530;
+  --color-surface: #171F42;
+  --color-surface-sunken: #0B1026;
+  --color-border: #2A3462;
+  --color-text: #EEF0F7;
+  --color-text-muted: #A8B0CC;
+  --color-primary: #FFD84D;
+  --color-primary-hover: #FFE066;
+  --color-on-primary: #1F2A55;
+  --color-secondary: #9AB1EF;
+  --color-highlight: #FFD84D33;
+  --color-link: #9AB1EF;
+  --color-focus-ring: #9AB1EF;
+  --color-severity-high: #FDA29B;
+  --color-severity-high-bg: #55160C;
+  --color-severity-medium: #FEC84B;
+  --color-severity-medium-bg: #4E1D09;
+  --color-severity-low: #9AB1EF;
+  --color-severity-low-bg: #172B6B;
+  --color-severity-ok: #75E0A7;
+  --color-severity-ok-bg: #053321;
+  --color-severity-unchecked: #D0D5DD;
+  --color-severity-unchecked-bg: #1D2939;
+}
