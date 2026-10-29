@@ -12,6 +12,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
 from report import parse_hr_draft, parse_report
@@ -43,6 +44,18 @@ with open(Path(__file__).parent.parent / "data" / "labor_corpus.csv", encoding="
 UNAVAILABLE = "Layanan CekPKWT sedang tidak tersedia. Coba lagi beberapa saat lagi."
 
 app = FastAPI(title="CekPKWT API")
+
+# Browser origins allowed to call this API directly, comma-separated (e.g. the static host's domain).
+# Empty = no cross-origin calls, which is all local dev needs: Vite forwards /api on the same origin.
+FRONTEND_ORIGINS = [o.strip().rstrip("/") for o in (os.environ.get("FRONTEND_ORIGINS") or "").split(",") if o.strip()]
+if FRONTEND_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=FRONTEND_ORIGINS,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
+    )
+    log.info("Allowing browser calls from %s", FRONTEND_ORIGINS)
 
 
 class Input(BaseModel):
