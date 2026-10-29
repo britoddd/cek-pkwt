@@ -77,6 +77,31 @@ mark {
 .nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--color-text); text-decoration: none; font-size: 15px; font-weight: 500; }
 .nav a[aria-current="page"] { color: var(--color-primary); font-weight: 700; box-shadow: inset 0 -3px 0 var(--color-accent); }
 .nav .btn-primary { margin-left: 8px; padding: 0 18px; color: var(--button-primary-text); font-weight: 700; }
+/* Wide screens: the header sticks, and once the page scrolls (App.tsx adds .is-island) it lifts into a
+   frosted pill. Its height never changes, so nothing below it shifts. Phones keep the plain header:
+   their nav wraps to two or three rows, too tall to pin. */
+@media (min-width: 768px) {
+  html { scroll-padding-top: 88px; } /* anchors, report jumps and focused fields land below the island */
+  .site-header { position: sticky; top: 0; z-index: 10; transition: background-color 0.25s ease, border-color 0.25s ease; }
+  .site-header .container {
+    width: 100%; border: 1px solid transparent; border-radius: var(--radius-full);
+    transition: width 0.3s ease, max-width 0.3s ease, padding 0.3s ease, translate 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  /* The transparent strip around the island lets clicks through to the page. */
+  .site-header.is-island { background-color: transparent; border-bottom-color: transparent; pointer-events: none; }
+  .site-header.is-island .container {
+    pointer-events: auto;
+    width: calc(100% - 24px); max-width: 1080px; padding-inline: 20px 11px; translate: 0 12px;
+    background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+    box-shadow: 0 1px 2px rgba(15, 21, 48, 0.06), 0 12px 32px rgba(15, 21, 48, 0.12);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header.is-island .container { background-color: var(--color-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
 
 /* Buttons */
 .btn {
@@ -199,7 +224,8 @@ mark {
 .toc-dot[data-severity="ok"] { background: var(--color-severity-ok); }
 .toc-dot[data-severity="unchecked"] { background: none; border: 1.5px dashed var(--color-severity-unchecked); }
 /* The outline only helps beside a long report; on narrow screens the summary chips do the jumping. */
-@media (min-width: 921px) { .report-aside { position: sticky; top: 24px; } }
+/* Top clears the header island and lines up with jumped-to sections (scroll-padding 88 + scroll-margin 24). */
+@media (min-width: 921px) { .report-aside { position: sticky; top: 112px; } }
 @media (max-width: 920px) { .toc { display: none; } }
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
 .finding { display: flex; flex-direction: column; gap: 18px; }
@@ -313,7 +339,7 @@ mark {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn { transition: none; }
+  .btn, .site-header, .site-header .container { transition: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
   html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
