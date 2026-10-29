@@ -3,6 +3,8 @@
 
 /* Base */
 *, *::before, *::after { box-sizing: border-box; }
+/* Home nav links ("#cara-kerja") glide to their section; route changes jump instantly (App.tsx). */
+html { scroll-behavior: smooth; }
 body {
   margin: 0;
   background: var(--color-background);
@@ -310,7 +312,7 @@ mark {
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
-  .chat-log { scroll-behavior: auto; }
+  html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
 
