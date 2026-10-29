@@ -35,7 +35,7 @@ export default function App() {
   useEffect(() => {
     if (shownRoute.current === route) return
     shownRoute.current = route
-    scrollTo(0, route === '/laporan' ? reportScroll.current : 0)
+    scrollTo({ top: route === '/laporan' ? reportScroll.current : 0, behavior: 'instant' })
     document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true })
   }, [route])
 
