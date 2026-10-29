@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { draftHrEmail, type CheckResult, type Finding, type HrDraft } from '../api'
-import { EmptyState, Icon, Loading, Steps } from '../components'
+import { CopyButton, EmptyState, Icon, Loading, Steps } from '../components'
 
 const SUBJECT = 'Pertanyaan Terkait Draf Kontrak Kerja (PKWT)'
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
@@ -25,7 +25,6 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
   const findings = result?.report?.findings ?? []
   const [error, setError] = useState('')
   const [hrEmail, setHrEmail] = useState('')
-  const [copied, setCopied] = useState(false)
   const requested = useRef(false)
 
   const generate = useCallback(async () => {
@@ -57,9 +56,6 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
 
   const to = EMAIL.test(hrEmail.trim()) ? hrEmail.trim() : ''
   const mailto = draft && `mailto:${to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
-  const copy = () => draft && navigator.clipboard
-    ?.writeText(`Subjek: ${draft.subject}\n\n${draft.body}`)
-    .then(() => setCopied(true), () => {})
 
   return (
     <div className="container page" style={{ gap: 28 }}>
@@ -110,9 +106,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
               </div>
               <div className="row">
                 <a href={mailto ?? undefined} className="btn btn-primary btn-lg"><Icon name="mail" />Buka di aplikasi email</a>
-                <button type="button" className="btn btn-secondary btn-lg" onClick={copy}>
-                  <Icon name={copied ? 'check' : 'copy'} size={18} />{copied ? 'Tersalin' : 'Salin teks'}
-                </button>
+                <CopyButton text={`Subjek: ${draft.subject}\n\n${draft.body}`} label="Salin teks" className="btn btn-secondary btn-lg" />
               </div>
             </section>
 

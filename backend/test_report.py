@@ -55,6 +55,11 @@ def test_report():
     assert r["disclaimer"] == "Ini bukan nasihat hukum. Hubungi LBH atau Disnaker."
 
 
+def test_findings_sorted_by_severity():
+    md = "**Ringkasan:** x\n### 1. A\n- **Keparahan:** rendah\n### 2. B\n- **Keparahan:** tinggi\n### 3. C\n### 4. D\n- **Keparahan:** sedang"
+    assert [f["title"] for f in parse_report(md)["findings"]] == ["B", "D", "A", "C"]
+
+
 def test_out_of_scope_reply_is_not_a_report():
     assert parse_report("CekPKWT saat ini hanya memeriksa kontrak PKWT.\n\n---\n*Ini bukan nasihat hukum.*") is None
 
@@ -72,6 +77,7 @@ def test_hr_draft():
 
 if __name__ == "__main__":
     test_report()
+    test_findings_sorted_by_severity()
     test_out_of_scope_reply_is_not_a_report()
     test_hr_draft()
     print("ok")

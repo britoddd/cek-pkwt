@@ -31,6 +31,7 @@ FIELDS = {
     "pertanyaan untuk hr": "hr_question",
 }
 LISTS = ("no_issues", "unchecked", "notes")
+SEVERITY_RANK = {"tinggi": 0, "sedang": 1, "rendah": 2}
 
 
 def _lookup(table: dict, text: str):
@@ -113,6 +114,8 @@ def parse_report(markdown: str) -> dict | None:
     for finding in report["findings"]:
         finding["quote"] = finding["quote"].strip('"“”')
         finding["references"] = [_reference(r) for r in finding["references"].split(";") if r.strip()]
+    # Most severe first, so the report and the HR email list them in the same order.
+    report["findings"].sort(key=lambda f: SEVERITY_RANK.get(f["severity"], len(SEVERITY_RANK)))
     return report
 
 

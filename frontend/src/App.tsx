@@ -18,24 +18,38 @@ export default function App() {
   const [result, setResult] = useState<CheckResult | null>(null)
   const [draft, setDraft] = useState<HrDraft | null>(null)
   const shownRoute = useRef(route)
+  const reportScroll = useRef(0)
 
   useEffect(() => {
-    const onHash = () => setRoute(currentRoute())
+    const onHash = () => {
+      if (shownRoute.current === '/laporan') reportScroll.current = scrollY
+      setRoute(currentRoute())
+    }
     addEventListener('hashchange', onHash)
     return () => removeEventListener('hashchange', onHash)
   }, [])
 
-  // On navigation, start at the top and focus the new page's heading so screen readers announce it.
+  // On navigation, start at the top (or where the reader left the report) and focus the new page's
+  // heading so screen readers announce it.
   useEffect(() => {
     if (shownRoute.current === route) return
     shownRoute.current = route
-    scrollTo(0, 0)
-    document.querySelector<HTMLElement>('main h1')?.focus()
+    scrollTo(0, route === '/laporan' ? reportScroll.current : 0)
+    document.querySelector<HTMLElement>('main h1')?.focus({ preventScroll: true })
   }, [route])
+
+  // The report lives only in memory; ask before a reload or a closed tab throws it away.
+  useEffect(() => {
+    if (!result) return
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault()
+    addEventListener('beforeunload', warn)
+    return () => removeEventListener('beforeunload', warn)
+  }, [result])
 
   const onChecked = (r: CheckResult) => {
     setResult(r)
     setDraft(null)
+    reportScroll.current = 0
     location.hash = '#/laporan'
   }
 
@@ -48,12 +62,13 @@ export default function App() {
     default: page = <Home />
   }
 
+  // The chat page is a fixed-height window that scrolls inside; other pages scroll normally.
   return (
-    <>
+    <div className={route === '/tanya' ? 'app app-fixed' : 'app'}>
       <Header route={route} hasReport={result !== null} />
       <main>{page}</main>
       <Footer home={route === '/'} />
-    </>
+    </div>
   )
 }
 

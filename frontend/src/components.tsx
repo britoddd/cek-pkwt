@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Reference, Severity } from './api'
 
 // Lucide icon paths (lucide.dev, ISC licence), inlined to avoid an icon dependency.
@@ -17,6 +17,7 @@ const ICONS = {
   circleDashed: <><path d="M10.1 2.182a10 10 0 0 1 3.8 0" /><path d="M13.9 21.818a10 10 0 0 1-3.8 0" /><path d="M17.609 3.721a10 10 0 0 1 2.69 2.7" /><path d="M2.182 13.9a10 10 0 0 1 0-3.8" /><path d="M20.279 17.609a10 10 0 0 1-2.7 2.69" /><path d="M21.818 10.1a10 10 0 0 1 0 3.8" /><path d="M3.721 6.391a10 10 0 0 1 2.7-2.69" /><path d="M6.391 20.279a10 10 0 0 1-2.69-2.7" /></>,
   copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
   mail: <><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></>,
+  download: <><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></>,
 }
 
 export type IconName = keyof typeof ICONS
@@ -41,12 +42,53 @@ export function SeverityBadge({ level }: { level: Severity }) {
   return <span className={`badge sev-${level}`}><Icon name={s.icon} size={16} />Keparahan: {s.label}</span>
 }
 
+// Corpus status codes in words a reader understands.
+const STATUS_LABEL: Record<string, string> = {
+  dimaknai_putusan_mk: 'dimaknai Putusan MK',
+  berlaku_imbauan: 'imbauan',
+  catatan_sistem: 'catatan sistem',
+}
+
 export function Citation({ label, status }: Reference) {
   return (
     <span className="cite">
       <span className="cite-dot" data-status={status ?? ''} aria-hidden="true" />
-      {label}{status && ` · ${status}`}
+      {label}{status && ` · ${STATUS_LABEL[status] ?? status}`}
     </span>
+  )
+}
+
+// Copy with brief, announced feedback that resets itself.
+export function CopyButton({ text, label = 'Salin', name, className = 'btn btn-secondary btn-sm' }: {
+  text: string
+  label?: string
+  name?: string // accessible name when the visible label lacks context, e.g. "Salin pertanyaan 2"
+  className?: string
+}) {
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const timer = useRef<number>(undefined)
+  useEffect(() => () => clearTimeout(timer.current), [])
+
+  const copy = () => {
+    const done = (s: 'copied' | 'failed') => {
+      setState(s)
+      clearTimeout(timer.current)
+      timer.current = window.setTimeout(() => setState('idle'), 2500)
+    }
+    if (!navigator.clipboard) return done('failed')
+    navigator.clipboard.writeText(text).then(() => done('copied'), () => done('failed'))
+  }
+
+  return (
+    <>
+      <button type="button" className={className} onClick={copy} aria-label={state === 'idle' ? name : undefined}>
+        <Icon name={state === 'copied' ? 'check' : 'copy'} size={16} />
+        {state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin' : label}
+      </button>
+      <span className="sr-only" aria-live="polite">
+        {state === 'copied' ? 'Tersalin ke clipboard' : state === 'failed' ? 'Gagal menyalin. Pilih teksnya lalu salin manual.' : ''}
+      </span>
+    </>
   )
 }
 
