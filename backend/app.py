@@ -106,6 +106,7 @@ async def ask(body: AskIn):
 @app.post("/api/hr-draft")
 async def hr_draft(body: HrDraftIn):
     # No HR address is sent on purpose: the Composio Gmail tool is linked to one account,
-    # so a web visitor's draft would land in the app owner's mailbox. The page uses mailto: instead.
+    # so a web visitor's draft would land in the app owner's mailbox. The page opens the user's own
+    # Gmail compose window, mailto: or WhatsApp instead.
     raw = await run_flow("hr", body.findings)
     return {"raw": raw, **parse_hr_draft(raw)}
