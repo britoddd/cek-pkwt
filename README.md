@@ -17,6 +17,7 @@ Tema: **Education & Future of Work**
 - [Korpus regulasi](#korpus-regulasi)
 - [Setup](#setup)
 - [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow)
+- [Menjalankan web app](#menjalankan-web-app)
 - [Contoh penggunaan](#contoh-penggunaan)
 - [Hasil evaluasi](#hasil-evaluasi)
 - [Responsible AI](#responsible-ai)
@@ -268,6 +269,37 @@ Langflow mengekspos flow dalam satu project sebagai **MCP server**, dan IBM Bob 
 
 Bob mengirim teks pengguna ke Chat Input setiap flow dan menerima Chat Output sebagai hasil tool. Logika workflow tetap berada di Langflow, sedangkan logika percakapan berada di Bob.
 
+## Menjalankan web app
+
+Selain lewat IBM Bob, CekPKWT bisa dipakai lewat web app yang terdiri dari dua bagian terpisah:
+
+- **`backend/`**: FastAPI (Python). Memvalidasi input, menyimpan API key Langflow di server, lalu meneruskan permintaan ke ketiga flow lewat API `/api/v1/run`. Laporan Markdown dari flow diubah menjadi JSON (`backend/report.py`). Teks kontrak tidak dicatat di log dan tidak disimpan. Setiap permintaan memakai sesi Langflow baru, sehingga pesan satu pengguna tidak masuk ke memori agent pengguna lain.
+- **`frontend/`**: React + Vite + TypeScript. Lima halaman: beranda, tempel kontrak (dengan pratinjau penyamaran data pribadi), laporan, draf email HR, dan tanya aturan. Warna dan font diambil dari `assets/design-tokens.css` (sumbernya `docs/brand-guidelines.md`).
+
+Isi `LANGFLOW_URL` dan `LANGFLOW_API_KEY` di `.env` (lihat `.env.example`). Jika Langflow memberi ID baru saat flow diimpor, isi juga `LANGFLOW_FLOW_CHECK`, `LANGFLOW_FLOW_ASK`, dan `LANGFLOW_FLOW_HR`.
+
+```bash
+# Terminal 1: backend di port 8000
+cd backend
+python -m venv .venv
+.venv/Scripts/activate            # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app:app --env-file ../.env
+
+# Terminal 2: frontend di port 5173 (meneruskan /api ke backend)
+cd frontend
+npm install
+npm run dev
+```
+
+Buka http://localhost:5173. Uji parser laporan dengan `python test_report.py` di folder `backend/`.
+
+Catatan:
+
+- **Draf email tidak dibuat di Gmail.** Komponen Composio terhubung ke satu akun, jadi draf dari semua pengunjung web akan masuk ke kotak surat pemilik aplikasi. Web app membuka aplikasi email pengguna sendiri lewat tautan `mailto:`. Alur draf Gmail tetap tersedia lewat IBM Bob.
+- **Laporan hanya ada di memori browser** dan hilang saat halaman dimuat ulang.
+- **Untuk produksi**, jalankan `npm run build` lalu sajikan `frontend/dist` dan backend dari satu domain, dengan reverse proxy `/api` ke backend.
+
 ## Contoh penggunaan
 
 | Pengguna menulis di Bob | Tool yang dipanggil |
@@ -332,7 +364,7 @@ sebagaimana diubah UU 6/2023, PP 35/2021, dan Putusan MK 168/PUU-XXI/2023 (rezim
 - Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
 - Redaksi data pribadi berbasis regex dan bisa melewatkan format yang tidak umum.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
-- Saat ini hanya bisa digunakan lewat IBM Bob (IDE) atau Playground Langflow.
+- Bisa digunakan lewat IBM Bob (IDE), Playground Langflow, atau web app di `frontend/` dan `backend/`. Web app belum di-deploy dan belum memiliki pembatasan jumlah permintaan (rate limiting).
 
 ## Rencana pengembangan
 
@@ -341,7 +373,7 @@ sebagaimana diubah UU 6/2023, PP 35/2021, dan Putusan MK 168/PUU-XXI/2023 (rezim
 - **Jenis kontrak:** memperluas cakupan ke PKWTT, magang, dan outsourcing.
 - **Distribusi:** integrasi dengan platform lowongan kerja sebagai fitur "cek kontrak", serta lisensi untuk pusat karier kampus dan serikat pekerja.
 - **Pasar kedua:** pemeriksaan kepatuhan template kontrak untuk UMKM sebelum merekrut.
-- **Antarmuka:** front end web agar dapat digunakan tanpa IDE.
+- **Antarmuka:** men-deploy web app agar dapat digunakan tanpa IDE.
 
 ### Memperbarui korpus
 
@@ -354,8 +386,13 @@ sebagaimana diubah UU 6/2023, PP 35/2021, dan Putusan MK 168/PUU-XXI/2023 (rezim
 ```
 .
 ├── .env.example                 # Template variabel lingkungan (tanpa nilai)
+├── assets/                      # Logo (SVG) dan design token hasil brand guidelines
+├── backend/                     # FastAPI: proxy ke Langflow + parser laporan
 ├── data/
 │   └── labor_corpus.csv         # Korpus regulasi (64 entri) beserta sumbernya
+├── docs/
+│   └── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
+├── frontend/                    # React + Vite + TypeScript
 └── langflow/                    # Ekspor JSON flow (berisi prompt lengkap)
     ├── answer_labor_rule_question.json
     ├── check_work_contract.json
