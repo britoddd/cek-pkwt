@@ -283,13 +283,20 @@ mark {
 .hero { display: flex; flex-wrap: wrap; align-items: center; gap: 56px; padding-block: 72px 96px; }
 .hero-copy { flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
 .hero-title { font-size: clamp(2.5rem, 5.4vw, 4.25rem); font-weight: 800; line-height: 1.06; letter-spacing: -0.025em; }
-.hero-title mark { background: var(--color-accent); color: var(--color-primary); padding: 0 0.04em 0 0.1em; border-radius: 6px; }
+/* The highlighter swipes across "Cek dulu" on load. */
+.hero-title mark {
+  background: linear-gradient(var(--color-accent), var(--color-accent)) no-repeat 0 0 / 100% 100%;
+  color: var(--color-primary); padding: 0 0.04em 0 0.1em; border-radius: 6px;
+  animation: swipe 0.7s 0.2s cubic-bezier(0.6, 0, 0.2, 1) backwards;
+}
+@keyframes swipe { from { background-size: 0% 100%; } }
 .pill { align-self: flex-start; padding: 6px 14px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: 14px; font-weight: 600; color: var(--color-text-muted); }
 .trust { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 24px; font-size: 14px; font-weight: 500; color: var(--color-text-muted); }
 .trust li { display: inline-flex; align-items: center; gap: 8px; }
 .trust .icon { color: var(--color-primary); }
 .doc { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 32px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); box-shadow: 0 1px 2px rgba(15, 21, 48, 0.06), 0 12px 32px rgba(15, 21, 48, 0.08); font-family: var(--font-quote); font-size: 15px; line-height: 1.7; }
-.doc-head { display: flex; flex-direction: column; gap: 2px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+.doc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+.doc-head > div { display: flex; flex-direction: column; gap: 2px; }
 .doc-head strong { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); }
 .doc-note { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 16px; background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-family: var(--font-body); font-size: 14px; line-height: 1.55; }
 .pii { padding: 2px 6px; border-radius: 4px; background: var(--primitive-color-tinta-50); color: var(--color-primary); font-family: var(--font-mono); font-size: 12px; }
@@ -297,6 +304,67 @@ mark {
 .signatures > div { flex: 1 1 140px; display: flex; flex-direction: column; gap: 6px; }
 .sign-line { border-top: 1.5px solid var(--primitive-color-tinta-300); }
 .sign-line.ready { border-color: var(--color-primary); }
+
+/* Hero demo (ContractDemo in Home.tsx) */
+.doc-clauses { position: relative; display: flex; flex-direction: column; gap: 14px; }
+/* Flagged clauses get an editor's rule in the margin, in the active finding's severity colour. */
+.clause { margin-left: -19px; padding-left: 16px; border-left: 3px solid transparent; transition: border-color 0.3s ease; }
+.clause.is-active[data-severity="tinggi"] { border-color: var(--color-severity-high); }
+.clause.is-active[data-severity="sedang"] { border-color: var(--color-severity-medium); }
+.clause.is-active[data-severity="rendah"] { border-color: var(--color-severity-low); }
+/* Found clauses are underlined; the active one is highlighted, the stroke running line by line (slice). */
+.sweep {
+  padding: 1px 0; border-radius: 2px; background-color: transparent;
+  background-image: linear-gradient(var(--quote-highlight), var(--quote-highlight)), linear-gradient(var(--color-accent-hover), var(--color-accent-hover));
+  background-repeat: no-repeat; background-position: left center, left bottom; background-size: 0% 100%, 0% 2px;
+  -webkit-box-decoration-break: slice; box-decoration-break: slice;
+  transition: background-size 0.3s ease;
+}
+.demo.is-done .sweep { background-size: 0% 100%, 100% 2px; }
+.demo.is-done .sweep.is-on { background-size: 100% 100%, 100% 2px; transition: background-size 0.7s 0.1s cubic-bezier(0.6, 0, 0.2, 1); }
+.pii-in { animation: pii-in 0.4s ease both; }
+@keyframes pii-in { from { opacity: 0; filter: blur(4px); } }
+/* A highlighter-yellow line sweeps down the clauses; multiply keeps the text under it legible. */
+.doc-scan { position: absolute; inset: -8px -12px; overflow: hidden; pointer-events: none; }
+.doc-scan > span {
+  position: absolute; inset: 0; mix-blend-mode: multiply;
+  background: linear-gradient(to bottom, transparent calc(100% - 64px), color-mix(in srgb, var(--color-accent) 45%, transparent) calc(100% - 3px), var(--color-accent-hover) calc(100% - 3px));
+  translate: 0 -100%; animation: scan 1.4s cubic-bezier(0.45, 0, 0.25, 1) forwards;
+}
+@keyframes scan { to { translate: 0 64px; } }
+.demo-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.demo-chip {
+  position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--color-border); border-radius: var(--radius-full);
+  background: var(--color-surface); color: var(--color-text); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.demo-chip:hover { background: var(--primitive-color-tinta-50); }
+.demo-chip[aria-pressed="true"] { background: var(--primitive-color-tinta-50); border-color: var(--color-primary); color: var(--color-primary); }
+/* The rotation timer: when this bar fills, the next finding takes its turn (onAnimationEnd). */
+.demo-progress { position: absolute; inset: auto 0 0; height: 3px; background: var(--color-accent-hover); transform-origin: left; animation: progress 6s linear both; }
+@keyframes progress { from { scale: 0 1; } }
+.demo.is-paused .demo-progress, .demo:hover .demo-progress, .demo:has(.demo-chip:focus-visible) .demo-progress { animation-play-state: paused; }
+.demo-pause { flex: none; margin: -8px -10px 0 0; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--color-text-muted); cursor: pointer; }
+.demo-pause:hover { background: var(--primitive-color-tinta-50); color: var(--color-primary); }
+/* Status and findings share one grid cell, so the panel keeps the tallest one's height and never jumps. */
+.demo-notes { display: grid; width: 100%; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.demo-notes > * { grid-area: 1 / 1; transition: opacity 0.3s ease, translate 0.3s ease, visibility 0.3s; }
+.demo-notes > :not(.is-shown) { opacity: 0; translate: 0 6px; visibility: hidden; }
+.demo-notes .loading { align-self: center; font-size: 14px; }
+.demo-note { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.sign-check { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 0.5s 0.4s ease; }
+.demo.is-done .sign-check { stroke-dashoffset: 0; }
+
+.stats { flex: 1 1 100%; list-style: none; padding: 32px 0 0; border-top: 1px solid var(--color-border); display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 24px 32px; font-size: 15px; color: var(--color-text-muted); }
+.stat-num { display: block; margin-bottom: 4px; font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--color-primary); }
+
+/* Scroll reveal (Home.tsx adds .is-in); cards in a row arrive one after another. */
+.reveal { transition: opacity 0.5s ease, translate 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.reveal:not(.is-in) { opacity: 0; translate: 0 24px; }
+.grid > .reveal:nth-child(2) { transition-delay: 80ms; }
+.grid > .reveal:nth-child(3) { transition-delay: 160ms; }
+.grid > .reveal:nth-child(4) { transition-delay: 240ms; }
 .band { background: var(--color-surface); border-block: 1px solid var(--color-border); }
 .section { padding-block: 88px; display: flex; flex-direction: column; gap: 40px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 24px; list-style: none; padding: 0; }
@@ -325,7 +393,7 @@ mark {
 
 @media (max-width: 640px) {
   .container { padding-inline: var(--space-md); }
-  .card, .card-dark { padding: 22px; }
+  .card, .card-dark, .doc { padding: 22px; }
   .limits { padding: 24px; }
   .hero { padding-block: 40px 64px; }
   .section { padding-block: 64px; }
@@ -347,6 +415,11 @@ mark {
 @media (prefers-reduced-motion: reduce) {
   .btn, .site-header, .site-header .container { transition: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
+  /* Home: everything shows in its final state, and the demo stays on whichever finding the reader picks. */
+  .hero-title mark, .pii-in { animation: none; }
+  .reveal, .sweep, .clause, .sign-check, .demo-notes > * { transition: none !important; }
+  .reveal:not(.is-in) { opacity: 1; translate: none; }
+  .demo-progress, .demo-pause { display: none; }
   html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
