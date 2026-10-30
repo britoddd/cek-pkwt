@@ -108,6 +108,39 @@ def test_wage_row_and_flip():
     assert old["status"] == "berlaku", "the loaded corpus is never mutated"
 
 
+def test_ingest_tweaks_the_servers_node_ids():
+    import contextlib, io, json, os
+    from argparse import Namespace
+    import httpx
+
+    seen, sent = [], {}
+
+    def langflow(request: httpx.Request) -> httpx.Response:  # node ids as on the server, unlike the repo JSON
+        seen.append(f"{request.method} {request.url.path}")
+        if request.method == "GET":
+            return httpx.Response(200, json={"data": {"nodes": [
+                {"id": "File-7OekK", "data": {"type": "File"}},
+                {"id": "CsvRowsToData-09l3u", "data": {"type": "CsvRowsToData"}},
+                {"id": "ext:datastax:AstraDBVectorStoreComponent@official-VEG2h",
+                 "data": {"type": "ext:datastax:AstraDBVectorStoreComponent@official"}}]}})
+        if request.url.path == "/api/v2/files":
+            return httpx.Response(201, json={"path": "user/labor.csv"})
+        sent.update(json.loads(request.content))
+        return httpx.Response(200, json={})
+
+    real = httpx.Client
+    httpx.Client = lambda **kw: real(transport=httpx.MockTransport(langflow), **kw)
+    os.environ |= {"LANGFLOW_URL": "http://lf", "LANGFLOW_API_KEY": "k", "LANGFLOW_FLOW_INGEST": "http://lf/flow/abc/"}
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            assert cs.cmd_ingest(Namespace(full=True, since=None)) == 0
+    finally:
+        httpx.Client = real
+    assert seen == ["GET /api/v1/flows/abc", "POST /api/v2/files", "POST /api/v1/run/abc"], seen
+    assert sent["tweaks"] == {"File-7OekK": {"path": ["user/labor.csv"]},
+                              "ext:datastax:AstraDBVectorStoreComponent@official-VEG2h": {"deletion_field": "id"}}
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):
