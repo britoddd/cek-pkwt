@@ -550,12 +550,18 @@ Catatan:
 Jadwal harian dan tombol "Run workflow" baru muncul setelah kedua workflow ada di `main`. Siapkan runner (langkah 2) sebelum merge, karena merge yang mengubah CSV menjalankan job unggah.
 
 1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY` untuk menyusun draf, `LANGFLOW_API_KEY`, dan `LANGFLOW_FLOW_INGEST` (ID flow `ingest_labor_corpus` di server). `LANGFLOW_URL` opsional; bawaannya `http://127.0.0.1:7860`.
-2. **Self-hosted runner di server.** Langflow hanya mendengarkan `127.0.0.1`, jadi job unggah berjalan di runner yang dipasang di server yang sama (Settings → Actions → Runners → New self-hosted runner, jalankan sebagai service). Server perlu `python3` dengan modul `venv`.
+2. **Self-hosted runner di server.** Kedua workflow berjalan di runner yang dipasang di server (Settings → Actions → Runners → New self-hosted runner, jalankan sebagai service): job unggah karena Langflow hanya mendengarkan `127.0.0.1`, dan sinkronisasi harian karena JDIH BPK, Jawa Barat, dan MK memblokir runner GitHub (IP luar negeri). Server perlu `python3` dengan modul `venv`, [`gh` CLI](https://github.com/cli/cli/blob/trunk/docs/install_linux.md), dan library sistem untuk Chromium (sekali):
+
+   ```bash
+   python3 -m venv /tmp/pw && /tmp/pw/bin/pip install -q playwright \
+     && sudo /tmp/pw/bin/python -m playwright install-deps chromium && rm -rf /tmp/pw
+   ```
+
 3. **Pengaturan Actions** (Settings → Actions → General):
    - "Approval for running fork pull request workflows": pilih "Require approval for all external contributors", karena repository ini publik. Job unggah sendiri tidak pernah berjalan untuk `pull_request`.
    - "Workflow permissions": centang "Allow GitHub Actions to create and approve pull requests". Tanpa ini bot tidak bisa membuka PR.
    - **Ruleset** (Settings → Rules → Rulesets → New branch ruleset, target `main`): aktifkan "Require status checks to pass" dengan check `validate`. Tanpa ini PR yang masih `pending_review` tetap bisa di-merge. "Require review from Code Owners" opsional.
-4. **Uji sumber dari runner GitHub.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang. Jika JDIH Kemnaker atau BPK gagal dari runner GitHub (IP luar negeri), buat repository variable `CORPUS_SYNC_RUNNER=self-hosted`. Server lalu juga perlu `gh` CLI dan Chromium (`python -m playwright install --with-deps chromium`).
+4. **Uji sumber.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang, lalu periksa tabel sumber di halaman run.
 5. **Impor ulang** `check_work_contract`, `answer_labor_rule_question`, dan `ingest_labor_corpus` di Langflow.
 6. **Bersihkan entri ganda lama.** Jalankan workflow `corpus-ci` secara manual sekali. Semua baris diunggah ulang dan entri ganda dari ingest manual sebelumnya terhapus.
 
