@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
+import { getRegions } from '../api'
 import { Citation, Icon, SeverityBadge, type IconName } from '../components'
 
 const PROBLEMS = [
   ['Aturannya tersebar', 'Di UU Ketenagakerjaan dan perubahannya, peraturan pemerintah, keputusan upah minimum daerah, sampai putusan Mahkamah Konstitusi.'],
-  ['Aturannya sedang berubah', 'UU Ketenagakerjaan baru sedang dibahas. Pasal yang kamu temukan di internet bisa saja sudah diubah atau dimaknai ulang.'],
+  ['Aturannya sedang berubah', 'UU Pelindungan Ketenagakerjaan baru disahkan DPR pada Oktober 2026, dan aturan turunannya terus terbit. Pasal yang kamu temukan di internet bisa saja sudah diubah atau dimaknai ulang.'],
   ['Bertanya terasa canggung', 'Pengacara terlalu mahal untuk pekerja baru, dan bertanya ke HR terasa berisiko saat tawaran kerja belum resmi.'],
 ]
 
@@ -13,20 +15,24 @@ const STEPS = [
 ]
 
 const PRINCIPLES: [IconName, string, string, string][] = [
-  ['book', 'Berbasis pasal', 'Setiap temuan menunjuk ke pasal yang nyata, lengkap dengan status berlakunya dan rezim aturan yang dipakai.', '64 pasal dan ketentuan · sumber resmi tercatat'],
+  ['book', 'Berbasis pasal', 'Setiap temuan menunjuk ke pasal yang nyata, lengkap dengan status berlakunya dan rezim aturan yang dipakai.', 'Sumber resmi tercatat · dicek ke situs pemerintah setiap hari'],
   ['circleDashed', 'Jujur soal batas', 'Kalau sebuah klausul tidak bisa diperiksa, CekPKWT bilang begitu. Tidak ada pasal, angka, atau akibat hukum yang dikarang.', 'Bagian khusus: Tidak dapat diperiksa'],
   ['eyeOff', 'Privasi dulu', 'NIK, NPWP, email, telepon, rekening, nama, alamat, dan tempat/tanggal lahir disamarkan sebelum diproses. Kontrakmu tidak disimpan.', '[NIK] [NAMA] [ALAMAT] [NO_REKENING]'],
   ['pen', 'Kendali di tanganmu', 'CekPKWT tidak pernah mengirim email. Kamu yang meninjau, mengedit, dan memutuskan kapan mengirim.', 'Hanya draf · tidak pernah terkirim otomatis'],
 ]
 
-const LIMITS = [
+// The region count comes from the corpus via /api/regions, so it follows the daily sync.
+const limits = (regionCount: number) => [
   <>Hanya kontrak <strong>PKWT</strong>. PKWTT, magang, outsourcing, dan kemitraan belum bisa diperiksa.</>,
-  <>Upah minimum 2026 baru tersedia untuk <strong>18 wilayah</strong> di Pulau Jawa, termasuk DKI Jakarta.</>,
-  <>Basis regulasi berisi <strong>64 pasal</strong> dari aturan yang berlaku saat ini. UU Ketenagakerjaan baru belum tercakup.</>,
+  <>Upah minimum baru tersedia untuk <strong>{regionCount ? `${regionCount} wilayah` : 'sebagian wilayah'}</strong> di Pulau Jawa, termasuk DKI Jakarta.</>,
+  <>Kontrak dinilai dengan <strong>aturan yang berlaku saat ini</strong>. UU Pelindungan Ketenagakerjaan yang baru disahkan belum dipakai untuk menilai.</>,
   <>Input berupa <strong>teks</strong>. Kontrak dalam bentuk PDF atau foto perlu disalin dulu.</>,
 ]
 
 export default function Home() {
+  const [regionCount, setRegionCount] = useState(0)
+  useEffect(() => { getRegions().then((r) => setRegionCount(r.length)).catch(() => {}) }, [])
+
   return (
     <>
       <section className="container hero" aria-labelledby="hero-title">
@@ -153,7 +159,7 @@ export default function Home() {
             <p className="muted">Lebih baik jujur sejak awal. Untuk hal di luar daftar ini, tanyakan ke Disnaker atau LBH setempat.</p>
           </div>
           <ul>
-            {LIMITS.map((text, i) => <li key={i}><Icon name="circleDashed" size={22} /><span>{text}</span></li>)}
+            {limits(regionCount).map((text, i) => <li key={i}><Icon name="circleDashed" size={22} /><span>{text}</span></li>)}
           </ul>
         </div>
       </section>

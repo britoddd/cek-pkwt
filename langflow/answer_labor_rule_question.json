@@ -1871,7 +1871,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "bool",
-                "value": true
+                "value": false
               }
             },
             "tool_mode": false
@@ -2179,7 +2179,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "bool",
-                "value": true
+                "value": false
               }
             },
             "tool_mode": false
