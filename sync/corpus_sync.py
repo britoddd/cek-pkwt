@@ -672,10 +672,18 @@ def cmd_validate(args) -> int:
     return 1 if errors else 0
 
 
-def ingest_nodes() -> tuple[str, str]:
-    flow = json.loads((ROOT / "langflow" / "ingest_labor_corpus.json").read_text(encoding="utf-8"))
-    ids = {n["data"]["node"]["display_name"]: n["id"] for n in flow["data"]["nodes"]}
-    return ids["Read File"], ids["Astra DB"]
+def ingest_nodes(client: httpx.Client, url: str, flow: str) -> tuple[str, str]:
+    """Node ids of the flow as it is on the server, found by type: importing or editing it in Langflow changes them,
+    and Langflow silently ignores a tweak for a node id it does not have."""
+    got = client.get(f"{url}/api/v1/flows/{flow}")
+    if got.is_error:
+        sys.exit(f"Langflow returned {got.status_code} for flow {flow}: {got.text[:1000]}")
+    nodes = got.json()["data"]["nodes"]
+    files = [n["id"] for n in nodes if n["data"].get("type") == "File"]
+    astra = [n["id"] for n in nodes if "AstraDB" in n["data"].get("type", "")]
+    if len(files) != 1 or len(astra) != 1:
+        sys.exit(f"Flow {flow} needs exactly one Read File and one Astra DB component; found {len(files)} and {len(astra)}.")
+    return files[0], astra[0]
 
 
 def cmd_ingest(args) -> int:
@@ -688,13 +696,20 @@ def cmd_ingest(args) -> int:
     if pending:
         sys.exit(f"Refusing to upload unreviewed rows: {', '.join(pending)}")
     url = os.environ["LANGFLOW_URL"].rstrip("/").split("/api/")[0]
-    file_node, astra_node = ingest_nodes()
-    with httpx.Client(headers={"x-api-key": os.environ["LANGFLOW_API_KEY"]}, timeout=900) as client:
+    key = os.environ.get("LANGFLOW_API_KEY", "").strip()
+    # Takes the bare ID or the whole editor URL (.../flow/<ID>). Empty would POST to /api/v1/run/, which Langflow answers with 405.
+    flow = os.environ.get("LANGFLOW_FLOW_INGEST", "").strip().rstrip("/").rsplit("/", 1)[-1]
+    for name, value in (("LANGFLOW_API_KEY", key), ("LANGFLOW_FLOW_INGEST", flow)):
+        if not value:
+            sys.exit(f"{name} is empty: set the repository secret (Settings → Secrets and variables → Actions).")
+    with httpx.Client(headers={"x-api-key": key}, timeout=900) as client:
+        file_node, astra_node = ingest_nodes(client, url, flow)
         upload = client.post(f"{url}/api/v2/files", files={"file": ("labor_corpus_changes.csv", dump(todo).encode(), "text/csv")})
-        upload.raise_for_status()
+        if upload.is_error:  # 403: LANGFLOW_API_KEY is not a key of this Langflow instance
+            sys.exit(f"Langflow upload returned {upload.status_code}: {upload.text[:1000]}")
         # deletion_field makes Astra DB delete documents with the same metadata id before inserting: replace, not append.
         tweaks = {file_node: {"path": [upload.json()["path"]]}, astra_node: {"deletion_field": "id"}}
-        run = client.post(f"{url}/api/v1/run/{os.environ['LANGFLOW_FLOW_INGEST']}",
+        run = client.post(f"{url}/api/v1/run/{flow}",
                           json={"input_value": "", "input_type": "any", "output_type": "debug", "tweaks": tweaks})
         if run.is_error:
             sys.exit(f"Langflow returned {run.status_code}: {run.text[:1000]}")
