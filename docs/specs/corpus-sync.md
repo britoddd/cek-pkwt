@@ -258,7 +258,7 @@ Blocked sources are still probed daily and show as `blocked` in the job summary.
 
 **Ingest:** passes `deletion_field = "id"` as a run tweak as well as in the flow file, so replace-by-id works even before the server's copy of the flow is re-imported. Runs `output_type: "debug"` so every node builds; the ingest flow has no chat output.
 
-**Runner:** the watch job uses `vars.CORPUS_SYNC_RUNNER` (default `ubuntu-latest`). The ingest job is always `self-hosted` and never runs for `pull_request`, so fork PRs cannot reach the server. The repository is public: require approval for fork PR workflows.
+**Runner:** both the watch and the ingest job run `self-hosted` on the home server. The first watch run from a GitHub-hosted runner (2026-10-30) was blocked by JDIH BPK, JDIH Jawa Barat, MK, DPR and JDIH Jawa Timur; all but the last two answer the home server's Indonesian connection. Neither job runs for `pull_request`, so fork PRs cannot reach the server. The repository is public: require approval for fork PR workflows.
 
 **Known ceilings:** MK reads only the 10 newest decisions (a day with more can slip past). Two bot PRs open at once both append at the end of the CSV and conflict after the first merge. The wage retrieval is still a fixed query with top-4, now filtered to `status = berlaku`.
 
