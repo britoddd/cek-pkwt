@@ -3,8 +3,7 @@
 name: corpus-ci
 
 on:
-  pull_request:
-    paths: [data/labor_corpus.csv, sync/**]
+  pull_request: # every PR: a required check skipped by a path filter would leave other PRs waiting forever
   push:
     branches: [main]
     paths: [data/labor_corpus.csv]
