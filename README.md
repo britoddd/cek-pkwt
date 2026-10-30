@@ -106,6 +106,7 @@ CekPKWT:
 | Email | Composio Gmail (OAuth2) |
 | Web app | Frontend React + Vite + TypeScript di Vercel; backend FastAPI |
 | Server | Debian self-hosted: Docker Compose (Langflow + PostgreSQL), systemd, nginx, Cloudflare Tunnel |
+| Sinkronisasi korpus | GitHub Actions di self-hosted runner (server), Playwright (Chromium headless), pypdf, OpenAI `gpt-5.4-mini` |
 
 **Alur penggunaan**
 
@@ -132,6 +133,20 @@ CekPKWT:
 ```
 
 Langflow tidak diekspos ke internet. Backend memanggilnya di dalam server, sedangkan editor Langflow dan IBM Bob mengaksesnya lewat SSH tunnel (lihat [Deploy](#deploy)).
+
+**Alur pembaruan korpus**
+
+```
+ GitHub Actions (jadwal 02.00 WIB) ─► self-hosted runner di server
+    │  corpus-sync: JDIH & MK ─► PDF resmi ─► LLM + cek kata per kata
+    ▼
+ Pull request per regulasi (baris bertanda pending_review)
+    │  ditinjau manusia, lalu merge
+    ▼
+ corpus-ci: baris yang berubah ─► Langflow ingest_labor_corpus ─► Astra DB
+```
+
+Detailnya di [Memperbarui korpus](#memperbarui-korpus).
 
 ## Penjelasan setiap flow
 
@@ -192,6 +207,7 @@ Read File (CSV) ─► CSV Rows to Data ─► Astra DB (embedding gemini-embedd
 
 - **CSV Rows to Data:** komponen kustom yang mengubah satu baris CSV menjadi satu dokumen. Kolom `text` menjadi konten, kolom lain menjadi metadata.
 - **Astra DB** memakai `deletion_field = id`: dokumen dengan `id` yang sama dihapus dulu sebelum dimasukkan, sehingga ingest ulang mengganti entri, bukan menggandakannya.
+- Workflow `corpus-ci` menjalankan flow ini lewat API: mengunggah CSV berisi baris yang berubah, mencari komponen Read File dan Astra DB menurut tipenya di flow yang ada di server (ID node bisa berbeda dari file JSON), lalu menjalankannya dengan `deletion_field = id`.
 
 ## Korpus regulasi
 
@@ -249,7 +265,7 @@ GOOGLE_API_KEY=     # Untuk embedding gemini-embedding-001
 OPENAI_API_KEY=     # Untuk Agent gpt-5.4-mini
 ```
 
-Variabel untuk backend web app (`LANGFLOW_URL`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_*`, `FRONTEND_ORIGINS`) dijelaskan di [Menjalankan web app](#menjalankan-web-app). Untuk server, kunci provider di atas diisi di `deploy/.env` (lihat [Deploy](#deploy)).
+Variabel untuk backend web app (`LANGFLOW_URL`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_*`, `FRONTEND_ORIGINS`) dijelaskan di [Menjalankan web app](#menjalankan-web-app). Untuk server, kunci provider di atas diisi di `deploy/.env` (lihat [Deploy](#deploy)). `sync/corpus_sync.py` juga membaca `.env` ini saat dijalankan lokal, mis. `OPENAI_API_KEY` untuk menyusun draf.
 
 Flow merujuk nama-nama variabel ini sebagai *Global Variables* Langflow, jadi nilainya tidak tersimpan di file JSON. Daftarkan variabelnya dengan salah satu cara berikut:
 
@@ -411,7 +427,9 @@ Prasyarat: Docker dan Docker Compose, Python 3 dengan `venv`, nginx, serta Cloud
      -d '{"question": "Apa itu kompensasi akhir PKWT?"}'
    ```
 
-Backend, Langflow, dan PostgreSQL berjalan otomatis setelah server dinyalakan ulang: backend lewat `systemctl enable`, sedangkan kedua container lewat `restart: unless-stopped`.
+7. **Pasang runner GitHub** untuk sinkronisasi dan unggah korpus: lihat [Persiapan (sekali)](#persiapan-sekali).
+
+Backend, Langflow, dan PostgreSQL berjalan otomatis setelah server dinyalakan ulang: backend lewat `systemctl enable`, kedua container lewat `restart: unless-stopped`, dan runner GitHub lewat service-nya (`svc.sh install`).
 
 ### Mengakses Langflow di server
 
@@ -442,6 +460,8 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 | Permintaan ke backend dan alasan error dari Langflow | `journalctl -u cekpkwt-api -f` |
 | Jalannya flow | `docker compose logs -f langflow` (dari folder `deploy/`) |
 | Permintaan yang ditolak rate limit | `sudo tail -f /var/log/nginx/error.log` |
+| Sinkronisasi harian dan unggah korpus | GitHub → Actions → run `corpus-sync` / `corpus-ci` (perlu login). Tabel sumber dan usulan ada di halaman ringkasan run. |
+| Status runner GitHub | `cd ~/actions-runner && sudo ./svc.sh status` |
 
 - **"Layanan CekPKWT sedang tidak tersedia" (502):** Langflow menolak permintaan. `journalctl` menunjukkan alasannya, biasanya API key yang salah (401/403) atau ID flow yang berubah (404).
 - **"Tidak bisa terhubung ke server" di browser:** biasanya CORS. Pastikan `FRONTEND_ORIGINS` sama persis dengan alamat frontend (dengan `https://`, tanpa path), lalu restart backend.
@@ -496,13 +516,14 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 - Hanya memeriksa **PKWT**. PKWTT, magang, outsourcing, dan kemitraan/freelance berada di luar cakupan.
 - Korpus hanya berisi **64 entri** dari rezim aturan saat ini. UU Pelindungan Ketenagakerjaan (disahkan DPR 6 Oktober 2026) baru masuk setelah diundangkan dan PR-nya ditinjau.
 - Sinkronisasi harian belum bisa membaca JDIH Banten (pencarian situsnya error), JDIH Jawa Timur, dan DPR (keduanya memblokir bot). Ketiganya dicek manual; status blokirnya tampil di ringkasan job setiap hari.
+- Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup wilayah yang tercantum di atas. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
 - Sebagian entri korpus diverifikasi dari sumber sekunder (`checked_secondary`) atau satu sumber saja (`accepted_single_source`).
 - Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
 - Redaksi data pribadi berbasis regex dan bisa melewatkan format yang tidak umum.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
 - Bisa digunakan lewat IBM Bob (IDE), Playground Langflow, atau web app di https://cek-pkwt.briantedjo.my.id.
-- Backend dan Langflow berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
+- Backend, Langflow, dan runner sinkronisasi korpus berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
 - Pembatasan jumlah permintaan baru diterapkan di nginx per pengunjung. Belum ada kuota per pengguna atau autentikasi pengguna.
 
 ## Rencana pengembangan
@@ -519,20 +540,42 @@ Korpus hanya berubah lewat pull request, baik dari bot maupun manual. Tidak ada 
 
 ### Sinkronisasi harian
 
-Workflow `corpus-sync` berjalan setiap hari pukul 02.00 WIB:
+Workflow `corpus-sync` berjalan setiap hari pukul 02.00 WIB di self-hosted runner di server (GitHub bisa memulainya sedikit terlambat saat sibuk):
 
 1. Bot membaca daftar regulasi terbaru di JDIH Kemnaker, JDIH BPK, JDIH DKI Jakarta, Jawa Tengah, Jawa Barat, DI Yogyakarta, serta putusan MK. Jawa Barat, DIY, dan MK dibuka lewat headless browser karena dilindungi Cloudflare atau berupa aplikasi JavaScript.
 2. Regulasi dianggap relevan jika jenisnya dipakai korpus dan judul atau "tentang"-nya menyebut topik PKWT (upah, PKWT, THR, BPJS, PHK, dsb.) atau regulasi yang sudah dikutip korpus. Untuk JDIH provinsi, hanya keputusan UMP/UMK untuk tahun yang belum ada di korpus.
 3. Bot mengunduh PDF resminya, lalu LLM (`gpt-5.4-mini`) memilih pasal yang relevan dan baris lama yang diubahnya. Kode menolak teks yang tidak ditemukan kata per kata di PDF, lalu mengisi kolom lain sendiri.
-4. Bot membuka satu PR per regulasi (`[corpus-sync <kunci>] …`). Semua baris barunya bertanda `verification = pending_review`. Jika PDF tidak punya lapisan teks, bot membuka issue untuk entri manual. Jika tidak ada pasal yang relevan, bot membuat issue tertutup sebagai catatan.
+4. Bot membuka satu PR per regulasi (`[corpus-sync <kunci>] …`). Semua baris barunya bertanda `verification = pending_review`. Jika bot tidak bisa menyusun draf (biasanya PDF hasil pindaian), bot membuka issue "needs manual entry". Jika tidak ada pasal yang relevan, bot membuat issue tertutup sebagai catatan.
 5. Peninjau (@britoddd atau @Joelcrl lewat `CODEOWNERS`) mencocokkan setiap baris dengan PDF, mengisi `effective_from` untuk baris `belum_berlaku`, lalu mengubah `pending_review` menjadi `checked_official`. CI menolak PR selama masih ada `pending_review`.
-6. Setelah merge, workflow `corpus-ci` hanya mengunggah baris yang berubah ke `ingest_labor_corpus`.
+6. Setelah merge, workflow `corpus-ci` hanya mengunggah baris yang berubah ke `ingest_labor_corpus`. Tidak ada langkah manual untuk memperbarui vector store.
+
+**Yang perlu dilakukan peninjau:** tidak perlu memeriksa setiap hari. Pada kebanyakan hari tidak ada regulasi baru, sehingga tidak ada PR maupun issue. Saat PR muncul, GitHub mengirim permintaan review (email dan notifikasi) ke kedua peninjau.
+
+#### Meninjau PR bot
+
+```bash
+git fetch origin && git switch corpus-sync/<kunci>
+# Edit data/labor_corpus.csv: cocokkan setiap baris baru dengan PDF yang ditautkan di PR,
+# perbaiki atau hapus baris yang salah, lalu ubah pending_review menjadi checked_official
+sync/.venv/Scripts/python sync/corpus_sync.py validate --base origin/main   # Linux/macOS: sync/.venv/bin/
+git commit -am "Tinjau baris <kunci>" && git push
+```
+
+Push ini menjalankan check `validate`. Setelah hijau, merge PR-nya. PR bot sendiri tidak menjalankan check sebelum ada push dari manusia, karena GitHub tidak memicu workflow dari PR yang dibuka oleh token Actions.
+
+Periksa terutama nomor pasal: lapisan teks PDF kadang membaca huruf sebagai angka (mis. "Pasal 35I" terbaca "Pasal 351"), dan pemeriksaan kata per kata tidak bisa menangkapnya.
+
+#### Issue "needs manual entry"
+
+Alasannya tercantum di ringkasan run `corpus-sync`, biasanya PDF hasil pindaian. Jika regulasinya relevan (mis. Surat Edaran THR), tambahkan barisnya secara [manual](#manual) lalu tutup issue-nya. Jika tidak relevan, cukup tutup issue-nya.
 
 Catatan:
 
 - **Menolak usulan:** tutup PR tanpa merge. Regulasi itu tidak akan diusulkan lagi. Untuk mengusulkannya ulang, hapus tag `[corpus-sync …]` dari judul PR atau issue-nya.
 - **Mulai berlaku:** saat `effective_from` tiba, bot membuka PR yang mengubah `belum_berlaku` menjadi `berlaku`, dan UMK tahun sebelumnya menjadi `tidak_berlaku`.
 - **Wilayah baru:** backend membaca daftar wilayah dari CSV saat start. Jika PR menambah wilayah yang belum ada, jalankan `git pull` dan restart backend di server (lihat [Memperbarui](#memperbarui)).
+- **Run yang gagal:** run ditandai gagal (dan GitHub mengirim email) hanya jika JDIH Kemnaker atau BPK tidak terbaca, atau penyusunan draf suatu regulasi error. Sumber lain yang terblokir hanya tercatat `blocked` di tabel. Tidak ada yang hilang: setiap run memeriksa 30 hari terakhir, jadi run berikutnya menyusul.
+- **Jeda 60 hari:** di repository publik, GitHub menonaktifkan jadwal workflow setelah 60 hari tanpa aktivitas repository. GitHub mengirim email peringatan; aktifkan lagi di tab Actions.
 - **Konflik:** PR bot menambahkan baris di akhir file. Jika dua PR terbuka bersamaan, setelah satu di-merge selesaikan konflik yang lain di editor GitHub dengan mempertahankan kedua blok baris.
 - **Situs yang belum terbaca bot** (Banten, Jawa Timur, DPR): susun draf dari PDF resminya secara lokal, lalu buka PR seperti biasa.
 
@@ -549,7 +592,7 @@ Catatan:
 
 Jadwal harian dan tombol "Run workflow" baru muncul setelah kedua workflow ada di `main`. Siapkan runner (langkah 2) sebelum merge, karena merge yang mengubah CSV menjalankan job unggah.
 
-1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY` untuk menyusun draf, `LANGFLOW_API_KEY`, dan `LANGFLOW_FLOW_INGEST` (ID flow `ingest_labor_corpus` di server). `LANGFLOW_URL` opsional; bawaannya `http://127.0.0.1:7860`.
+1. **Secrets** (Settings → Secrets and variables → Actions → tab **Secrets**, bagian Repository secrets): `OPENAI_API_KEY` untuk menyusun draf, `LANGFLOW_API_KEY` (dibuat di Langflow server, sama dengan milik backend), dan `LANGFLOW_FLOW_INGEST` (ID flow `ingest_labor_corpus` di server, atau URL editornya `…/flow/<ID>`). `LANGFLOW_URL` opsional; bawaannya `http://127.0.0.1:7860`.
 2. **Self-hosted runner di server.** Kedua workflow berjalan di runner yang dipasang di server (Settings → Actions → Runners → New self-hosted runner, jalankan sebagai service): job unggah karena Langflow hanya mendengarkan `127.0.0.1`, dan sinkronisasi harian karena JDIH BPK, Jawa Barat, dan MK memblokir runner GitHub (IP luar negeri). Server perlu `python3` dengan modul `venv`, [`gh` CLI](https://github.com/cli/cli/blob/trunk/docs/install_linux.md), dan library sistem untuk Chromium (sekali):
 
    ```bash
@@ -560,14 +603,33 @@ Jadwal harian dan tombol "Run workflow" baru muncul setelah kedua workflow ada d
 3. **Pengaturan Actions** (Settings → Actions → General):
    - "Approval for running fork pull request workflows": pilih "Require approval for all external contributors", karena repository ini publik. Job unggah sendiri tidak pernah berjalan untuk `pull_request`.
    - "Workflow permissions": centang "Allow GitHub Actions to create and approve pull requests". Tanpa ini bot tidak bisa membuka PR.
-   - **Ruleset** (Settings → Rules → Rulesets → New branch ruleset, target `main`): aktifkan "Require status checks to pass" dengan check `validate`. Tanpa ini PR yang masih `pending_review` tetap bisa di-merge. "Require review from Code Owners" opsional.
-4. **Uji sumber.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang, lalu periksa tabel sumber di halaman run.
-5. **Impor ulang** `check_work_contract`, `answer_labor_rule_question`, dan `ingest_labor_corpus` di Langflow.
+   - **Ruleset** (Settings → Rules → Rulesets → New branch ruleset, target `main`): aktifkan "Require status checks to pass" dengan check `validate` (berjalan di setiap PR). Tanpa ini PR yang masih `pending_review` tetap bisa di-merge. "Require review from Code Owners" opsional.
+   - **Collaborators:** pastikan kedua peninjau punya akses write, agar `CODEOWNERS` bisa meminta review mereka.
+4. **Uji sumber.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang, lalu periksa tabel sumber di halaman run. Untuk mengusulkan regulasi yang lebih lama dari 30 hari, jalankan sekali tanpa `dry_run` dengan `since` diisi, mis. `2025-10-01`.
+5. **Impor ulang** `check_work_contract` dan `answer_labor_rule_question` di Langflow. Jika ID-nya berubah, perbarui `LANGFLOW_FLOW_CHECK` dan `LANGFLOW_FLOW_ASK` di `.env` server lalu restart backend. `ingest_labor_corpus` tidak wajib diimpor ulang: job unggah mencari komponennya sendiri dan mengirim `deletion_field = id`.
 6. **Bersihkan entri ganda lama.** Jalankan workflow `corpus-ci` secara manual sekali. Semua baris diunggah ulang dan entri ganda dari ingest manual sebelumnya terhapus.
 
 ### Manual
 
-Ubah `data/labor_corpus.csv` di sebuah branch, lalu buka PR. Jangan menghapus baris: jika pasal lama diubah atau diganti, ubah `status` dan isi `amended_by`. Sertakan header `[...]` di awal kolom `text`, serta `source_url`, `retrieved_on`, dan `verification`. Periksa dengan `python sync/corpus_sync.py validate` sebelum push.
+Ubah `data/labor_corpus.csv` di sebuah branch, lalu buka PR. Jangan menghapus baris: jika pasal lama diubah atau diganti, ubah `status` dan isi `amended_by`. Sertakan header `[...]` di awal kolom `text`, serta `source_url`, `retrieved_on`, dan `verification`. Periksa dengan `sync/.venv/Scripts/python sync/corpus_sync.py validate --base origin/main` sebelum push.
+
+Untuk melihat apa yang akan diusulkan bot tanpa membuka PR, jalankan sinkronisasi secara lokal. Ringkasannya tersimpan di file:
+
+```bash
+PYTHONIOENCODING=utf-8 GITHUB_STEP_SUMMARY=~/corpus-sync-summary.md \
+  sync/.venv/Scripts/python sync/corpus_sync.py watch --since 2025-10-01 --dry-run 2>&1 | tee ~/corpus-sync.log
+```
+
+### Pemecahan masalah
+
+| Pesan di log run | Penyebab dan solusi |
+|---|---|
+| `corpus-sync` gagal, `kemnaker` atau `bpk` berstatus `blocked` | Situsnya menolak koneksi saat itu. Biarkan; run berikutnya memeriksa ulang 30 hari terakhir. Jika berulang beberapa hari, coba buka situsnya dari server. |
+| `LANGFLOW_API_KEY is empty` / `LANGFLOW_FLOW_INGEST is empty` | Secret belum diisi, atau dibuat di tab Variables atau sebagai environment secret. Isi di Repository secrets. |
+| `Langflow upload returned 403` | API key bukan milik Langflow di server. API key hanya berlaku di instance yang membuatnya; pakai key yang sama dengan backend. |
+| `Langflow returned 404 for flow …` | `LANGFLOW_FLOW_INGEST` salah. Ambil ID dari URL editor flow di Langflow server (`/flow/<ID>`). |
+| `needs exactly one Read File and one Astra DB component` | `LANGFLOW_FLOW_INGEST` menunjuk flow lain, bukan `ingest_labor_corpus`. |
+| Job menunggu lama di status *Queued* | Runner di server mati. Periksa dengan `sudo ./svc.sh status` di `~/actions-runner`. |
 
 ## Struktur repository
 
@@ -578,7 +640,7 @@ Ubah `data/labor_corpus.csv` di sebuah branch, lalu buka PR. Jangan menghapus ba
 │   ├── CODEOWNERS               # Peninjau wajib untuk perubahan korpus
 │   └── workflows/
 │       ├── corpus-sync.yml      # Cek situs resmi setiap hari, buka PR korpus
-│       └── corpus-ci.yml        # Validasi PR korpus; unggah baris yang berubah setelah merge
+│       └── corpus-ci.yml        # Validasi setiap PR; unggah baris korpus yang berubah setelah merge
 ├── assets/                      # Logo (SVG) dan design token hasil brand guidelines
 ├── backend/                     # FastAPI: proxy ke Langflow + parser laporan
 ├── data/
@@ -604,5 +666,6 @@ Ubah `data/labor_corpus.csv` di sebuah branch, lalu buka PR. Jangan menghapus ba
 └── sync/                        # Sinkronisasi korpus: sumber, draf, validasi, unggah
     ├── corpus_sync.py           # CLI: watch | draft | validate | ingest
     ├── sources.py               # Satu fungsi per situs resmi
+    ├── requirements.txt         # httpx, pypdf, openai, playwright
     └── test_corpus_sync.py      # python sync/test_corpus_sync.py
 ```
