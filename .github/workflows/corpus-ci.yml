@@ -1,0 +1,47 @@
+# Checks corpus edits on PRs. After a merge to main, uploads only the changed rows to Astra DB
+# through the Langflow ingest flow, replacing older copies by id (docs/specs/corpus-sync.md).
+name: corpus-ci
+
+on:
+  pull_request: # every PR: a required check skipped by a path filter would leave other PRs waiting forever
+  push:
+    branches: [main]
+    paths: [data/labor_corpus.csv]
+  workflow_dispatch: # re-upload every row; also clears duplicates left by earlier manual ingests
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r sync/requirements.txt
+      - run: python sync/test_corpus_sync.py
+      - run: python sync/corpus_sync.py validate --base origin/${{ github.base_ref }}
+
+  ingest:
+    if: github.event_name != 'pull_request'
+    # Langflow only listens on the home server (127.0.0.1:7860), so this runs on the self-hosted runner there.
+    # Never on pull_request: fork PRs must not reach the server.
+    runs-on: self-hosted
+    concurrency: corpus-ingest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install httpx (validate and ingest need nothing else)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/venv/bin/pip" install -q "httpx>=0.28"
+      - run: python sync/corpus_sync.py validate ${{ github.event_name == 'push' && format('--base {0}', github.event.before) || '' }}
+      - run: python sync/corpus_sync.py ingest ${{ github.event_name == 'push' && format('--since {0}', github.event.before) || '--full' }}
+        env:
+          LANGFLOW_URL: ${{ secrets.LANGFLOW_URL || 'http://127.0.0.1:7860' }}
+          LANGFLOW_API_KEY: ${{ secrets.LANGFLOW_API_KEY }}
+          LANGFLOW_FLOW_INGEST: ${{ secrets.LANGFLOW_FLOW_INGEST }}

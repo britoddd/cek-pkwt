@@ -26,6 +26,7 @@ Tema: **Education & Future of Work**
 - [Responsible AI](#responsible-ai)
 - [Keterbatasan](#keterbatasan)
 - [Rencana pengembangan](#rencana-pengembangan)
+- [Memperbarui korpus](#memperbarui-korpus)
 - [Struktur repository](#struktur-repository)
 
 ## Latar belakang
@@ -69,7 +70,7 @@ CekPKWT:
 1. **Pemeriksaan Kontrak** (`check_work_contract`): mengekstrak klausul penting dari teks kontrak, membandingkannya dengan pasal regulasi dan upah minimum 2026 per wilayah, lalu menyusun laporan potensi masalah beserta tingkat keparahan, tingkat keyakinan, dan pasal rujukan.
 2. **Tanya Aturan PKWT** (`answer_labor_rule_question`): menjawab pertanyaan lanjutan hanya dari regulasi yang tersimpan, dengan sitasi pasal. Klaim pengguna yang keliru ("katanya boleh kan?") langsung dibantah. Jika jawabannya tidak ada di sumber, sistem menyatakannya dan menyarankan bertanya ke Disnaker atau LBH.
 3. **Draf Pertanyaan untuk HR** (`draft_hr_questions`): mengubah temuan menjadi pertanyaan yang sopan dan membuat draf Gmail yang tidak terkirim otomatis. Pengguna meninjau dan mengirimnya sendiri.
-4. **Kesadaran Perubahan Regulasi:** setiap pasal di korpus ditandai status (`berlaku`, `diubah`, `dimaknai_putusan_mk`, …) dan rezim aturan. Laporan selalu menyebut rezim yang dipakai, sehingga korpus dapat diperbarui saat UU baru berlaku tanpa membangun ulang sistem.
+4. **Kesadaran Perubahan Regulasi:** setiap pasal di korpus ditandai status (`berlaku`, `diubah`, `dimaknai_putusan_mk`, …) dan rezim aturan. Laporan selalu menyebut rezim yang dipakai, sehingga korpus dapat diperbarui saat UU baru berlaku tanpa membangun ulang sistem. Situs JDIH dan putusan MK diperiksa setiap hari, dan perubahan yang relevan diusulkan sebagai pull request yang ditinjau manusia sebelum masuk ke basis data.
 5. **Perlindungan Data Pribadi:** NIK, NPWP, email, nomor telepon, nomor rekening, serta baris nama, alamat, dan tempat/tanggal lahir disamarkan otomatis sebelum teks diproses model. Kontrak pengguna tidak pernah disimpan ke basis data vektor.
 
 ## Arsitektur
@@ -190,23 +191,27 @@ Read File (CSV) ─► CSV Rows to Data ─► Astra DB (embedding gemini-embedd
 ```
 
 - **CSV Rows to Data:** komponen kustom yang mengubah satu baris CSV menjadi satu dokumen. Kolom `text` menjadi konten, kolom lain menjadi metadata.
+- **Astra DB** memakai `deletion_field = id`: dokumen dengan `id` yang sama dihapus dulu sebelum dimasukkan, sehingga ingest ulang mengganti entri, bukan menggandakannya.
 
 ## Korpus regulasi
 
-`data/labor_corpus.csv` berisi **64 entri**. Satu baris berisi satu pasal atau ketentuan, dan semuanya berada di rezim `current`.
+`data/labor_corpus.csv` berisi **64 entri**. Satu baris berisi satu pasal atau ketentuan, dan semuanya berada di rezim `current`. Korpus diperiksa terhadap situs pemerintah setiap hari; lihat [Memperbarui korpus](#memperbarui-korpus).
 
 | Kolom | Keterangan |
 |---|---|
 | `id` | ID unik, mis. `pp35-12` |
 | `regulation`, `article` | Nama regulasi dan pasal/ayat |
 | `topic` | Topik, mis. `masa_percobaan`, `upah_minimum`, `thr`, `bpjs` |
-| `status` | `berlaku`, `diubah`, `disisipkan`, `dimaknai_putusan_mk`, `berlaku_imbauan`, `catatan_sistem` |
+| `status` | `berlaku`, `diubah`, `disisipkan`, `dimaknai_putusan_mk`, `berlaku_imbauan`, `catatan_sistem`, `belum_berlaku` (sudah terbit, belum berlaku), `tidak_berlaku` (sudah diganti, mis. UMK tahun lalu) |
 | `amended_by` | Regulasi pengubah (jika ada) |
-| `regime` | Rezim aturan (`current`; rezim UU baru akan ditambahkan setelah disahkan) |
+| `regime` | Rezim aturan: `current`, atau `uu_pk_2026` untuk UU Pelindungan Ketenagakerjaan (disahkan DPR 6 Oktober 2026) |
 | `region`, `province` | `nasional`, atau kabupaten/kota/provinsi untuk upah minimum |
 | `source_url`, `retrieved_on` | Sumber resmi dan tanggal pengambilan |
-| `verification` | `checked_official` (39), `checked_secondary` (20), `accepted_single_source` (4), `system_note` (1) |
+| `verification` | `checked_official` (39), `checked_secondary` (20), `accepted_single_source` (4), `system_note` (1). `pending_review` hanya dipakai bot dan tidak bisa di-merge. |
+| `effective_from` | Tanggal mulai berlaku (`YYYY-MM-DD`), wajib untuk baris `belum_berlaku` |
 | `text` | Teks pasal, diawali header `[Regulasi \| Pasal \| status \| rezim \| wilayah \| topik]` yang dipakai LLM untuk sitasi |
+
+Flow pemeriksaan dan tanya aturan hanya menilai dengan rezim `current`. Pasal `uu_pk_2026` diambil terpisah (2 teratas) dan hanya disebut di "Catatan" sebagai aturan yang akan berlaku.
 
 **Cakupan regulasi:**
 
@@ -371,7 +376,7 @@ Prasyarat: Docker dan Docker Compose, Python 3 dengan `venv`, nginx, serta Cloud
    ```
 
    Kunci provider (`ASTRA_DB_PKWT`, `COMPOSIO_PKWT`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`) diteruskan ke Langflow sebagai Global Variables. Tentukan password PostgreSQL sejak awal, karena PostgreSQL hanya membacanya saat volume database pertama kali dibuat.
-3. **Siapkan flow.** Buka Langflow lewat SSH tunnel (lihat di bawah), impor keempat flow, uji di Playground, buat API key, dan catat ID ketiga flow yang dipakai backend. Jalankan `ingest_labor_corpus` hanya jika koleksi `corpus_v1` di Astra DB masih kosong, agar tidak ada entri ganda.
+3. **Siapkan flow.** Buka Langflow lewat SSH tunnel (lihat di bawah), impor keempat flow, uji di Playground, buat API key, dan catat ID ketiga flow yang dipakai backend serta ID `ingest_labor_corpus` (untuk sinkronisasi korpus). Menjalankan ulang `ingest_labor_corpus` aman karena entri dengan `id` yang sama diganti.
 4. **Jalankan backend** sebagai service systemd:
 
    ```bash
@@ -489,7 +494,8 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 ## Keterbatasan
 
 - Hanya memeriksa **PKWT**. PKWTT, magang, outsourcing, dan kemitraan/freelance berada di luar cakupan.
-- Korpus hanya berisi **64 entri** dari rezim aturan saat ini. UU Ketenagakerjaan baru yang sedang dibahas DPR belum tercakup.
+- Korpus hanya berisi **64 entri** dari rezim aturan saat ini. UU Pelindungan Ketenagakerjaan (disahkan DPR 6 Oktober 2026) baru masuk setelah diundangkan dan PR-nya ditinjau.
+- Sinkronisasi harian belum bisa membaca JDIH Banten (pencarian situsnya error), JDIH Jawa Timur, dan DPR (keduanya memblokir bot). Ketiganya dicek manual; status blokirnya tampil di ringkasan job setiap hari.
 - Data upah minimum 2026 hanya mencakup wilayah yang tercantum di atas. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
 - Sebagian entri korpus diverifikasi dari sumber sekunder (`checked_secondary`) atau satu sumber saja (`accepted_single_source`).
 - Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
@@ -501,23 +507,72 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 
 ## Rencana pengembangan
 
-- **Regulasi:** memperbarui korpus ke UU Ketenagakerjaan baru setelah disahkan, cukup dengan menambahkan pasal berlabel rezim baru.
+- **Regulasi:** meninjau PR UU Pelindungan Ketenagakerjaan begitu diundangkan, lalu memindahkan flow ke rezim baru saat masa transisinya berakhir.
 - **Wilayah:** menambahkan upah minimum provinsi dan kabupaten/kota lain.
 - **Jenis kontrak:** memperluas cakupan ke PKWTT, magang, dan outsourcing.
 - **Distribusi:** integrasi dengan platform lowongan kerja sebagai fitur "cek kontrak", serta lisensi untuk pusat karier kampus dan serikat pekerja.
 - **Pasar kedua:** pemeriksaan kepatuhan template kontrak untuk UMKM sebelum merekrut.
 
-### Memperbarui korpus
+## Memperbarui korpus
 
-1. Tambahkan atau ubah baris di `data/labor_corpus.csv` sesuai kolom di atas. Sertakan header `[...]` di awal kolom `text`, serta `source_url`, `retrieved_on`, dan `verification`.
-2. Jika pasal lama diubah atau diganti, ubah `status` dan isi `amended_by`; jangan menghapus barisnya. Pasal dari UU baru diberi `regime` baru.
-3. Jalankan ulang `ingest_labor_corpus`. Pertimbangkan koleksi baru (mis. `corpus_v2`) agar tidak ada entri ganda, lalu perbarui nama koleksi di semua flow.
+Korpus hanya berubah lewat pull request, baik dari bot maupun manual. Tidak ada teks yang masuk ke Astra DB sebelum PR-nya ditinjau dan di-merge. Spesifikasi lengkap: [`docs/specs/corpus-sync.md`](docs/specs/corpus-sync.md).
+
+### Sinkronisasi harian
+
+Workflow `corpus-sync` berjalan setiap hari pukul 02.00 WIB:
+
+1. Bot membaca daftar regulasi terbaru di JDIH Kemnaker, JDIH BPK, JDIH DKI Jakarta, Jawa Tengah, Jawa Barat, DI Yogyakarta, serta putusan MK. Jawa Barat, DIY, dan MK dibuka lewat headless browser karena dilindungi Cloudflare atau berupa aplikasi JavaScript.
+2. Regulasi dianggap relevan jika jenisnya dipakai korpus dan judul atau "tentang"-nya menyebut topik PKWT (upah, PKWT, THR, BPJS, PHK, dsb.) atau regulasi yang sudah dikutip korpus. Untuk JDIH provinsi, hanya keputusan UMP/UMK untuk tahun yang belum ada di korpus.
+3. Bot mengunduh PDF resminya, lalu LLM (`gpt-5.4-mini`) memilih pasal yang relevan dan baris lama yang diubahnya. Kode menolak teks yang tidak ditemukan kata per kata di PDF, lalu mengisi kolom lain sendiri.
+4. Bot membuka satu PR per regulasi (`[corpus-sync <kunci>] …`). Semua baris barunya bertanda `verification = pending_review`. Jika PDF tidak punya lapisan teks, bot membuka issue untuk entri manual. Jika tidak ada pasal yang relevan, bot membuat issue tertutup sebagai catatan.
+5. Peninjau (@britoddd atau @Joelcrl lewat `CODEOWNERS`) mencocokkan setiap baris dengan PDF, mengisi `effective_from` untuk baris `belum_berlaku`, lalu mengubah `pending_review` menjadi `checked_official`. CI menolak PR selama masih ada `pending_review`.
+6. Setelah merge, workflow `corpus-ci` hanya mengunggah baris yang berubah ke `ingest_labor_corpus`.
+
+Catatan:
+
+- **Menolak usulan:** tutup PR tanpa merge. Regulasi itu tidak akan diusulkan lagi. Untuk mengusulkannya ulang, hapus tag `[corpus-sync …]` dari judul PR atau issue-nya.
+- **Mulai berlaku:** saat `effective_from` tiba, bot membuka PR yang mengubah `belum_berlaku` menjadi `berlaku`, dan UMK tahun sebelumnya menjadi `tidak_berlaku`.
+- **Wilayah baru:** backend membaca daftar wilayah dari CSV saat start. Jika PR menambah wilayah yang belum ada, jalankan `git pull` dan restart backend di server (lihat [Memperbarui](#memperbarui)).
+- **Konflik:** PR bot menambahkan baris di akhir file. Jika dua PR terbuka bersamaan, setelah satu di-merge selesaikan konflik yang lain di editor GitHub dengan mempertahankan kedua blok baris.
+- **Situs yang belum terbaca bot** (Banten, Jawa Timur, DPR): susun draf dari PDF resminya secara lokal, lalu buka PR seperti biasa.
+
+  ```bash
+  python -m venv sync/.venv && sync/.venv/Scripts/pip install -r sync/requirements.txt   # Linux/macOS: sync/.venv/bin/
+  sync/.venv/Scripts/python sync/corpus_sync.py draft --province "Jawa Timur" \
+    --title "Keputusan Gubernur Jawa Timur Nomor ... Tahun 2026" \
+    --about "Upah Minimum Kabupaten/Kota Tahun 2027" --pdf <URL PDF resmi> --apply
+  ```
+
+  `OPENAI_API_KEY` dibaca dari `.env` root; variabel lingkungan yang sudah diset tetap didahulukan.
+
+### Persiapan (sekali)
+
+Jadwal harian dan tombol "Run workflow" baru muncul setelah kedua workflow ada di `main`. Siapkan runner (langkah 2) sebelum merge, karena merge yang mengubah CSV menjalankan job unggah.
+
+1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY` untuk menyusun draf, `LANGFLOW_API_KEY`, dan `LANGFLOW_FLOW_INGEST` (ID flow `ingest_labor_corpus` di server). `LANGFLOW_URL` opsional; bawaannya `http://127.0.0.1:7860`.
+2. **Self-hosted runner di server.** Langflow hanya mendengarkan `127.0.0.1`, jadi job unggah berjalan di runner yang dipasang di server yang sama (Settings → Actions → Runners → New self-hosted runner, jalankan sebagai service). Server perlu `python3` dengan modul `venv`.
+3. **Pengaturan Actions** (Settings → Actions → General):
+   - "Approval for running fork pull request workflows": pilih "Require approval for all external contributors", karena repository ini publik. Job unggah sendiri tidak pernah berjalan untuk `pull_request`.
+   - "Workflow permissions": centang "Allow GitHub Actions to create and approve pull requests". Tanpa ini bot tidak bisa membuka PR.
+   - **Ruleset** (Settings → Rules → Rulesets → New branch ruleset, target `main`): aktifkan "Require status checks to pass" dengan check `validate`. Tanpa ini PR yang masih `pending_review` tetap bisa di-merge. "Require review from Code Owners" opsional.
+4. **Uji sumber dari runner GitHub.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang. Jika JDIH Kemnaker atau BPK gagal dari runner GitHub (IP luar negeri), buat repository variable `CORPUS_SYNC_RUNNER=self-hosted`. Server lalu juga perlu `gh` CLI dan Chromium (`python -m playwright install --with-deps chromium`).
+5. **Impor ulang** `check_work_contract`, `answer_labor_rule_question`, dan `ingest_labor_corpus` di Langflow.
+6. **Bersihkan entri ganda lama.** Jalankan workflow `corpus-ci` secara manual sekali. Semua baris diunggah ulang dan entri ganda dari ingest manual sebelumnya terhapus.
+
+### Manual
+
+Ubah `data/labor_corpus.csv` di sebuah branch, lalu buka PR. Jangan menghapus baris: jika pasal lama diubah atau diganti, ubah `status` dan isi `amended_by`. Sertakan header `[...]` di awal kolom `text`, serta `source_url`, `retrieved_on`, dan `verification`. Periksa dengan `python sync/corpus_sync.py validate` sebelum push.
 
 ## Struktur repository
 
 ```
 .
 ├── .env.example                 # Template variabel lingkungan (tanpa nilai): kunci provider + backend
+├── .github/
+│   ├── CODEOWNERS               # Peninjau wajib untuk perubahan korpus
+│   └── workflows/
+│       ├── corpus-sync.yml      # Cek situs resmi setiap hari, buka PR korpus
+│       └── corpus-ci.yml        # Validasi PR korpus; unggah baris yang berubah setelah merge
 ├── assets/                      # Logo (SVG) dan design token hasil brand guidelines
 ├── backend/                     # FastAPI: proxy ke Langflow + parser laporan
 ├── data/
@@ -531,12 +586,17 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 │       └── cekpkwt-api.service  # Service systemd untuk backend
 ├── docs/
 │   ├── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
+│   ├── specs/corpus-sync.md     # Spesifikasi sinkronisasi korpus harian
 │   └── screenshots/             # Bukti alur: Bob, Langflow, Gmail
 ├── frontend/                    # React + Vite + TypeScript (di-hosting di Vercel)
 │   └── .env.example             # Template VITE_API_BASE
-└── langflow/                    # Ekspor JSON flow (berisi prompt lengkap)
-    ├── answer_labor_rule_question.json
-    ├── check_work_contract.json
-    ├── draft_hr_questions.json
-    └── ingest_labor_corpus.json
+├── langflow/                    # Ekspor JSON flow (berisi prompt lengkap)
+│   ├── answer_labor_rule_question.json
+│   ├── check_work_contract.json
+│   ├── draft_hr_questions.json
+│   └── ingest_labor_corpus.json
+└── sync/                        # Sinkronisasi korpus: sumber, draf, validasi, unggah
+    ├── corpus_sync.py           # CLI: watch | draft | validate | ingest
+    ├── sources.py               # Satu fungsi per situs resmi
+    └── test_corpus_sync.py      # python sync/test_corpus_sync.py
 ```

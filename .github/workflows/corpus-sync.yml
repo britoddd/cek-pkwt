@@ -1,0 +1,54 @@
+# Daily check of official sources for labor regulation changes (docs/specs/corpus-sync.md).
+# Opens one PR per relevant regulation; nothing reaches Astra DB until a person merges it.
+name: corpus-sync
+
+on:
+  schedule:
+    - cron: "0 19 * * *" # 02:00 WIB
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Only regulations issued on or after YYYY-MM-DD (empty: the last 30 days)"
+        required: false
+      dry_run:
+        description: "Only list candidates: no LLM, no PRs or issues"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency: corpus-sync
+
+jobs:
+  sync:
+    # Set the repository variable CORPUS_SYNC_RUNNER=self-hosted to run on the home server
+    # if government sites block GitHub's US-hosted runners.
+    runs-on: ${{ vars.CORPUS_SYNC_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sync/requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install -r sync/requirements.txt
+          python -m playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} chromium
+      - name: Configure git and the label
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          gh label create corpus-sync --color FBCA04 --description "Opened by the daily corpus sync" --force
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Watch official sources
+        run: python sync/corpus_sync.py watch ${SINCE:+--since "$SINCE"} ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          SINCE: ${{ inputs.since }}
+          GH_TOKEN: ${{ github.token }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
