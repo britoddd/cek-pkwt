@@ -27,6 +27,9 @@ services:
       LANGFLOW_SECRET_KEY: ${LANGFLOW_SECRET_KEY}
       # New sign-ups stay inactive until you approve them.
       LANGFLOW_NEW_USER_IS_ACTIVE: "false"
+      # Langflow logs every component's input and output (the first one is the raw contract) and has no
+      # switch to stop it. Keep only the newest entry per flow; 0 is rejected by Postgres (negative OFFSET).
+      LANGFLOW_MAX_TRANSACTIONS_TO_KEEP: "1"
       # Default is "*" (any origin). Restrict it.
       LANGFLOW_CORS_ORIGINS: ${LANGFLOW_CORS_ORIGINS}
       # The flows read these as Global Variables (see the repo README, "Variabel lingkungan").
