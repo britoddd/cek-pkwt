@@ -27,6 +27,12 @@ import httpx
 import sources
 
 ROOT = Path(__file__).resolve().parent.parent
+# Local runs use the backend's .env; in CI the secrets arrive as env vars, which take precedence.
+if (ROOT / ".env").exists():
+    for line in (ROOT / ".env").read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.partition("=")
+        if sep and not key.lstrip().startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 CORPUS_PATH = "data/labor_corpus.csv"
 CORPUS = ROOT / CORPUS_PATH
 COLUMNS = ["id", "regulation", "article", "topic", "status", "amended_by", "regime", "region", "province",

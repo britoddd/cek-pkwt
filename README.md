@@ -532,21 +532,29 @@ Catatan:
 
 - **Menolak usulan:** tutup PR tanpa merge. Regulasi itu tidak akan diusulkan lagi. Untuk mengusulkannya ulang, hapus tag `[corpus-sync …]` dari judul PR atau issue-nya.
 - **Mulai berlaku:** saat `effective_from` tiba, bot membuka PR yang mengubah `belum_berlaku` menjadi `berlaku`, dan UMK tahun sebelumnya menjadi `tidak_berlaku`.
+- **Wilayah baru:** backend membaca daftar wilayah dari CSV saat start. Jika PR menambah wilayah yang belum ada, jalankan `git pull` dan restart backend di server (lihat [Memperbarui](#memperbarui)).
 - **Konflik:** PR bot menambahkan baris di akhir file. Jika dua PR terbuka bersamaan, setelah satu di-merge selesaikan konflik yang lain di editor GitHub dengan mempertahankan kedua blok baris.
 - **Situs yang belum terbaca bot** (Banten, Jawa Timur, DPR): susun draf dari PDF resminya secara lokal, lalu buka PR seperti biasa.
 
   ```bash
-  pip install -r sync/requirements.txt
-  OPENAI_API_KEY=... python sync/corpus_sync.py draft --province "Jawa Timur" \
+  python -m venv sync/.venv && sync/.venv/Scripts/pip install -r sync/requirements.txt   # Linux/macOS: sync/.venv/bin/
+  sync/.venv/Scripts/python sync/corpus_sync.py draft --province "Jawa Timur" \
     --title "Keputusan Gubernur Jawa Timur Nomor ... Tahun 2026" \
     --about "Upah Minimum Kabupaten/Kota Tahun 2027" --pdf <URL PDF resmi> --apply
   ```
 
+  `OPENAI_API_KEY` dibaca dari `.env` root; variabel lingkungan yang sudah diset tetap didahulukan.
+
 ### Persiapan (sekali)
+
+Jadwal harian dan tombol "Run workflow" baru muncul setelah kedua workflow ada di `main`. Siapkan runner (langkah 2) sebelum merge, karena merge yang mengubah CSV menjalankan job unggah.
 
 1. **Secrets** (Settings → Secrets and variables → Actions): `OPENAI_API_KEY` untuk menyusun draf, `LANGFLOW_API_KEY`, dan `LANGFLOW_FLOW_INGEST` (ID flow `ingest_labor_corpus` di server). `LANGFLOW_URL` opsional; bawaannya `http://127.0.0.1:7860`.
 2. **Self-hosted runner di server.** Langflow hanya mendengarkan `127.0.0.1`, jadi job unggah berjalan di runner yang dipasang di server yang sama (Settings → Actions → Runners → New self-hosted runner, jalankan sebagai service). Server perlu `python3` dengan modul `venv`.
-3. **Keamanan runner.** Repository ini publik. Di Settings → Actions → General → "Approval for running fork pull request workflows", pilih "Require approval for all external contributors". Job unggah sendiri tidak pernah berjalan untuk `pull_request`.
+3. **Pengaturan Actions** (Settings → Actions → General):
+   - "Approval for running fork pull request workflows": pilih "Require approval for all external contributors", karena repository ini publik. Job unggah sendiri tidak pernah berjalan untuk `pull_request`.
+   - "Workflow permissions": centang "Allow GitHub Actions to create and approve pull requests". Tanpa ini bot tidak bisa membuka PR.
+   - **Ruleset** (Settings → Rules → Rulesets → New branch ruleset, target `main`): aktifkan "Require status checks to pass" dengan check `validate`. Tanpa ini PR yang masih `pending_review` tetap bisa di-merge. "Require review from Code Owners" opsional.
 4. **Uji sumber dari runner GitHub.** Jalankan workflow `corpus-sync` secara manual dengan `dry_run` dicentang. Jika JDIH Kemnaker atau BPK gagal dari runner GitHub (IP luar negeri), buat repository variable `CORPUS_SYNC_RUNNER=self-hosted`. Server lalu juga perlu `gh` CLI dan Chromium (`python -m playwright install --with-deps chromium`).
 5. **Impor ulang** `check_work_contract`, `answer_labor_rule_question`, dan `ingest_labor_corpus` di Langflow.
 6. **Bersihkan entri ganda lama.** Jalankan workflow `corpus-ci` secara manual sekali. Semua baris diunggah ulang dan entri ganda dari ingest manual sebelumnya terhapus.

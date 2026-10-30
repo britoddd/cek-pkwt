@@ -176,9 +176,9 @@ README.md                           "Memperbarui korpus" section rewritten
 
 The same CLI runs locally (`python sync/corpus_sync.py ingest --since <sha>`), so ingest still works while Langflow is not publicly reachable.
 
-**Secrets:** `OPENAI_API_KEY`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_INGEST`, and optionally `LANGFLOW_URL` (default `http://127.0.0.1:7860`, as seen from the self-hosted runner). Workflow permissions: `contents: write`, `pull-requests: write`, `issues: write`.
+**Secrets:** `OPENAI_API_KEY`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_INGEST`, and optionally `LANGFLOW_URL` (default `http://127.0.0.1:7860`, as seen from the self-hosted runner). Workflow permissions: `contents: write`, `pull-requests: write`, `issues: write`, plus the repository setting "Allow GitHub Actions to create and approve pull requests" (off by default; without it `gh pr create` fails).
 
-**Review:** `CODEOWNERS` auto-requests @britoddd and @Joelcrl on every bot PR. It only *blocks* merging if branch protection on `main` has "Require review from Code Owners" turned on; the `pending_review` check blocks it either way.
+**Review:** `CODEOWNERS` auto-requests @britoddd and @Joelcrl on every bot PR. A failing check only *blocks* merging when a ruleset on `main` requires it: require the `validate` status check (blocks `pending_review`), and optionally "Require review from Code Owners".
 
 **GitHub gotcha:** PRs opened with `GITHUB_TOKEN` do not trigger other workflows, so `corpus-ci.yml` does not run on the bot's PR until a person pushes a commit to it. The required `pending_review` → `checked_official` edit is that commit. The sync job also runs `validate` itself before opening the PR.
 
