@@ -135,7 +135,7 @@ Runs in the sync job before every PR and in `corpus-ci.yml` on PRs and pushes. C
 
 1. `validate`.
 2. **Changed rows** = rows whose content differs between `github.event.before` and `HEAD`, compared by `id`. Write them to a temporary CSV with the same header.
-3. Upload it to Langflow: `POST {LANGFLOW_URL}/api/v2/files`, then `POST /api/v1/run/{LANGFLOW_FLOW_INGEST}` with a tweak pointing the Read File node (`File-vT4E5`) at the uploaded path. *The exact tweak field for the 1.13 File component is still to be checked.*
+3. Upload it to Langflow: `POST {LANGFLOW_URL}/api/v2/files`, then `POST /api/v1/run/{LANGFLOW_FLOW_INGEST}` with a tweak setting the Read File node's `path` to `[<uploaded path>]`. Verified on the server (Langflow 1.12.4) on 2026-10-30 with a full re-upload of all 64 rows.
 4. Non-2xx → red job → GitHub emails the owner. Recover by re-running the job, which is safe because uploads replace by id.
 
 **Change to `ingest_labor_corpus`:** set the Astra DB component's **`deletion_field = "id"`**. Before inserting, Langflow deletes documents whose metadata `id` matches each incoming row, so every upload is a replace by id. This fixes today's problem where re-running the flow duplicates the whole corpus. *Verify: ingest one row twice → exactly one document with that id.*
@@ -256,7 +256,7 @@ Blocked sources are still probed daily and show as `blocked` in the job summary.
 
 **Validator:** additionally requires `effective_from` on every `belum_berlaku` row, which enforces that checklist item.
 
-**Ingest:** passes `deletion_field = "id"` as a run tweak as well as in the flow file, so replace-by-id works even before the server's copy of the flow is re-imported. Runs `output_type: "debug"` so every node builds; the ingest flow has no chat output.
+**Ingest:** passes `deletion_field = "id"` as a run tweak as well as in the flow file, so replace-by-id works even before the server's copy of the flow is re-imported. Runs `output_type: "debug"` so every node builds; the ingest flow has no chat output. The Read File and Astra DB node ids come from the server's copy of the flow (`GET /api/v1/flows/{id}`, matched by component type), not from the repo JSON: the server's flow had different ids, and Langflow silently ignores a tweak for an unknown node id.
 
 **Runner:** both the watch and the ingest job run `self-hosted` on the home server. The first watch run from a GitHub-hosted runner (2026-10-30) was blocked by JDIH BPK, JDIH Jawa Barat, MK, DPR and JDIH Jawa Timur; all but the last two answer the home server's Indonesian connection. Neither job runs for `pull_request`, so fork PRs cannot reach the server. The repository is public: require approval for fork PR workflows.
 
