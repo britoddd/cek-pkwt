@@ -1,0 +1,2 @@
+# Multi-line quoted fields must stay LF, or the validator's citation-header check fails on Windows checkouts.
+data/labor_corpus.csv text eol=lf
