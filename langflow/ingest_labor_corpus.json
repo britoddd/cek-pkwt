@@ -713,7 +713,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": ""
+                "value": "id"
               },
               "embedding_model": {
                 "_input_type": "ModelInput",

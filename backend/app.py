@@ -38,8 +38,12 @@ FLOWS = {
 log.info("Forwarding to Langflow at %s, flows %s", LANGFLOW_URL, FLOWS)
 
 # Minimum-wage regions come from the same corpus the flows search, so the list never drifts.
+# A region has one row per year once next year's wage is added (sync/corpus_sync.py), hence the dedupe.
 with open(Path(__file__).parent.parent / "data" / "labor_corpus.csv", encoding="utf-8") as f:
-    REGIONS = [row["region"] for row in csv.DictReader(f) if row["topic"] == "upah_minimum" and row["region"] != "nasional"]
+    REGIONS = list(dict.fromkeys(
+        row["region"] for row in csv.DictReader(f)
+        if row["topic"] == "upah_minimum" and row["region"] != "nasional" and row["status"] in ("berlaku", "belum_berlaku")
+    ))
 
 UNAVAILABLE = "Layanan CekPKWT sedang tidak tersedia. Coba lagi beberapa saat lagi."
 

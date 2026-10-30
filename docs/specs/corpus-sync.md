@@ -1,7 +1,7 @@
 # Spec: daily regulation sync for the labor corpus
 
 > Branch: `feature/daily-corpus-sync`
-> Status: Draft, 2026-10-29
+> Status: Implemented on this branch, 2026-10-30 (draft 2026-10-29). Deviations from the plan are in §17.
 > Decisions: draft PR + human merge (reviewers @britoddd, @Joelcrl), GitHub Actions (self-hosted runner on the home server allowed), all four source groups (MK/DPR best effort), new law as a separate regime cited as "upcoming". See §16.
 
 ## 1. Why
@@ -57,7 +57,7 @@ S4 notes (decided: best effort): try a headless browser (Playwright). If it is s
 
 **Runner location risk:** GitHub-hosted runners use US IP addresses, and some `.go.id` sites block foreign traffic. Step 0 of implementation is a probe workflow that fetches every source from a GitHub-hosted runner. If any Phase 1 source fails, the same workflows run on a **self-hosted runner** on the home server (`runs-on: self-hosted`; approved). It has an Indonesian IP and sits next to Langflow. That box then needs Python 3.12 and the `gh` CLI; GitHub-hosted runners already have both.
 
-Langflow itself is already publicly reachable (the Vercel-deployed backend calls it), so the ingest step works from either runner type.
+~~Langflow itself is already publicly reachable~~ Correction: Langflow only listens on `127.0.0.1:7860` on the home server (the Vercel frontend reaches the backend, and the backend reaches Langflow locally). The ingest job therefore always runs on the self-hosted runner; only the watch job can choose.
 
 ## 5. Relevance filter (no LLM)
 
@@ -176,7 +176,7 @@ README.md                           "Memperbarui korpus" section rewritten
 
 The same CLI runs locally (`python sync/corpus_sync.py ingest --since <sha>`), so ingest still works while Langflow is not publicly reachable.
 
-**Secrets:** `OPENAI_API_KEY`, `LANGFLOW_URL` (the same public URL the Vercel backend uses), `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_INGEST`. Workflow permissions: `contents: write`, `pull-requests: write`, `issues: write`.
+**Secrets:** `OPENAI_API_KEY`, `LANGFLOW_API_KEY`, `LANGFLOW_FLOW_INGEST`, and optionally `LANGFLOW_URL` (default `http://127.0.0.1:7860`, as seen from the self-hosted runner). Workflow permissions: `contents: write`, `pull-requests: write`, `issues: write`.
 
 **Review:** `CODEOWNERS` auto-requests @britoddd and @Joelcrl on every bot PR. It only *blocks* merging if branch protection on `main` has "Require review from Code Owners" turned on; the `pending_review` check blocks it either way.
 
@@ -219,10 +219,47 @@ Each run writes a job summary table: source · items seen · candidates · PRs o
 | Runtime | GitHub Actions; a self-hosted runner on the home server is allowed (the server already runs there) |
 | Sources | S1–S4; S4 (MK, DPR) best effort |
 | New law | Separate regime `uu_pk_2026`, cited as upcoming |
-| Langflow reachable from CI? | Yes, it is public (the Vercel backend calls it) |
+| Langflow reachable from CI? | No: it listens on 127.0.0.1 only, so ingest runs on the self-hosted runner (corrected 2026-10-30) |
 | Reviewers | @britoddd and @Joelcrl via `CODEOWNERS` |
 
 **Still open (defaults apply if unanswered)**
 
 1. **Drafting LLM:** `gpt-5.4-mini` (default, same as the flows) or Gemini (its key is already used for embeddings)?
 2. **Regime name:** `uu_pk_2026` (default), or the official number once known (e.g. `uu_12_2026`)?
+
+## 17. As built (2026-10-30)
+
+Where the implementation differs from the plan above, and why.
+
+**Sources** (live-tested from an Indonesian IP; `python sync/corpus_sync.py watch --dry-run` repeats the test):
+
+| Source | How | Result |
+|---|---|---|
+| S1 JDIH Kemnaker | `?sort=terbaru` is not newest-first across all types, but it is per type, so one request per type (`jenis[]` = UU, Perppu, PP, Perpres, Permen, Kepmen, SE Menteri) | ok, ~93 items |
+| S2 JDIH BPK | `Search?keywords=…&sort=terbaru` for `ketenagakerjaan`, `pengupahan`, `perjanjian kerja`; dates and "Tanggal Berlaku" come from the detail page | ok, 30 items |
+| S3 DKI Jakarta, Jawa Tengah | plain HTTP search for "upah minimum" | ok |
+| S3 Jawa Barat, DI Yogyakarta | headless Chromium (Cloudflare captcha / JavaScript app). DIY detail pages have no PDF link, so a DIY decree becomes a "needs manual entry" issue | ok |
+| S3 Banten | site search returns HTTP 500, even in a browser | blocked |
+| S3 Jawa Timur | Cloudflare challenge that headless Chromium does not pass | blocked |
+| S4 MK | headless Chromium; the decision list is JSON embedded in the page (10 newest). Only granted reviews ("Mengabulkan…") of cited laws are candidates | ok |
+| S4 DPR | Akamai 403, even in a browser | blocked |
+
+Blocked sources are still probed daily and show as `blocked` in the job summary. If one opens up, the summary says it is reachable but has no parser yet. For their documents, `corpus_sync.py draft --pdf …` drafts the rows locally.
+
+**Memory:** the PR or issue title tag `[corpus-sync <key>]` is the only state. Besides PRs, the job opens an issue when a PDF has no text layer or no PDF link (left open), and a closed issue when the LLM finds nothing relevant, so the regulation is not re-sent to the LLM every day.
+
+**Word-for-word guard:** comparison ignores all whitespace and hyphens (official PDFs have text layers like "m enetapkan" and "perundang-\nundangan"). Page furniture is stripped first, including garbled running headers ("PRES IDEN", "RU EPLBLIK INDONESIA"), page numbers, and the "…" continuation line that the next page repeats. The elucidation (PENJELASAN) is cut off because it repeats every Pasal. Spans under 30 characters are rejected.
+
+**Wage decrees:** the LLM returns `{region, amount, year}`, never row text. The amount must appear right after the region name in the PDF (within 12 non-digit characters), which also rejects the sectoral (UMSK) tables. For a UMP decree only the amount is checked. The row text is the previous year's row with the year and amount replaced.
+
+**Amendments:** applied to the rows for ordinary regulations (status + `amended_by`), but only listed for the reviewer when they come from the new law, since current rules stay in force during the transition.
+
+**Validator:** additionally requires `effective_from` on every `belum_berlaku` row, which enforces that checklist item.
+
+**Ingest:** passes `deletion_field = "id"` as a run tweak as well as in the flow file, so replace-by-id works even before the server's copy of the flow is re-imported. Runs `output_type: "debug"` so every node builds; the ingest flow has no chat output.
+
+**Runner:** the watch job uses `vars.CORPUS_SYNC_RUNNER` (default `ubuntu-latest`). The ingest job is always `self-hosted` and never runs for `pull_request`, so fork PRs cannot reach the server. The repository is public: require approval for fork PR workflows.
+
+**Known ceilings:** MK reads only the 10 newest decisions (a day with more can slip past). Two bot PRs open at once both append at the end of the CSV and conflict after the first merge. The wage retrieval is still a fixed query with top-4, now filtered to `status = berlaku`.
+
+**Found on the first dry run:** PP 49/2025 (second amendment to PP 36/2021 on wages, Dec 2025), Permenaker 7/2026 (outsourcing) and the 2026 THR circular are not in the corpus. Run `corpus-sync` once with `since` = `2025-10-01` to get PRs for them.
