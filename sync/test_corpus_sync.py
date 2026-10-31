@@ -75,10 +75,14 @@ def test_wage_amounts():
     assert cs.parse_amount("Rp2.698.273,24") == (2698273, "24")
     assert cs.parse_amount("Rp5.729.876") == (5729876, "")
     assert cs.rupiah(2698273, "24") == "Rp2.698.273,24"
-    pdf = cs.squash("33. Kota Semarang Rp3.701.709,00 \n4. Kota \nSemarang \nJasa Pekerjaan Konstruksi \n42930 Rp3.721.126,00")
+    pdf = "33. Kota Semarang Rp3.701.709,00 \n4. Kota \nSemarang \nJasa Pekerjaan Konstruksi \n42930 Rp3.721.126,00"
     assert cs.amount_near("Kota Semarang", 3701709, pdf, need_region=True)
     assert not cs.amount_near("Kota Semarang", 3721126, pdf, need_region=True), "sectoral wage, not the UMK"
     assert not cs.amount_near("Kota Semarang", 701709, pdf, need_region=False), "no partial numbers"
+    table = "(Rp,00) 1. Kota Bekasi 5.999.443 2. Kabupaten \nKarawang 5.886.853 3. Kabupaten Bekasi 5.938.885"  # Jabar 2026
+    assert cs.amount_near("Kota Bekasi", 5999443, table, need_region=True), "next row's number must not glue on"
+    assert cs.amount_near("Kabupaten Karawang", 5886853, table, need_region=True), "region name wraps a line"
+    assert not cs.amount_near("Kota Bekasi", 5938885, table, need_region=True)
 
 
 def test_wage_row_and_flip():

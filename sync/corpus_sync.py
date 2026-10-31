@@ -281,12 +281,15 @@ def rupiah(value: int, cents: str) -> str:
     return f"Rp{value:,}".replace(",", ".") + (f",{cents}" if cents else "")
 
 
-def amount_near(region: str, value: int, squashed_source: str, need_region: bool) -> bool:
+def amount_near(region: str, value: int, source: str, need_region: bool) -> bool:
+    # Whitespace stays in: squashed, a table's next row number glues onto the amount ("5.999.443 2." -> "5.999.4432.").
+    text = re.sub(r"\s+", " ", unicodedata.normalize("NFKC", source))
     # Not part of a longer number: no digit or "digit." before it, no digit or further ".ddd" group after it.
     number = r"(?<!\d)(?<!\d\.)" + r"\.?".join(f"{value:,}".split(",")) + r"(?!\d)(?!\.\d{3})"
     if not need_region:
-        return re.search(number, squashed_source) is not None
-    return re.search(re.escape(squash(region)) + r"\D{0,12}" + number, squashed_source, re.I) is not None
+        return re.search(number, text) is not None
+    name = r"[\s\-­‐‑–—]*".join(map(re.escape, squash(region)))  # the name may wrap across lines
+    return re.search(name + r"\D{0,12}" + number, text, re.I) is not None
 
 
 # ---------------------------------------------------------------- LLM drafting
@@ -456,7 +459,6 @@ def draft_wages(d: Draft, text: str, name: str, today: date) -> None:
             if r["region"] not in latest or year > int(re.search(r"\b(20\d\d)\b", latest[r["region"]]["article"])[1]):
                 latest[r["region"]] = r
     out = ask(WAGE_PROMPT, f"Requested regions: {', '.join(latest)}\n\nDecree: {d.title}\n<<<\n{text}\n>>>", WAGE_SCHEMA)
-    squashed = squash(text)
     single = "upah minimum provinsi" in d.item.about.lower()  # a UMP decree names the province, not the region
     for w in out["wages"]:
         old = latest.get(w["region"])
@@ -468,7 +470,7 @@ def draft_wages(d: Draft, text: str, name: str, today: date) -> None:
         if w["year"] <= int(old_year):
             d.rejected.append(f"`{w['region']}`: year {w['year']} is not newer than {old_year}")
             continue
-        if not amount_near(w["region"], amount[0], squashed, need_region=not single):
+        if not amount_near(w["region"], amount[0], text, need_region=not single):
             d.rejected.append(f"`{w['region']}`: {w['amount']} not found next to the region name in the PDF")
             continue
         year = str(w["year"])
