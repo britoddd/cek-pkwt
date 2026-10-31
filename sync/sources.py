@@ -213,9 +213,10 @@ def details(f: Fetcher, item: Item) -> None:
         return
     page = f.browse(item.url) if item.source in BROWSER_SOURCES else f.get(item.url)
     # Kemnaker embeds the regulation as <iframe src="….pdf#toolbar=0">; abstracts, minutes and translations sit beside it.
+    # BPK links each PDF twice: /Read/… is an HTML viewer, /Download/… the file.
     links = re.findall(r'(?:href|src)="([^"]+?\.pdf)(?:[#?][^"]*)?"', page, re.I)
     pdfs = [urljoin(item.url, html.unescape(u)) for u in links]
-    pdfs = [u for u in pdfs if not re.search(r"(?i)abstrak|datadukung|terjemahan|risalah|jspdf", u)]
+    pdfs = [u for u in pdfs if not re.search(r"(?i)abstrak|datadukung|terjemahan|risalah|jspdf|/Read/\d+/", u)]
     item.pdf_url = pdfs[0] if pdfs else ""
     if item.source == "bpk":
         text = clean(page)
