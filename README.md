@@ -363,7 +363,7 @@ Read File (CSV) ─► CSV Rows to Data ─► Astra DB (embedding gemini-embedd
 | `regime` | Rezim aturan: `current`, atau `uu_pk_2026` untuk UU Pelindungan Ketenagakerjaan (disahkan DPR 6 Oktober 2026) |
 | `region`, `province` | `nasional`, atau kabupaten/kota/provinsi untuk upah minimum |
 | `source_url`, `retrieved_on` | Sumber resmi dan tanggal pengambilan |
-| `verification` | `checked_official` (63), `checked_secondary` (0), `accepted_single_source` (0), `system_note` (1). `pending_review` hanya dipakai bot dan tidak bisa di-merge. |
+| `verification` | `checked_official` (63), `checked_secondary` (0), `accepted_single_source` (0), `system_note` (1). `checked_official` wajib bersumber dari situs `.go.id` atau `mkri.id`. `pending_review` hanya dipakai bot dan tidak bisa di-merge. |
 | `effective_from` | Tanggal mulai berlaku (`YYYY-MM-DD`), wajib untuk baris `belum_berlaku` |
 | `text` | Teks pasal, diawali header `[Regulasi \| Pasal \| status \| rezim \| wilayah \| topik]` yang dipakai LLM untuk sitasi |
 
