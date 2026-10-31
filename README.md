@@ -286,14 +286,14 @@ Detailnya di [Memperbarui korpus](#memperbarui-korpus).
 | Teknologi IBM | Peran di CekPKWT | Bukti |
 |---|---|---|
 | **IBM Langflow 1.12.4** | Menjalankan seluruh logika: empat flow, dua komponen kustom (PII Redactor dan CSV Rows to Data), Agent dengan tool kalkulator dan tanggal, serta retrieval dari Astra DB. Flow yang sama diekspos sebagai **MCP server** untuk IBM Bob, dipanggil backend web app lewat API `/api/v1/run`, dan dijalankan CI untuk mengunggah korpus. | Ekspor flow di `langflow/*.json`; screenshot flow di bawah |
-| **IBM Bob** | Antarmuka percakapan dan **MCP client**: memilih tool Langflow berdasarkan nama dan deskripsinya, mengirim teks pengguna ke Chat Input, lalu menjelaskan hasilnya dengan bahasa yang mudah dipahami. | Screenshot di [Demo dan video](#6-demo-dan-video); panduan di [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow) |
+| **IBM Bob** | Antarmuka percakapan dan **MCP client**: memilih tool Langflow berdasarkan nama dan deskripsinya, mengirim teks pengguna ke Chat Input, lalu menjelaskan hasilnya dengan bahasa yang mudah dipahami. | Panduan di [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow) |
 
 ### Penjelasan setiap flow
 
 Semua flow ada di folder `langflow/` dan dapat diimpor langsung ke Langflow.
 
 #### 1. `check_work_contract`
-![Flow check_work_contract di Langflow](docs/screenshots/langflow-workflow.jpeg)
+![Flow check_work_contract di Langflow](docs/screenshots/check-work-contract-flow.png)
 
 ```
 Chat Input → PII Redactor ─┬─► Astra DB (pasal relevan, top-4) ─► Parser ─┐
@@ -314,6 +314,7 @@ Chat Input → PII Redactor ─┬─► Astra DB (pasal relevan, top-4) ─► 
 - Kontrak dan laporan tidak disimpan ke riwayat pesan Langflow (`should_store_message = false` di Chat Input dan Chat Output, begitu juga di dua flow lainnya).
 
 #### 2. `answer_labor_rule_question`
+![Flow answer_labor_rule_question di Langflow](docs/screenshots/answer-labor-rule-question-flow.png)
 
 ```
 Chat Input ─┬─► Astra DB (top-4) ─► Parser <kutipan> ─┐
@@ -325,6 +326,7 @@ Chat Input ─┬─► Astra DB (top-4) ─► Parser <kutipan> ─┐
 - **Output:** jawaban beserta sitasi pasal.
 
 #### 3. `draft_hr_questions`
+![Flow draft_hr_questions di Langflow](docs/screenshots/draft-hr-flow.png)
 
 ```
 Chat Input ─► Agent (tanpa tool) ─► Chat Output
@@ -336,9 +338,8 @@ Chat Input ─► Agent (tanpa tool) ─► Chat Output
 - **Flow ini tidak bisa membuat atau mengirim email.** Agent tidak punya tool email sama sekali, jadi pembatasnya bersifat teknis, bukan hanya instruksi prompt. Prompt juga mengabaikan instruksi di dalam input yang meminta mengirim email.
 - Sebelumnya flow ini membuat draf lewat Composio Gmail. Integrasi itu dihapus karena aplikasi OAuth Google dalam mode testing hanya bisa dipakai akun yang didaftarkan sebagai test user.
 
-![Isi draf email HR di IBM Bob](docs/screenshots/bob-hr-draft.jpeg)
-
 #### 4. `ingest_labor_corpus` (internal, tidak diekspos ke Bob)
+![Flow ingest_labor_corpus di Langflow](docs/screenshots/ingest-corpus-flow.png)
 
 ```
 Read File (CSV) ─► CSV Rows to Data ─► Astra DB (embedding gemini-embedding-001)
@@ -514,6 +515,28 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 3. Klik **Buat draf email ke HR**, lalu buka drafnya di Gmail atau kirim lewat WhatsApp.
 4. Buka **Tanya aturan** dan tulis "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?". Kalimat pertama jawabannya membantah klaim itu, disertai pasal rujukan.
 
+### Tampilan web app
+
+**Beranda:** pintu masuk ke pemeriksaan kontrak dan tanya aturan.
+
+![Beranda CekPKWT](docs/screenshots/home.png)
+
+**Tempel kontrak:** teks kontrak ditempel dan wilayah kerja dipilih. Pratinjau "Yang dibaca AI" menunjukkan data pribadi yang disamarkan sebelum teks dikirim ke model.
+
+![Halaman tempel kontrak](docs/screenshots/tempel-kontrak.png)
+
+**Laporan pemeriksaan:** temuan diurutkan dari keparahan tertinggi. Setiap temuan memuat kutipan kontrak, pasal rujukan beserta statusnya, dan pertanyaan untuk HR.
+
+![Laporan pemeriksaan kontrak](docs/screenshots/laporan-pemeriksaan-kontrak.png)
+
+**Draf email ke HR:** temuan ditulis ulang jadi pertanyaan yang sopan, lalu dibuka di Gmail, aplikasi email, atau WhatsApp. CekPKWT tidak mengirim apa pun.
+
+![Draf pertanyaan untuk HR](docs/screenshots/draft-hr.png)
+
+**Tanya aturan:** jawaban hanya diambil dari pasal di basis regulasi, dengan sitasi `(Regulasi, Pasal, status)`.
+
+![Tanya aturan](docs/screenshots/tanya-aturan.png)
+
 ### Contoh penggunaan di IBM Bob
 
 | Pengguna menulis di Bob | Tool yang dipanggil |
@@ -522,14 +545,6 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 | "Apa itu kompensasi akhir PKWT?" | `answer_labor_rule_question` |
 | "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?" | `answer_labor_rule_question` |
 | "Bantu buatkan email ke HR (hr@perusahaan.co.id) soal temuan tadi" | `draft_hr_questions` |
-
-**Pemeriksaan kontrak:** Bob memanggil `check_work_contract` dan menampilkan 8 potensi masalah.
-
-![Hasil check_work_contract di IBM Bob](docs/screenshots/bob-check-contract.jpeg)
-
-**Tanya aturan dan permintaan draf email:** Bob memanggil `answer_labor_rule_question` untuk UMK Karawang, lalu `draft_hr_questions`.
-
-![Tanya UMK dan permintaan draf email di IBM Bob](docs/screenshots/bob-rule-question.jpeg)
 
 ## Tim
 
@@ -884,7 +899,7 @@ PYTHONIOENCODING=utf-8 GITHUB_STEP_SUMMARY=~/corpus-sync-summary.md \
 ├── docs/
 │   ├── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
 │   ├── specs/corpus-sync.md     # Spesifikasi sinkronisasi korpus harian
-│   └── screenshots/             # Bukti alur: Bob, Langflow, Gmail
+│   └── screenshots/             # Tampilan web app dan flow Langflow
 ├── evaluation/                  # Evaluasi kualitas AI dan redaksi data pribadi
 │   ├── contracts/               # 15 kontrak PKWT fiktif (5 bersih, 10 dengan masalah tertanam)
 │   ├── cases.json               # Kunci jawaban dan data pribadi contoh
