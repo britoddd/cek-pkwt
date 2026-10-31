@@ -1,0 +1,13 @@
+FIXED-TERM EMPLOYMENT AGREEMENT (FICTIONAL, FOR TESTING)
+
+Employer: PT Example Tech Solutions, a software company, office in Jakarta Barat.
+Employee:
+Name: Sari Wulandari
+Email: sari.fiktif@example.com, phone +62 813 0000 2222
+
+1. Position: Junior QA Tester for the development of a new mobile application, based in Jakarta Barat.
+2. Term: 12 months, from 1 November 2026 to 31 October 2027.
+3. Probation: The first 2 months are a probationary period. During probation the Employer may terminate this agreement at any time.
+4. Salary: IDR 6,000,000 gross per month.
+5. Social security: The Employee is responsible for their own health insurance. The Employer will not register the Employee in BPJS Ketenagakerjaan or BPJS Kesehatan.
+6. End of contract: The Employee is entitled to compensation money in accordance with prevailing regulations.
