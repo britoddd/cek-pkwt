@@ -1,0 +1,870 @@
+{
+  "summary": {
+    "groups": {
+      "umum": {
+        "cases": 32,
+        "values": 32,
+        "failed": 0,
+        "failed_ids": []
+      },
+      "tidak_umum": {
+        "cases": 30,
+        "values": 30,
+        "failed": 30,
+        "failed_ids": [
+          "nama_huruf",
+          "nama_bullet",
+          "nama_tabel",
+          "nama_tanda_tangan",
+          "nama_tanda_tangan_ttd",
+          "nama_kalimat",
+          "nama_sapaan",
+          "nama_label_pekerja",
+          "tgl_lahir",
+          "tgl_lahir_singkat",
+          "tempat_tgl_lahir_singkat",
+          "lahir_kalimat",
+          "alamat_ktp",
+          "domisili",
+          "alamat_baris_lanjutan",
+          "alamat_kalimat",
+          "nik_diikuti_koma",
+          "nik_akhir_kalimat",
+          "nik_spasi_ganda",
+          "npwp_15_polos",
+          "telp_kurung",
+          "telp_surabaya",
+          "telp_bali",
+          "hp_kurung",
+          "rek_singkat",
+          "no_rek",
+          "account_en",
+          "bpjs_kesehatan",
+          "bpjs_kpj",
+          "paspor"
+        ]
+      },
+      "adversarial": {
+        "cases": 4,
+        "values": 4,
+        "failed": 3,
+        "failed_ids": [
+          "email_obfuscated",
+          "nik_zero_width",
+          "hp_dieja"
+        ]
+      },
+      "bukan_pii": {
+        "cases": 16,
+        "values": 19,
+        "failed": 2,
+        "failed_ids": [
+          "blok_perusahaan_nama",
+          "blok_perusahaan_alamat"
+        ]
+      }
+    },
+    "documents": {
+      "contracts": 15,
+      "pii_values": 89,
+      "leaked": 29,
+      "leaked_values": {
+        "bersih-01-depok": [
+          "Rina Kartika Sari"
+        ],
+        "bersih-02-gresik": [
+          "Agus Prasetyo",
+          "Graha Asri Blok D",
+          "17 Agustus 1995",
+          "1234567802"
+        ],
+        "bersih-03-jakarta": [
+          "Siti Nurhaliza Putri"
+        ],
+        "bersih-04-malang": [
+          "Dewi Lestari",
+          "3573019999970006",
+          "Ijen Nirwana Blok B2",
+          "12 Maret 1997"
+        ],
+        "bersih-05-tangsel": [
+          "Bayu Firmansyah",
+          "RT 004/RW 002",
+          "0001234567805"
+        ],
+        "masalah-01-bekasi": [
+          "Joko Susilo"
+        ],
+        "masalah-02-jakarta": [
+          "Maya Anggraini"
+        ],
+        "masalah-03-surabaya": [
+          "Rudi Hartono",
+          "Rungkut Asri Tengah",
+          "(031) 5678913"
+        ],
+        "masalah-04-bandung-english": [
+          "Andi Wijaya"
+        ],
+        "masalah-05-semarang": [
+          "Lina Marlina"
+        ],
+        "masalah-06-karawang": [
+          "Hendra Gunawan"
+        ],
+        "masalah-07-yogyakarta": [
+          "Fajar Nugroho",
+          "11 November 2002"
+        ],
+        "masalah-08-medan": [
+          "Putri Ayu Lestari",
+          "123456789012318"
+        ],
+        "masalah-09-sidoarjo": [
+          "Eko Saputra"
+        ],
+        "masalah-10-tangerang": [
+          "Nur Aisyah",
+          "Imam Bonjol Gg. Masjid No. 7",
+          "15 Mei 2000"
+        ]
+      },
+      "work_region_kept": 15,
+      "all_amounts_kept": 15
+    },
+    "frontend_parity": {
+      "compared": 97,
+      "mismatches": [
+        "nik_fullwidth"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "nama_label",
+      "group": "umum",
+      "input": "Nama : Budi Santoso",
+      "output": "Nama : [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_lengkap",
+      "group": "umum",
+      "input": "Nama Lengkap: Budi Santoso",
+      "output": "Nama Lengkap: [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_pekerja_kapital",
+      "group": "umum",
+      "input": "NAMA PEKERJA : BUDI SANTOSO",
+      "output": "NAMA PEKERJA : [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_bernomor",
+      "group": "umum",
+      "input": "1. Nama : Budi Santoso",
+      "output": "1. Nama : [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_karyawan",
+      "group": "umum",
+      "input": "Nama Karyawan\t: Budi Santoso",
+      "output": "Nama Karyawan\t: [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "name_en",
+      "group": "umum",
+      "input": "Full Name: Budi Santoso",
+      "output": "Full Name: [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_ibu_kandung",
+      "group": "umum",
+      "input": "Nama Ibu Kandung: Sri Wahyuni",
+      "output": "Nama Ibu Kandung: [NAMA]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "alamat_label",
+      "group": "umum",
+      "input": "Alamat : Jl. Melati No. 5, Bekasi",
+      "output": "Alamat : [ALAMAT]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "alamat_domisili",
+      "group": "umum",
+      "input": "Alamat Domisili: Jl. Melati No. 5",
+      "output": "Alamat Domisili: [ALAMAT]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "address_en",
+      "group": "umum",
+      "input": "Address: Jl. Melati No. 5",
+      "output": "Address: [ALAMAT]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "ttl_lengkap",
+      "group": "umum",
+      "input": "Tempat, Tanggal Lahir : Bandung, 1 Januari 1999",
+      "output": "Tempat, Tanggal Lahir : [TTL]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "ttl_singkat",
+      "group": "umum",
+      "input": "TTL : Bandung, 1 Januari 1999",
+      "output": "TTL : [TTL]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "dob_en",
+      "group": "umum",
+      "input": "Date of Birth: 1 January 1999",
+      "output": "Date of Birth: [TTL]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nik_polos",
+      "group": "umum",
+      "input": "pemegang NIK 3201019999990001",
+      "output": "pemegang NIK [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nik_spasi",
+      "group": "umum",
+      "input": "NIK: 3201 0199 9999 0001",
+      "output": "NIK: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nik_titik",
+      "group": "umum",
+      "input": "NIK: 3201.0199.9999.0001",
+      "output": "NIK: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nik_strip",
+      "group": "umum",
+      "input": "NIK: 3201-0199-9999-0001",
+      "output": "NIK: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "no_kk",
+      "group": "umum",
+      "input": "No. KK: 3201019999990099",
+      "output": "No. KK: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "npwp_format",
+      "group": "umum",
+      "input": "NPWP: 12.345.678.9-012.345",
+      "output": "NPWP: [NPWP]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "npwp_16_digit",
+      "group": "umum",
+      "input": "NPWP: 3201019999990001",
+      "output": "NPWP: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "email",
+      "group": "umum",
+      "input": "Email: budi.santoso@example.com",
+      "output": "Email: [EMAIL]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "email_plus",
+      "group": "umum",
+      "input": "kirim ke budi_s+kerja@mail.example.co.id",
+      "output": "kirim ke [EMAIL]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_08_strip",
+      "group": "umum",
+      "input": "HP: 0812-3456-7890",
+      "output": "HP: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_08_polos",
+      "group": "umum",
+      "input": "HP: 081234567890",
+      "output": "HP: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_62_spasi",
+      "group": "umum",
+      "input": "HP: +62 812 3456 7890",
+      "output": "HP: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_62_strip",
+      "group": "umum",
+      "input": "HP: +62-812-3456-7890",
+      "output": "HP: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_62_polos",
+      "group": "umum",
+      "input": "HP: 6281234567890",
+      "output": "HP: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "whatsapp",
+      "group": "umum",
+      "input": "WhatsApp: 0812 3456 7890",
+      "output": "WhatsApp: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "telp_jakarta",
+      "group": "umum",
+      "input": "Telepon rumah: 021-5551234",
+      "output": "Telepon rumah: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "telp_jakarta_spasi",
+      "group": "umum",
+      "input": "Telepon rumah: 021 555 1234",
+      "output": "Telepon rumah: [TELEPON]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "rekening_label",
+      "group": "umum",
+      "input": "No. Rekening: 1234567890",
+      "output": "No. Rekening: [NO_REKENING]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "rekening_kalimat",
+      "group": "umum",
+      "input": "ditransfer ke nomor rekening BCA 123-456-7890",
+      "output": "ditransfer ke nomor rekening BCA [NO_REKENING]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_huruf",
+      "group": "tidak_umum",
+      "input": "a. Nama : Budi Santoso",
+      "output": "a. Nama : Budi Santoso",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_bullet",
+      "group": "tidak_umum",
+      "input": "- Nama: Budi Santoso",
+      "output": "- Nama: Budi Santoso",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_tabel",
+      "group": "tidak_umum",
+      "input": "| Nama | Budi Santoso |",
+      "output": "| Nama | Budi Santoso |",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_tanda_tangan",
+      "group": "tidak_umum",
+      "input": "PIHAK KEDUA\n\n(Budi Santoso)",
+      "output": "PIHAK KEDUA\n\n(Budi Santoso)",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_tanda_tangan_ttd",
+      "group": "tidak_umum",
+      "input": "ttd\nBudi Santoso\nPekerja",
+      "output": "ttd\nBudi Santoso\nPekerja",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_kalimat",
+      "group": "tidak_umum",
+      "input": "Saya yang bertanda tangan di bawah ini, Budi Santoso, menyatakan setuju.",
+      "output": "Saya yang bertanda tangan di bawah ini, Budi Santoso, menyatakan setuju.",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_sapaan",
+      "group": "tidak_umum",
+      "input": "Perjanjian ini diberikan kepada Sdr. Budi Santoso.",
+      "output": "Perjanjian ini diberikan kepada Sdr. Budi Santoso.",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nama_label_pekerja",
+      "group": "tidak_umum",
+      "input": "Pekerja : Budi Santoso",
+      "output": "Pekerja : Budi Santoso",
+      "leaked": [
+        "Budi Santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "tgl_lahir",
+      "group": "tidak_umum",
+      "input": "Tanggal Lahir: 1 Januari 1999",
+      "output": "Tanggal Lahir: 1 Januari 1999",
+      "leaked": [
+        "1 Januari 1999"
+      ],
+      "lost": []
+    },
+    {
+      "id": "tgl_lahir_singkat",
+      "group": "tidak_umum",
+      "input": "Tgl. Lahir: 01-01-1999",
+      "output": "Tgl. Lahir: 01-01-1999",
+      "leaked": [
+        "01-01-1999"
+      ],
+      "lost": []
+    },
+    {
+      "id": "tempat_tgl_lahir_singkat",
+      "group": "tidak_umum",
+      "input": "Tempat/Tgl. Lahir: Bandung, 01-01-1999",
+      "output": "Tempat/Tgl. Lahir: Bandung, 01-01-1999",
+      "leaked": [
+        "01-01-1999"
+      ],
+      "lost": []
+    },
+    {
+      "id": "lahir_kalimat",
+      "group": "tidak_umum",
+      "input": "lahir di Bandung pada tanggal 1 Januari 1999",
+      "output": "lahir di Bandung pada tanggal 1 Januari 1999",
+      "leaked": [
+        "1 Januari 1999"
+      ],
+      "lost": []
+    },
+    {
+      "id": "alamat_ktp",
+      "group": "tidak_umum",
+      "input": "Alamat KTP: Jl. Melati No. 5",
+      "output": "Alamat KTP: Jl. Melati No. 5",
+      "leaked": [
+        "Jl. Melati No. 5"
+      ],
+      "lost": []
+    },
+    {
+      "id": "domisili",
+      "group": "tidak_umum",
+      "input": "Domisili: Jl. Melati No. 5",
+      "output": "Domisili: Jl. Melati No. 5",
+      "leaked": [
+        "Jl. Melati No. 5"
+      ],
+      "lost": []
+    },
+    {
+      "id": "alamat_baris_lanjutan",
+      "group": "tidak_umum",
+      "input": "Alamat: Jl. Melati No. 5\n        RT 002/RW 005, Kel. Sukamaju",
+      "output": "Alamat: [ALAMAT]\n        RT 002/RW 005, Kel. Sukamaju",
+      "leaked": [
+        "RT 002/RW 005, Kel. Sukamaju"
+      ],
+      "lost": []
+    },
+    {
+      "id": "alamat_kalimat",
+      "group": "tidak_umum",
+      "input": "bertempat tinggal di Jl. Melati No. 5, Kota Bekasi",
+      "output": "bertempat tinggal di Jl. Melati No. 5, Kota Bekasi",
+      "leaked": [
+        "Jl. Melati No. 5"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nik_diikuti_koma",
+      "group": "tidak_umum",
+      "input": "pemegang NIK 3201019999990001, beralamat di Bekasi",
+      "output": "pemegang NIK 3201019999990001, beralamat di Bekasi",
+      "leaked": [
+        "3201019999990001"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nik_akhir_kalimat",
+      "group": "tidak_umum",
+      "input": "Nomor induk kependudukan saya 3201019999990001.",
+      "output": "Nomor induk kependudukan saya 3201019999990001.",
+      "leaked": [
+        "3201019999990001"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nik_spasi_ganda",
+      "group": "tidak_umum",
+      "input": "NIK: 3201  0199  9999  0001",
+      "output": "NIK: 3201  0199  9999  0001",
+      "leaked": [
+        "0199  9999"
+      ],
+      "lost": []
+    },
+    {
+      "id": "npwp_15_polos",
+      "group": "tidak_umum",
+      "input": "NPWP: 123456789012345",
+      "output": "NPWP: 123456789012345",
+      "leaked": [
+        "123456789012345"
+      ],
+      "lost": []
+    },
+    {
+      "id": "telp_kurung",
+      "group": "tidak_umum",
+      "input": "Telp: (021) 5551234",
+      "output": "Telp: (021) 5551234",
+      "leaked": [
+        "5551234"
+      ],
+      "lost": []
+    },
+    {
+      "id": "telp_surabaya",
+      "group": "tidak_umum",
+      "input": "Telp: 031-5678901",
+      "output": "Telp: 031-5678901",
+      "leaked": [
+        "5678901"
+      ],
+      "lost": []
+    },
+    {
+      "id": "telp_bali",
+      "group": "tidak_umum",
+      "input": "Telp: 0361-234567",
+      "output": "Telp: 0361-234567",
+      "leaked": [
+        "234567"
+      ],
+      "lost": []
+    },
+    {
+      "id": "hp_kurung",
+      "group": "tidak_umum",
+      "input": "HP: +62 (812) 3456-7890",
+      "output": "HP: +62 (812) 3456-7890",
+      "leaked": [
+        "3456-7890"
+      ],
+      "lost": []
+    },
+    {
+      "id": "rek_singkat",
+      "group": "tidak_umum",
+      "input": "Rek. BCA 1234567890",
+      "output": "Rek. BCA 1234567890",
+      "leaked": [
+        "1234567890"
+      ],
+      "lost": []
+    },
+    {
+      "id": "no_rek",
+      "group": "tidak_umum",
+      "input": "No. Rek: 1234567890",
+      "output": "No. Rek: 1234567890",
+      "leaked": [
+        "1234567890"
+      ],
+      "lost": []
+    },
+    {
+      "id": "account_en",
+      "group": "tidak_umum",
+      "input": "Bank account number: 1234567890",
+      "output": "Bank account number: 1234567890",
+      "leaked": [
+        "1234567890"
+      ],
+      "lost": []
+    },
+    {
+      "id": "bpjs_kesehatan",
+      "group": "tidak_umum",
+      "input": "No. BPJS Kesehatan: 0001234567890",
+      "output": "No. BPJS Kesehatan: 0001234567890",
+      "leaked": [
+        "0001234567890"
+      ],
+      "lost": []
+    },
+    {
+      "id": "bpjs_kpj",
+      "group": "tidak_umum",
+      "input": "No. KPJ BPJS Ketenagakerjaan: 12345678901",
+      "output": "No. KPJ BPJS Ketenagakerjaan: 12345678901",
+      "leaked": [
+        "12345678901"
+      ],
+      "lost": []
+    },
+    {
+      "id": "paspor",
+      "group": "tidak_umum",
+      "input": "No. Paspor: C1234567",
+      "output": "No. Paspor: C1234567",
+      "leaked": [
+        "C1234567"
+      ],
+      "lost": []
+    },
+    {
+      "id": "email_obfuscated",
+      "group": "adversarial",
+      "input": "budi.santoso [at] example [dot] com",
+      "output": "budi.santoso [at] example [dot] com",
+      "leaked": [
+        "budi.santoso"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nik_zero_width",
+      "group": "adversarial",
+      "input": "NIK: 3201​0199​9999​0001",
+      "output": "NIK: 3201​0199​9999​0001",
+      "leaked": [
+        "9999​0001"
+      ],
+      "lost": []
+    },
+    {
+      "id": "nik_fullwidth",
+      "group": "adversarial",
+      "input": "NIK: ３２０１０１９９９９９９０００１",
+      "output": "NIK: [NIK]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "hp_dieja",
+      "group": "adversarial",
+      "input": "HP nol delapan satu dua tiga empat lima enam",
+      "output": "HP nol delapan satu dua tiga empat lima enam",
+      "leaked": [
+        "nol delapan satu dua"
+      ],
+      "lost": []
+    },
+    {
+      "id": "upah",
+      "group": "bukan_pii",
+      "input": "Upah sebesar Rp5.999.443 per bulan",
+      "output": "Upah sebesar Rp5.999.443 per bulan",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "upah_desimal",
+      "group": "bukan_pii",
+      "input": "Upah Rp 6.000.000,00 per bulan",
+      "output": "Upah Rp 6.000.000,00 per bulan",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "denda",
+      "group": "bukan_pii",
+      "input": "denda Rp25.000.000 (dua puluh lima juta rupiah)",
+      "output": "denda Rp25.000.000 (dua puluh lima juta rupiah)",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "tanggal",
+      "group": "bukan_pii",
+      "input": "mulai 1 Januari 2026 sampai 31 Desember 2026",
+      "output": "mulai 1 Januari 2026 sampai 31 Desember 2026",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "tanggal_angka",
+      "group": "bukan_pii",
+      "input": "berlaku 01-01-2026 s.d. 31-12-2026",
+      "output": "berlaku 01-01-2026 s.d. 31-12-2026",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "durasi",
+      "group": "bukan_pii",
+      "input": "selama 12 (dua belas) bulan",
+      "output": "selama 12 (dua belas) bulan",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nomor_kontrak",
+      "group": "bukan_pii",
+      "input": "Nomor: 088/PKWT/PRD/XI/2026",
+      "output": "Nomor: 088/PKWT/PRD/XI/2026",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "rujukan_pasal",
+      "group": "bukan_pii",
+      "input": "sesuai Pasal 59 ayat (1) UU 13/2003",
+      "output": "sesuai Pasal 59 ayat (1) UU 13/2003",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "jam_kerja",
+      "group": "bukan_pii",
+      "input": "pukul 08.00-17.00, 40 jam seminggu",
+      "output": "pukul 08.00-17.00, 40 jam seminggu",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "persen",
+      "group": "bukan_pii",
+      "input": "potongan paling banyak 50% dari upah",
+      "output": "potongan paling banyak 50% dari upah",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "lembur",
+      "group": "bukan_pii",
+      "input": "upah sejam 1/173 kali upah sebulan",
+      "output": "upah sejam 1/173 kali upah sebulan",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_perusahaan",
+      "group": "bukan_pii",
+      "input": "Nama Perusahaan: PT Maju Jaya",
+      "output": "Nama Perusahaan: PT Maju Jaya",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "alamat_perusahaan",
+      "group": "bukan_pii",
+      "input": "Alamat Perusahaan: Jl. Industri No. 1, Kota Bekasi",
+      "output": "Alamat Perusahaan: Jl. Industri No. 1, Kota Bekasi",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "lokasi_kerja",
+      "group": "bukan_pii",
+      "input": "Tempat kerja di pabrik Perusahaan di Kabupaten Karawang.",
+      "output": "Tempat kerja di pabrik Perusahaan di Kabupaten Karawang.",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "blok_perusahaan_nama",
+      "group": "bukan_pii",
+      "input": "PIHAK PERTAMA\nNama : PT Maju Jaya Sejahtera",
+      "output": "PIHAK PERTAMA\nNama : [NAMA]",
+      "leaked": [],
+      "lost": [
+        "PT Maju Jaya Sejahtera"
+      ]
+    },
+    {
+      "id": "blok_perusahaan_alamat",
+      "group": "bukan_pii",
+      "input": "PIHAK PERTAMA\nAlamat : Jl. Industri Raya No. 5, Kota Bekasi",
+      "output": "PIHAK PERTAMA\nAlamat : [ALAMAT]",
+      "leaked": [],
+      "lost": [
+        "Kota Bekasi"
+      ]
+    }
+  ]
+}
