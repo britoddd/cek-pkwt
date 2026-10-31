@@ -79,7 +79,7 @@ Kontrak ditulis bebas, dengan istilah dan susunan yang berbeda di setiap perusah
 
 1. **Pemeriksaan Kontrak** (`check_work_contract`): mengekstrak klausul penting dari teks kontrak, membandingkannya dengan pasal regulasi dan upah minimum 2026 per wilayah, lalu menyusun laporan potensi masalah beserta tingkat keparahan, tingkat keyakinan, dan pasal rujukan.
 2. **Tanya Aturan PKWT** (`answer_labor_rule_question`): menjawab pertanyaan lanjutan hanya dari regulasi yang tersimpan, dengan sitasi pasal. Klaim pengguna yang keliru ("katanya boleh kan?") langsung dibantah. Jika jawabannya tidak ada di sumber, sistem menyatakannya dan menyarankan bertanya ke Disnaker atau LBH.
-3. **Draf Pertanyaan untuk HR** (`draft_hr_questions`): mengubah temuan menjadi pertanyaan yang sopan dan membuat draf Gmail yang tidak terkirim otomatis. Pengguna meninjau dan mengirimnya sendiri.
+3. **Draf Pertanyaan untuk HR** (`draft_hr_questions`): mengubah temuan menjadi email pertanyaan yang sopan. Pengguna membukanya di Gmail, aplikasi email, atau WhatsApp miliknya sendiri, lalu meninjau dan mengirimnya sendiri.
 4. **Kesadaran perubahan regulasi:** lihat [Yang baru](#yang-baru), poin 1 dan 2.
 5. **Perlindungan data pribadi:** lihat [Yang baru](#yang-baru), poin 3.
 
@@ -218,7 +218,7 @@ Metrik yang kami pakai: tingkat deteksi masalah yang sengaja ditanam, alarm pals
  IBM Langflow  (MCP server, seluruh logika workflow)
     ├── check_work_contract         ──┐
     ├── answer_labor_rule_question  ──┼──► Astra DB (corpus_v1, embedding Gemini)
-    ├── draft_hr_questions ──► Composio Gmail (hanya draf)
+    ├── draft_hr_questions ──► teks draf email (dikirim sendiri oleh pengguna)
     └── ingest_labor_corpus (internal) ─► memuat data/labor_corpus.csv ke Astra DB
 ```
 
@@ -236,7 +236,7 @@ Metrik yang kami pakai: tingkat deteksi masalah yang sengaja ditanam, alarm pals
 | LLM (Agent) | OpenAI `gpt-5.4-mini` (bawaan flow). Bisa diganti ke model Gemini lewat dropdown "Language Model". |
 | Embedding | Google `models/gemini-embedding-001` |
 | Vector store | DataStax Astra DB: database `cek_pkwt`, koleksi `corpus_v1` |
-| Email | Composio Gmail (OAuth2) |
+| Email | Tautan tulis Gmail, `mailto:`, dan `wa.me` di akun pengguna sendiri (tanpa OAuth) |
 | Web app | Frontend React + Vite + TypeScript di Vercel; backend FastAPI |
 | Server | Debian self-hosted: Docker Compose (Langflow + PostgreSQL), systemd, nginx, Cloudflare Tunnel |
 | Sinkronisasi korpus | GitHub Actions di self-hosted runner (server), Playwright (Chromium headless), pypdf, OpenAI `gpt-5.4-mini` |
@@ -249,7 +249,7 @@ Metrik yang kami pakai: tingkat deteksi masalah yang sengaja ditanam, alarm pals
 4. Agent mengekstrak klausul, membandingkannya dengan pasal, lalu menyusun laporan.
 5. Laporan dikembalikan ke Bob, dan Bob menjelaskannya kepada pengguna.
 6. Pengguna bertanya lebih lanjut (`answer_labor_rule_question`) atau membuat draf email HR (`draft_hr_questions`).
-7. Pengguna meninjau draf di Gmail dan mengirimnya sendiri.
+7. Pengguna menyalin draf ke Gmail atau aplikasi email miliknya, meninjaunya, lalu mengirimnya sendiri.
 
 **Alur lewat web app**
 
@@ -285,7 +285,7 @@ Detailnya di [Memperbarui korpus](#memperbarui-korpus).
 
 | Teknologi IBM | Peran di CekPKWT | Bukti |
 |---|---|---|
-| **IBM Langflow 1.12.4** | Menjalankan seluruh logika: empat flow, dua komponen kustom (PII Redactor dan CSV Rows to Data), Agent dengan tool kalkulator dan tanggal, retrieval dari Astra DB, serta toolset Gmail. Flow yang sama diekspos sebagai **MCP server** untuk IBM Bob, dipanggil backend web app lewat API `/api/v1/run`, dan dijalankan CI untuk mengunggah korpus. | Ekspor flow di `langflow/*.json`; screenshot flow di bawah |
+| **IBM Langflow 1.12.4** | Menjalankan seluruh logika: empat flow, dua komponen kustom (PII Redactor dan CSV Rows to Data), Agent dengan tool kalkulator dan tanggal, serta retrieval dari Astra DB. Flow yang sama diekspos sebagai **MCP server** untuk IBM Bob, dipanggil backend web app lewat API `/api/v1/run`, dan dijalankan CI untuk mengunggah korpus. | Ekspor flow di `langflow/*.json`; screenshot flow di bawah |
 | **IBM Bob** | Antarmuka percakapan dan **MCP client**: memilih tool Langflow berdasarkan nama dan deskripsinya, mengirim teks pengguna ke Chat Input, lalu menjelaskan hasilnya dengan bahasa yang mudah dipahami. | Screenshot di [Demo dan video](#6-demo-dan-video); panduan di [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow) |
 
 ### Penjelasan setiap flow
@@ -327,15 +327,14 @@ Chat Input ─┬─► Astra DB (top-4) ─► Parser <kutipan> ─┐
 #### 3. `draft_hr_questions`
 
 ```
-Chat Input ─► Agent (+ Composio Gmail sebagai tool) ─► Chat Output
+Chat Input ─► Agent (tanpa tool) ─► Chat Output
 ```
 
-- **Input:** daftar temuan dari laporan pemeriksaan, dan bila ada, alamat email HR.
+- **Input:** daftar temuan dari laporan pemeriksaan.
 - **Proses:** menulis email berbahasa Indonesia yang sopan dan tidak menuduh (subjek "Pertanyaan Terkait Draf Kontrak Kerja (PKWT)", satu pertanyaan bernomor per temuan, nama pengirim `[Nama Anda]`).
-  - Jika alamat HR tersedia, Agent memakai aksi Gmail **Create Email Draft**.
-  - Jika tidak, teks email ditampilkan untuk disalin.
-- **Output:** status ("Draf dibuat di Gmail (belum terkirim)" atau "Teks email siap disalin"), subjek dan isi email, serta pengingat untuk meninjau sebelum mengirim.
-- **Agent tidak bisa mengirim email.** Di komponen Gmail hanya aksi **Create Email Draft** yang aktif. Aksi kirim (Send Email, Send Draft) dan semua aksi lain dimatikan, sehingga pembatasnya bersifat teknis, bukan hanya instruksi prompt. Prompt Agent juga mengabaikan instruksi di dalam input yang meminta mengirim atau menghapus email.
+- **Output:** subjek, isi email, dan pengingat untuk meninjau sebelum mengirim. Backend memisahkan subjek dan isi, lalu web app membukanya di jendela tulis Gmail, aplikasi email (`mailto:`), atau WhatsApp (`wa.me`) di akun pengguna sendiri. Di IBM Bob, teksnya ditampilkan untuk disalin.
+- **Flow ini tidak bisa membuat atau mengirim email.** Agent tidak punya tool email sama sekali, jadi pembatasnya bersifat teknis, bukan hanya instruksi prompt. Prompt juga mengabaikan instruksi di dalam input yang meminta mengirim email.
+- Sebelumnya flow ini membuat draf lewat Composio Gmail. Integrasi itu dihapus karena aplikasi OAuth Google dalam mode testing hanya bisa dipakai akun yang didaftarkan sebagai test user.
 
 ![Isi draf email HR di IBM Bob](docs/screenshots/bob-hr-draft.jpeg)
 
@@ -433,6 +432,7 @@ Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober
 | 29–30 Oktober | Deploy produksi | Konfigurasi Langflow publik dihapus; Langflow hanya bisa diakses lewat SSH tunnel |
 | 30 Oktober | Sinkronisasi korpus harian, PR #7 dan #8 | Status `belum_berlaku`/`tidak_berlaku` dan rezim `uu_pk_2026`; ingest mengganti entri berdasarkan `id` sehingga tidak ada entri ganda; ID node dicari di server |
 | 30 Oktober | PR #15–#17 | Sinkronisasi dipindah ke runner di server karena situs pemerintah memblokir IP runner GitHub di luar negeri |
+| 31 Oktober | Draf email tanpa Composio | Mode testing OAuth Google tidak bisa melayani semua pengguna, jadi flow kini hanya menulis teks dan pengguna membukanya di akun Gmail, aplikasi email, atau WhatsApp miliknya |
 
 ### Keterbatasan
 
@@ -459,7 +459,7 @@ Desain CekPKWT kami petakan ke lima pilar kepercayaan AI dari IBM (explainabilit
 | **Privasi** | Data pribadi disamarkan sebelum teks dikirim ke LLM atau dipakai sebagai query. Kontrak tidak pernah dimasukkan ke basis data vektor, dan ketiga flow tidak menyimpan pesan ke riwayat pesan Langflow. Log transaksi Langflow dibatasi satu entri per flow. Backend tidak mencatat teks kontrak di log dan memakai sesi Langflow baru untuk setiap permintaan. Browser menyimpan laporan paling lama 30 menit dan tidak pernah menyimpan kontrak mentah. Semua kunci disimpan sebagai Global Variables Langflow, tidak di file flow. |
 | **Transparansi** | Setiap laporan menyebut rezim aturan yang dipakai, dan setiap rujukan mencantumkan status pasalnya. Setiap entri korpus mencatat `source_url`, tanggal pengambilan, dan tingkat verifikasinya. Prompt lengkap terbuka di `langflow/*.json`, dan keterbatasan ditulis terbuka di README dan di web app. |
 | **Explainability** | Setiap temuan menunjukkan isi kontrak, penjelasan, pasal rujukan beserta statusnya, tingkat keparahan, dan tingkat keyakinan. Klausul tanpa masalah dan klausul yang tidak dapat diperiksa juga dicantumkan, sehingga pengguna tahu apa yang *tidak* diperiksa. Pertanyaan tanpa sumber dijawab "tidak ditemukan", disertai saran ke Disnaker atau LBH. |
-| **Pengawasan manusia** | Agent hanya bisa membuat draf email; pengguna meninjau, mengedit, dan mengirimnya sendiri. Setiap perubahan korpus, termasuk dari bot, masuk lewat pull request yang ditinjau manusia (`CODEOWNERS`), dan CI menolak baris `pending_review`. |
+| **Pengawasan manusia** | Agent tidak punya akses email; ia hanya menulis teks draf, dan pengguna meninjau, mengedit, serta mengirimnya sendiri dari akunnya. Setiap perubahan korpus, termasuk dari bot, masuk lewat pull request yang ditinjau manusia (`CODEOWNERS`), dan CI menolak baris `pending_review`. |
 | **Ketahanan dan pencegahan penyalahgunaan** | Teks kontrak diperlakukan sebagai data, bukan instruksi; teks yang mencoba memberi perintah ke AI dilaporkan di "Catatan". Cakupan dibatasi ke PKWT, dan jenis kontrak lain ditolak dengan sopan. Bot sinkronisasi menolak teks yang tidak ada kata per kata di PDF resmi. Rate limit per pengunjung mencegah penyalahgunaan API. |
 | **Akuntabilitas** | Setiap laporan ditutup dengan disclaimer "bukan nasihat hukum" dan rujukan ke LBH atau Disnaker setempat. |
 
@@ -470,7 +470,7 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 **Dijamin kode atau konfigurasi:**
 
 - Redaksi data pribadi oleh komponen PII Redactor sebelum teks sampai ke LLM.
-- Di komponen Gmail hanya aksi **Create Email Draft** yang aktif. Aksi kirim (Send Email, Send Draft) dan semua aksi lain dimatikan, jadi agent secara teknis tidak dapat mengirim email.
+- Flow `draft_hr_questions` tidak punya tool email, jadi agent secara teknis tidak dapat membuat atau mengirim email. Email hanya terkirim jika pengguna sendiri menekan kirim di Gmail, aplikasi email, atau WhatsApp miliknya.
 - Kontrak tidak pernah masuk basis data vektor, dan ketiga flow tidak menyimpan riwayat pesan.
 - Langflow hanya bisa diakses dari server; backend publik dibatasi rate limit.
 - Pemeriksaan kata per kata, validator, dan blokir `pending_review` di CI untuk setiap perubahan korpus.
@@ -483,8 +483,6 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 - Bahasa yang tidak menghakimi.
 - Melaporkan upaya prompt injection di "Catatan", dan mengabaikan instruksi di input yang meminta mengirim atau menghapus email.
 - Menolak kontrak di luar PKWT.
-
-![Draf tersimpan di Gmail dan belum terkirim](docs/screenshots/gmail-draft.jpeg)
 
 ### Risiko yang masih ada
 
@@ -539,7 +537,6 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 - IBM Bob
 - Akun DataStax Astra DB dengan database `cek_pkwt`
 - API key OpenAI dan/atau Google AI (Gemini)
-- Akun Composio yang terhubung ke Gmail (untuk `draft_hr_questions`)
 
 ### Variabel lingkungan
 
@@ -547,7 +544,6 @@ Salin `.env.example` menjadi `.env` lalu isi:
 
 ```env
 ASTRA_DB_PKWT=      # Application token Astra DB
-COMPOSIO_PKWT=      # API key Composio (Gmail)
 GOOGLE_API_KEY=     # Untuk embedding gemini-embedding-001
 OPENAI_API_KEY=     # Untuk Agent gpt-5.4-mini
 ```
@@ -560,7 +556,7 @@ Flow merujuk nama-nama variabel ini sebagai *Global Variables* Langflow, jadi ni
 - **Otomatis dari environment:** jalankan Langflow dengan
   ```env
   LANGFLOW_STORE_ENVIRONMENT_VARIABLES=true
-  LANGFLOW_VARIABLES_TO_GET_FROM_ENVIRONMENT=ASTRA_DB_PKWT,COMPOSIO_PKWT,GOOGLE_API_KEY,OPENAI_API_KEY
+  LANGFLOW_VARIABLES_TO_GET_FROM_ENVIRONMENT=ASTRA_DB_PKWT,GOOGLE_API_KEY,OPENAI_API_KEY
   ```
 
 ### Langkah setup
@@ -569,8 +565,7 @@ Flow merujuk nama-nama variabel ini sebagai *Global Variables* Langflow, jadi ni
 2. Komponen **Astra DB** sudah membaca token dari `ASTRA_DB_PKWT`. Jika database Anda berbeda, pilih ulang database dan endpoint-nya (daftar endpoint akan terisi otomatis dari token). Pastikan nama koleksi `corpus_v1` dan model embedding sama di semua flow.
 3. Tambahkan API key model untuk Agent di **Settings → Model Providers** (OpenAI, dan Google jika ingin memakai model Gemini). Field `api_key` di komponen Agent hanya *override*; jika dikosongkan, Agent memakai key dari Model Providers sesuai model yang dipilih di dropdown "Language Model".
 4. Buka flow `ingest_labor_corpus`, unggah `data/labor_corpus.csv` ke komponen **Read File**, lalu jalankan untuk mengisi vector store.
-5. Pada flow `draft_hr_questions`, hubungkan komponen **Gmail** ke akun Composio Anda (OAuth). Aksi yang aktif sudah dibatasi ke Create Email Draft; jangan aktifkan aksi kirim.
-6. Uji setiap flow di Playground Langflow sebelum menghubungkannya ke Bob.
+5. Uji setiap flow di Playground Langflow sebelum menghubungkannya ke Bob.
 
 ## Menghubungkan IBM Bob ke Langflow
 
@@ -640,7 +635,7 @@ Buka http://localhost:5173. Uji parser laporan dengan `python test_report.py` di
 
 Catatan:
 
-- **Draf email tidak dibuat di Gmail.** Komponen Composio terhubung ke satu akun, jadi draf dari semua pengunjung web akan masuk ke kotak surat pemilik aplikasi. Web app membuka jendela tulis Gmail di akun pengguna sendiri (tanpa login ke CekPKWT), aplikasi email lewat `mailto:`, atau WhatsApp lewat `wa.me`. Alur draf Gmail tetap tersedia lewat IBM Bob.
+- **Draf email tidak dibuat otomatis di Gmail.** Integrasi Composio Gmail dihapus karena aplikasi OAuth Google dalam mode testing hanya bisa dipakai akun yang didaftarkan sebagai test user. Web app membuka jendela tulis Gmail di akun pengguna sendiri (tanpa login ke CekPKWT), aplikasi email lewat `mailto:`, atau WhatsApp lewat `wa.me`. Di IBM Bob, draf ditampilkan sebagai teks untuk disalin.
 - **Laporan, draf email, dan percakapan Tanya aturan disimpan sementara di `localStorage` browser** agar tidak hilang saat halaman dimuat ulang atau tab tertutup tidak sengaja. Data terhapus otomatis 30 menit setelah terakhir dibuka (`TTL_MINUTES` di `frontend/src/storage.ts`) dan bisa dihapus manual lewat tombol "Hapus sekarang" di laporan. Teks kontrak mentah tidak pernah disimpan karena masih berisi data pribadi. Backend tidak menyimpan isi permintaan, dan Langflow tidak menyimpan riwayat pesan (lihat [Risiko yang masih ada](#risiko-yang-masih-ada) untuk log transaksinya).
 - **Untuk produksi**, frontend dan backend berjalan di domain berbeda. Lihat [Deploy](#deploy).
 
@@ -678,7 +673,7 @@ Prasyarat: Docker dan Docker Compose, Python 3 dengan `venv`, nginx, serta Cloud
    docker compose up -d
    ```
 
-   Kunci provider (`ASTRA_DB_PKWT`, `COMPOSIO_PKWT`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`) diteruskan ke Langflow sebagai Global Variables. Tentukan password PostgreSQL sejak awal, karena PostgreSQL hanya membacanya saat volume database pertama kali dibuat.
+   Kunci provider (`ASTRA_DB_PKWT`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`) diteruskan ke Langflow sebagai Global Variables. Tentukan password PostgreSQL sejak awal, karena PostgreSQL hanya membacanya saat volume database pertama kali dibuat.
 3. **Siapkan flow.** Buka Langflow lewat SSH tunnel (lihat di bawah), impor keempat flow, uji di Playground, buat API key, dan catat ID ketiga flow yang dipakai backend serta ID `ingest_labor_corpus` (untuk sinkronisasi korpus). Menjalankan ulang `ingest_labor_corpus` aman karena entri dengan `id` yang sama diganti.
 4. **Jalankan backend** sebagai service systemd:
 
