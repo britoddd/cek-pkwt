@@ -363,7 +363,7 @@ Read File (CSV) ─► CSV Rows to Data ─► Astra DB (embedding gemini-embedd
 | `regime` | Rezim aturan: `current`, atau `uu_pk_2026` untuk UU Pelindungan Ketenagakerjaan (disahkan DPR 6 Oktober 2026) |
 | `region`, `province` | `nasional`, atau kabupaten/kota/provinsi untuk upah minimum |
 | `source_url`, `retrieved_on` | Sumber resmi dan tanggal pengambilan |
-| `verification` | `checked_official` (39), `checked_secondary` (20), `accepted_single_source` (4), `system_note` (1). `pending_review` hanya dipakai bot dan tidak bisa di-merge. |
+| `verification` | `checked_official` (63), `checked_secondary` (0), `accepted_single_source` (0), `system_note` (1). `pending_review` hanya dipakai bot dan tidak bisa di-merge. |
 | `effective_from` | Tanggal mulai berlaku (`YYYY-MM-DD`), wajib untuk baris `belum_berlaku` |
 | `text` | Teks pasal, diawali header `[Regulasi \| Pasal \| status \| rezim \| wilayah \| topik]` yang dipakai LLM untuk sitasi |
 
@@ -442,7 +442,6 @@ Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober
 - Sinkronisasi harian belum bisa membaca JDIH Banten (pencarian situsnya error), JDIH Jawa Timur, dan DPR (keduanya memblokir bot). Ketiganya dicek manual; status blokirnya tampil di ringkasan job setiap hari.
 - Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup 18 wilayah di Pulau Jawa. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
-- Sebagian entri korpus diverifikasi dari sumber sekunder (`checked_secondary`) atau satu sumber saja (`accepted_single_source`).
 - Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
 - Redaksi data pribadi berbasis regex dan bisa melewatkan format yang tidak umum. Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
