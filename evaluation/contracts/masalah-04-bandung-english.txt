@@ -1,0 +1,55 @@
+FIXED-TERM EMPLOYMENT AGREEMENT
+No. FTEA/2026/1104
+
+This Agreement is made in Bandung on 4 November 2026 between:
+
+PT Techtonic Labs Indonesia, a software development company, with its office at Jl. Ir. H. Juanda No. 120, Kota Bandung, West Java, represented by its HR Director (the "Company"); and
+
+Full Name     : Andi Wijaya
+NIK           : 3273019999970014
+Gender        : Male
+Date of Birth : Bandung, 9 September 1997
+Age           : 29
+Address       : Jl. Dago Asri II No. 6, Kota Bandung
+Phone         : +62 812 3456 7814
+Email         : andi.wijaya@example.com
+(the "Employee").
+
+1. Position
+The Employee is employed as a QA Engineer for the launch of the Company's new mobile banking product, which is a new product still in its trial phase. The position is not permanent in nature.
+
+2. Term
+2.1 This Agreement is valid for twelve (12) months, from 16 November 2026 to 15 November 2027.
+2.2 The Employee shall serve a probationary period of three (3) months, during which either party may terminate this Agreement without notice.
+2.3 Any extension must be agreed in writing, and the total term including extensions shall not exceed five (5) years.
+
+3. Place of Work and Working Hours
+The Employee works at the Company's office in Kota Bandung, 8 hours per day and 40 hours per week, Monday to Friday. Overtime requires the Employee's consent, is limited to 4 hours per day and 18 hours per week, and is paid in accordance with the applicable regulations.
+
+4. Salary
+4.1 The Employee receives a salary of IDR 4,200,000 (four million two hundred thousand rupiah) gross per month, inclusive of all allowances.
+4.2 The Employee is entitled to the religious holiday allowance (THR) in accordance with the applicable regulations.
+
+5. Social Security
+The Employee is registered in BPJS Ketenagakerjaan and BPJS Kesehatan, with contributions shared according to the applicable regulations.
+
+6. Leave
+Annual leave of 12 working days after 12 consecutive months of service.
+
+7. Compensation Money
+Upon expiry of this Agreement, the Company pays compensation money (uang kompensasi) in accordance with Government Regulation No. 35 of 2021.
+
+8. Early Termination
+A party terminating this Agreement before its expiry shall pay the other party damages equal to the Employee's salary until the end of the term.
+
+9. Documents
+The Company does not hold any original diplomas or personal documents of the Employee.
+
+10. Language
+This Agreement is executed in the English language only. No Indonesian-language version shall be made, and the English text shall be the sole governing text.
+
+Bandung, 4 November 2026
+
+Company                             Employee
+
+HR Director                         Andi Wijaya

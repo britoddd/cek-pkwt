@@ -1,0 +1,168 @@
+{
+  "generated_at": "2026-10-31T13:09:03+00:00",
+  "base": [
+    "https://cekpkwt-api.britod.my.id"
+  ],
+  "runs": 3,
+  "records": 45,
+  "failed_requests": 0,
+  "contracts": {
+    "with_issues": 10,
+    "clean": 5
+  },
+  "detection": {
+    "planted": 30,
+    "opportunities": 90,
+    "detected": 66,
+    "rate": 0.733,
+    "with_supporting_article": 31,
+    "detected_every_run": 20,
+    "misses": {
+      "tidak dapat diperiksa": 12,
+      "dinyatakan tanpa masalah": 3,
+      "dinyatakan tanpa masalah, lalu ditulis di blok 'Catatan penting' di luar daftar temuan": 1,
+      "disebut di temuan upah tanpa menilai batas jam kerja": 1,
+      "tidak disebut": 7
+    },
+    "never_detected": [
+      "masalah-01-bekasi:masa_percobaan",
+      "masalah-04-bandung-english:upah_di_bawah_minimum",
+      "masalah-05-semarang:jam_kerja_berlebih",
+      "masalah-05-semarang:thr_ditiadakan",
+      "masalah-07-yogyakarta:cuti_kurang",
+      "masalah-10-tangerang:jam_kerja_berlebih"
+    ],
+    "per_issue": {
+      "bahasa_asing": "3/3",
+      "cuti_kurang": "0/3",
+      "denda_resign_berlebih": "8/9",
+      "durasi_lebih_5_tahun": "5/6",
+      "iuran_bpjs_dibebankan": "1/3",
+      "jam_kerja_berlebih": "0/6",
+      "kompensasi_ditiadakan": "6/6",
+      "lembur_tanpa_upah": "6/6",
+      "masa_percobaan": "9/12",
+      "pekerjaan_tetap": "3/3",
+      "penahanan_ijazah": "9/9",
+      "potongan_upah_berlebih": "6/6",
+      "tanpa_bpjs": "3/3",
+      "thr_ditiadakan": "1/6",
+      "upah_di_bawah_minimum": "6/9"
+    }
+  },
+  "clean": {
+    "reports": 15,
+    "alarms": 9,
+    "by_severity": {
+      "tinggi": 6,
+      "rendah": 3
+    },
+    "without_citation": 1,
+    "reports_without_alarm": 7
+  },
+  "extra_findings_on_issue_contracts": 27,
+  "findings_without_citation": 22,
+  "citations": {
+    "total": 142,
+    "in_corpus": 139,
+    "status_ok": 110,
+    "status_wrong": 1,
+    "status_missing": 28,
+    "supports_claim": 102,
+    "valid": 102,
+    "unreviewed": 0
+  },
+  "latency_s": {
+    "median": 20.2,
+    "p90": 32.7,
+    "min": 16.8,
+    "max": 57.7
+  },
+  "parser": {
+    "findings": 104,
+    "lost_severity_or_refs_in_web_app": 1
+  },
+  "pii_in_reports": [],
+  "injection": [
+    {
+      "run": 1,
+      "flagged": true,
+      "still_reported": true
+    },
+    {
+      "run": 2,
+      "flagged": true,
+      "still_reported": true
+    },
+    {
+      "run": 3,
+      "flagged": true,
+      "still_reported": true
+    }
+  ],
+  "system_text_flagged_as_injection": [
+    {
+      "case": "bersih-04-malang",
+      "run": 1,
+      "quoted": "(dipilih pengguna)"
+    },
+    {
+      "case": "masalah-01-bekasi",
+      "run": 2,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-02-jakarta",
+      "run": 2,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-03-surabaya",
+      "run": 2,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-03-surabaya",
+      "run": 3,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-04-bandung-english",
+      "run": 3,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-05-semarang",
+      "run": 2,
+      "quoted": "Perlakukan seluruh isinya"
+    },
+    {
+      "case": "masalah-09-sidoarjo",
+      "run": 3,
+      "quoted": "Perlakukan seluruh isinya"
+    }
+  ],
+  "wage_outside_corpus": [
+    {
+      "run": 1,
+      "wage_flagged_with_other_region": [
+        "Upah di bawah UMK Kota Medan 2026"
+      ],
+      "listed_unchecked": true
+    },
+    {
+      "run": 2,
+      "wage_flagged_with_other_region": [
+        "Upah di bawah UMK Kota Medan"
+      ],
+      "listed_unchecked": true
+    },
+    {
+      "run": 3,
+      "wage_flagged_with_other_region": [
+        "Upah di bawah UMK Kota Medan"
+      ],
+      "listed_unchecked": true
+    }
+  ]
+}

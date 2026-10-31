@@ -400,19 +400,32 @@ Flow pemeriksaan dan tanya aturan hanya menilai dengan rezim `current`. Pasal `u
 | Validator korpus | Header sitasi, kolom wajib, `pending_review`, baris yang dihapus, ID ganda, dan `effective_from` | `python sync/corpus_sync.py validate` |
 | Type-check frontend | Seluruh kode TypeScript (bagian dari `npm run build`) | `cd frontend && npx tsc --noEmit` |
 | CI `corpus-ci` | Uji sinkronisasi dan validator di setiap pull request | GitHub Actions |
+| `evaluation/run_eval.py` | Evaluasi end-to-end: 15 kontrak fiktif dikirim ke API, lalu deteksi masalah tertanam, alarm palsu, sitasi, dan waktu proses dihitung | `python evaluation/run_eval.py run`, lalu `score` (`selftest` tanpa jaringan) |
+| `evaluation/pii_eval.py` (tanpa jaringan dan tanpa LLM) | Ketahanan redaksi data pribadi pada 82 potongan teks dan 15 kontrak utuh, serta kesamaannya dengan pratinjau di browser | `python evaluation/pii_eval.py` |
 
 Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober 2026).
 
 **Evaluasi kualitas AI**
 
-> Bagian ini diisi dari hasil pengujian nyata. Jangan isi dengan perkiraan.
+Diukur pada 31 Oktober 2026. Ada 15 kontrak PKWT fiktif: 10 kontrak masing-masing berisi 3 masalah tertanam yang diatur pasal di korpus, dan 5 kontrak bersih yang sesuai aturan. Setiap kontrak dikirim 3 kali ke API produksi, sehingga ada 45 laporan. Metode, kontrak uji, laporan mentah, dan tinjauan setiap rujukan ada di [`evaluation/`](evaluation/README.md).
 
 | Metrik | Hasil |
 |---|---|
-| Masalah yang sengaja ditanam dan berhasil terdeteksi | [X dari Y] pada [N] kontrak uji fiktif ([%]) |
-| Alarm palsu pada kontrak bersih | [Z] pada [M] kontrak |
-| Sitasi pasal yang sesuai teks resmi (verifikasi manual) | [X%] |
-| Waktu review kontrak | dari [A] menit menjadi [B] menit ([N] responden) |
+| Masalah yang sengaja ditanam dan berhasil terdeteksi | 66 dari 90 deteksi (30 masalah × 3 run) pada 10 kontrak uji fiktif (73%). Dari jumlah itu, 31 dari 90 (34%) juga merujuk pasal pendukung yang tepat |
+| Alarm palsu pada kontrak bersih | 9 temuan pada 5 kontrak (15 laporan, 7 di antaranya tanpa temuan). 7 dari 9 adalah temuan upah minimum padahal upah sudah di atas UMK |
+| Sitasi pasal yang sesuai teks resmi (verifikasi manual) | 72% (102 dari 142 rujukan): pasalnya ada di korpus terverifikasi, statusnya tidak salah, dan isinya mendukung klaim temuan. Pasal yang dirujuk ada di korpus untuk 139 dari 142 rujukan (98%) |
+| Waktu review kontrak | Belum diukur dengan responden. Waktu proses sistem: median 20 detik per kontrak (p90 33 detik) |
+| Redaksi data pribadi, format yang didukung | 32 dari 32 tersamarkan |
+| Redaksi data pribadi, format tidak umum tetapi realistis | 0 dari 30 tersamarkan |
+| Redaksi pada 15 kontrak uji utuh | 60 dari 89 nilai data pribadi tersamarkan (67%); nama di blok tanda tangan lolos di 15 dari 15 kontrak |
+| Prompt injection di dalam kontrak | Dilaporkan di "Catatan" dan tidak diikuti pada 3 dari 3 run |
+
+Yang kami pelajari dari evaluasi ini:
+
+- **Retrieval adalah titik lemah utama.** Dari 24 masalah yang terlewat, 12 masuk "Tidak dapat diperiksa" karena pasalnya tidak ikut terambil; flow hanya mengambil 4 pasal teratas untuk seluruh kontrak. Saat pasal yang tepat tidak terambil, temuan kadang merujuk pasal yang tidak relevan, misalnya masa percobaan ke PP 35/2021 Pasal 13 (isi minimum PKWT), bukan Pasal 12.
+- **Alarm palsu upah minimum.** Temuan "upah di bawah UMK" muncul di 14 dari 33 laporan yang upahnya sudah sesuai, padahal isi temuannya sendiri menyatakan upah di atas UMK. Untuk wilayah di luar data upah (Medan), sistem tetap membuat temuan upah, dan satu run memakai angka UMK Kota Malang.
+- **Teks sistem dianggap upaya injection.** Kalimat pembungkus dari PII Redactor atau baris wilayah dari backend dilaporkan sebagai teks yang "mencoba memberi instruksi kepada AI" di 8 dari 42 laporan tanpa injection.
+- **Redaksi hanya andal untuk format berlabel standar.** Nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik tetap sampai ke model. Data pribadi mentah tidak muncul di satu pun dari 45 laporan.
 
 ### Kesiapan produksi
 
@@ -442,12 +455,12 @@ Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober
 - Sinkronisasi harian belum bisa membaca JDIH Banten (pencarian situsnya error), JDIH Jawa Timur, dan DPR (keduanya memblokir bot). Ketiganya dicek manual; status blokirnya tampil di ringkasan job setiap hari.
 - Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup 18 wilayah di Pulau Jawa. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
-- Retrieval mengambil 4 pasal teratas per query, sehingga pasal relevan bisa saja terlewat pada kontrak yang panjang.
-- Redaksi data pribadi berbasis regex dan bisa melewatkan format yang tidak umum. Pertanyaan di Tanya aturan tidak melewati redaksi.
+- Retrieval mengambil 4 pasal teratas untuk seluruh kontrak, sehingga pasal yang relevan sering tidak ikut terambil. Dalam evaluasi, ini penyebab separuh masalah yang terlewat, dan saat pasal yang tepat tidak terambil, temuan cenderung merujuk pasal lain yang tidak relevan.
+- Redaksi data pribadi berbasis regex. Format berlabel standar tersamarkan seluruhnya, tetapi nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
 - Backend, Langflow, dan runner sinkronisasi korpus berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
 - Pembatasan jumlah permintaan baru diterapkan di nginx per pengunjung. Belum ada kuota per pengguna atau autentikasi pengguna.
-- Kualitas penilaian AI belum dievaluasi secara kuantitatif dan belum ada uji pengguna formal.
+- Kualitas penilaian AI baru dievaluasi pada 15 kontrak fiktif buatan tim, dan belum ada uji pengguna formal.
 
 ## 5. Responsible AI
 
@@ -486,9 +499,9 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 
 ### Risiko yang masih ada
 
-- Redaksi berbasis regex bisa melewatkan format yang tidak umum, dan pertanyaan di Tanya aturan tidak melewati redaksi.
+- Redaksi berbasis regex melewatkan format yang tidak umum. Dalam evaluasi, nama di blok tanda tangan lolos di semua kontrak uji, sehingga nama pekerja tetap terbaca oleh model. Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Langflow 1.12.4 tidak bisa mematikan log transaksinya (masukan dan keluaran setiap komponen). Dengan `LANGFLOW_MAX_TRANSACTIONS_TO_KEEP=1`, hanya entri terbaru per flow yang tersimpan, dan entri itu tertimpa pada langkah berikutnya.
-- Kualitas penilaian belum dievaluasi secara kuantitatif; lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi).
+- Evaluasi menemukan alarm palsu upah minimum (upah di atas UMK ditandai "di bawah UMK") dan rujukan pasal yang keliru saat pasal yang tepat tidak terambil; lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi).
 
 ## 6. Demo dan video
 
@@ -872,6 +885,12 @@ PYTHONIOENCODING=utf-8 GITHUB_STEP_SUMMARY=~/corpus-sync-summary.md \
 │   ├── brand-guidelines.md      # Identitas visual, suara brand, dan pesan
 │   ├── specs/corpus-sync.md     # Spesifikasi sinkronisasi korpus harian
 │   └── screenshots/             # Bukti alur: Bob, Langflow, Gmail
+├── evaluation/                  # Evaluasi kualitas AI dan redaksi data pribadi
+│   ├── contracts/               # 15 kontrak PKWT fiktif (5 bersih, 10 dengan masalah tertanam)
+│   ├── cases.json               # Kunci jawaban dan data pribadi contoh
+│   ├── run_eval.py              # run | score | selftest
+│   ├── pii_eval.py              # Uji redaksi tanpa jaringan
+│   └── results/                 # Laporan mentah, ringkasan, tinjauan rujukan
 ├── frontend/                    # React + Vite + TypeScript (di-hosting di Vercel)
 │   └── .env.example             # Template VITE_API_BASE
 ├── langflow/                    # Ekspor JSON flow (berisi prompt lengkap)
