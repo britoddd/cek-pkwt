@@ -7,7 +7,7 @@ CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja w
 | | |
 |---|---|
 | **Coba langsung** | https://cek-pkwt.briantedjo.my.id (gratis, tanpa akun) |
-| **Video pitch** | [TAUTAN VIDEO] |
+| **Video pitch** | https://youtu.be/bPG3masozO4 |
 | **Tema** | Education & Future of Work |
 | **Teknologi IBM** | IBM Bob (antarmuka percakapan, MCP client) dan IBM Langflow (seluruh logika workflow, MCP server) |
 | **Tim** | Brian Nich ([@britoddd](https://github.com/britoddd)), Joel Chriscendo ([@Joelcrl](https://github.com/Joelcrl)) |
@@ -505,7 +505,7 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 
 ## 6. Demo dan video
 
-**Video pitch:** [TAUTAN VIDEO]
+**Video demo:** [\[TAUTAN VIDEO](https://youtu.be/n3jga_MC9AM)
 
 ### Coba sendiri dalam 3 menit
 
