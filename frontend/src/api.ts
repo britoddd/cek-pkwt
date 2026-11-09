@@ -52,7 +52,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
       body: JSON.stringify(body),
     })
   } catch {
-    throw new Error('Tidak bisa terhubung ke server. Periksa koneksi internetmu lalu coba lagi.')
+    // fetch also fails when a proxy (e.g. Cloudflare's 524 timeout) answers without CORS headers,
+    // so only blame the user's connection when the browser says it is offline.
+    throw new Error(
+      navigator.onLine
+        ? 'Server tidak merespons (mungkin sedang memulai ulang). Coba lagi dalam beberapa menit.'
+        : 'Tidak bisa terhubung ke server. Periksa koneksi internetmu lalu coba lagi.',
+    )
   }
   if (!res.ok) {
     const detail = (await res.json().catch(() => null))?.detail

@@ -28,7 +28,8 @@ if LANGFLOW_URL != _url:
 LANGFLOW_API_KEY = os.environ.get("LANGFLOW_API_KEY") or ""
 if not LANGFLOW_API_KEY:
     log.warning("LANGFLOW_API_KEY is empty; Langflow will reject the requests")
-LANGFLOW_TIMEOUT = float(os.environ.get("LANGFLOW_TIMEOUT") or "180")
+# Under Cloudflare's 100 s proxy limit, so the browser gets our error instead of a bare 524 it can't read.
+LANGFLOW_TIMEOUT = float(os.environ.get("LANGFLOW_TIMEOUT") or "90")
 # Defaults are the flow IDs in langflow/*.json; set these if Langflow assigned new IDs on import.
 FLOWS = {
     "check": os.environ.get("LANGFLOW_FLOW_CHECK") or "963cb46e-429b-4129-b08b-3f5094e08165",
@@ -46,6 +47,10 @@ with open(Path(__file__).parent.parent / "data" / "labor_corpus.csv", encoding="
     ))
 
 UNAVAILABLE = "Layanan CekPKWT sedang tidak tersedia. Coba lagi beberapa saat lagi."
+DB_WAKING = ("Basis data regulasi sedang dibangunkan setelah lama tidak aktif. "
+             "Coba lagi dalam 2–5 menit.")
+TIMED_OUT = "Server terlalu lama merespons. Coba lagi beberapa saat lagi."
+LANGFLOW_DOWN = "Mesin analisis CekPKWT (Langflow) tidak dapat dihubungi. Coba lagi beberapa saat lagi."
 
 app = FastAPI(title="CekPKWT API")
 
@@ -86,13 +91,22 @@ async def run_flow(flow: str, text: str) -> str:
     try:
         async with httpx.AsyncClient(timeout=LANGFLOW_TIMEOUT) as client:
             res = await client.post(url, json=payload, headers={"x-api-key": LANGFLOW_API_KEY})
+    except httpx.TimeoutException as exc:
+        # A hibernated Astra DB can also hang here while it wakes up.
+        log.error("Langflow timed out after %ss at %s: %r", LANGFLOW_TIMEOUT, url, exc)
+        raise HTTPException(504, TIMED_OUT) from exc
     except httpx.HTTPError as exc:
         log.error("Langflow unreachable at %s: %r", url, exc)
-        raise HTTPException(502, UNAVAILABLE) from exc
+        raise HTTPException(502, LANGFLOW_DOWN) from exc
     if res.is_error:
         # Langflow's error body says why: unknown flow ID, rejected key, or a failing component.
         log.error("Langflow returned %s for %s: %s", res.status_code, url, res.text[:500])
-        raise HTTPException(502, UNAVAILABLE)
+        # The body can quote the contract, so map it to a fixed message instead of passing it on.
+        # Free-tier Astra DB hibernates after ~2 idle days and answers "invalid token" until it wakes.
+        body = res.text.lower()
+        if "astra" in body or "hibernat" in body:
+            raise HTTPException(503, DB_WAKING)
+        raise HTTPException(502, f"{UNAVAILABLE} (kode {res.status_code})")
     try:
         return res.json()["outputs"][0]["outputs"][0]["results"]["message"]["text"]
     except (KeyError, IndexError, TypeError, ValueError) as exc:

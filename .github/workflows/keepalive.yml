@@ -1,0 +1,26 @@
+# Free-tier Astra DB hibernates after ~2 idle days, and the app then fails until it wakes.
+# One dummy question a day through the real ask flow (Langflow -> Astra DB -> LLM) keeps it awake
+# and doubles as an end-to-end health check: a failed run means the app is broken for visitors too.
+name: keepalive
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # 08:00 WIB
+  workflow_dispatch:
+
+jobs:
+  ping:
+    # Langflow only listens on the home server (127.0.0.1:7860).
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Ask the ask flow a dummy question
+        run: |
+          curl -sS --fail-with-body --max-time 180 -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" \
+            -H "x-api-key: $LANGFLOW_API_KEY" -H "Content-Type: application/json" \
+            -d '{"input_value":"Berapa lama maksimal PKWT?","input_type":"chat","output_type":"chat","session_id":"keepalive"}' \
+            "$LANGFLOW_URL/api/v1/run/$FLOW"
+        env:
+          LANGFLOW_URL: ${{ secrets.LANGFLOW_URL || 'http://127.0.0.1:7860' }}
+          LANGFLOW_API_KEY: ${{ secrets.LANGFLOW_API_KEY }}
+          FLOW: ${{ secrets.LANGFLOW_FLOW_ASK || 'b3c99f8f-f3fb-4341-8ecb-02d75e5a0632' }}
