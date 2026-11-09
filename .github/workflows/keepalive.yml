@@ -15,11 +15,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Ask the ask flow a dummy question
+        # Logging the reply is safe: the input is this fixed question, never a contract.
         run: |
-          curl -sS --fail-with-body --max-time 180 -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" \
+          code=$(curl -sS --max-time 180 -o reply.json -w "%{http_code}" \
             -H "x-api-key: $LANGFLOW_API_KEY" -H "Content-Type: application/json" \
             -d '{"input_value":"Berapa lama maksimal PKWT?","input_type":"chat","output_type":"chat","session_id":"keepalive"}' \
-            "$LANGFLOW_URL/api/v1/run/$FLOW"
+            "$LANGFLOW_URL/api/v1/run/$FLOW")
+          echo "HTTP $code from flow $FLOW"
+          if [ "$code" -ge 400 ]; then head -c 2000 reply.json; echo; exit 1; fi
         env:
           LANGFLOW_URL: ${{ secrets.LANGFLOW_URL || 'http://127.0.0.1:7860' }}
           LANGFLOW_API_KEY: ${{ secrets.LANGFLOW_API_KEY }}
