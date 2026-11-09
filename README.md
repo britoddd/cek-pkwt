@@ -2,7 +2,7 @@
 
 **AI pemeriksa kontrak kerja PKWT sebelum tanda tangan.**
 
-CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja waktu tertentu (PKWT) **sebelum** menandatanganinya. Pengguna cukup menempelkan teks kontrak ke **IBM Bob**. Bob lalu memanggil flow **IBM Langflow** lewat MCP untuk menyamarkan data pribadi, mengekstrak klausul penting, mencari pasal yang relevan dari basis regulasi resmi, dan menyusun laporan potensi masalah. Laporan itu memuat pasal rujukan beserta status berlakunya, tingkat keparahan, dan pertanyaan yang bisa diajukan ke HR.
+CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja waktu tertentu (PKWT) **sebelum** menandatanganinya. Pengguna cukup menempelkan teks kontrak di **web app CekPKWT**, tanpa akun. Web app lalu menjalankan flow **IBM Langflow** untuk menyamarkan data pribadi, mengekstrak klausul penting, mencari pasal yang relevan dari basis regulasi resmi, dan menyusun laporan potensi masalah. Laporan itu memuat pasal rujukan beserta status berlakunya, tingkat keparahan, dan pertanyaan yang bisa diajukan ke HR. Flow yang sama juga diekspos sebagai MCP server, sehingga bisa dipanggil langsung dari **IBM Bob**.
 
 | | |
 |---|---|
@@ -21,7 +21,7 @@ CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja w
 | Kejelasan dan relevansi masalah | Pengangguran usia 15–24 tahun 16,89%, lebih dari tiga kali angka nasional (BPS, Agustus 2025). 884 aduan ke Lapor Menaker dalam 8 hari, terbanyak soal hubungan kerja dan upah. UU Pelindungan Ketenagakerjaan disahkan DPR 6 Oktober 2026. | [1. Masalah](#1-masalah) |
 | Inovasi, kelayakan, dan monetisasi | Korpus regulasi yang sadar status dan rezim aturan, diperbarui bot setiap hari dengan tinjauan manusia. Sudah berjalan di produksi. Gratis bagi pekerja, dibiayai lisensi institusi. | [2. Solusi dan inovasi](#2-solusi-dan-inovasi) |
 | Dampak bagi pengguna | Pada kontrak contoh, lebih dari Rp12 juta hak upah dan uang kompensasi dipertaruhkan. Tindak lanjut ke HR lewat email atau WhatsApp. | [3. Dampak bagi pengguna](#3-dampak-bagi-pengguna) |
-| Eksekusi teknis | Langflow yang sama melayani IBM Bob (MCP), web app, dan CI. Web app di produksi, 11 pull request ter-merge, CI di setiap PR, uji otomatis. | [4. Eksekusi teknis](#4-eksekusi-teknis) |
+| Eksekusi teknis | Langflow yang sama melayani IBM Bob (MCP), web app, dan CI. Web app di produksi, 14+ pull request ter-merge, CI di setiap PR, uji otomatis. | [4. Eksekusi teknis](#4-eksekusi-teknis) |
 | Responsible AI | Data pribadi disamarkan sebelum sampai ke LLM, setiap temuan menyebut pasal dan statusnya, agent secara teknis tidak bisa mengirim email, dan perubahan korpus wajib ditinjau manusia. | [5. Responsible AI](#5-responsible-ai) |
 | Presentasi | Video pitch, alur demo 3 menit, dan kontrak contoh siap pakai di web app. | [6. Demo dan video](#6-demo-dan-video) |
 
@@ -34,7 +34,6 @@ CekPKWT adalah AI agent yang membantu *fresh graduate* memeriksa kontrak kerja w
 - [4. Eksekusi teknis](#4-eksekusi-teknis)
 - [5. Responsible AI](#5-responsible-ai)
 - [6. Demo dan video](#6-demo-dan-video)
-- [Tim](#tim)
 - Panduan teknis: [Setup](#setup) · [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow) · [Menjalankan web app](#menjalankan-web-app) · [Deploy](#deploy) · [Memperbarui korpus](#memperbarui-korpus) · [Struktur repository](#struktur-repository)
 
 ## 1. Masalah
@@ -387,7 +386,7 @@ Flow pemeriksaan dan tanya aturan hanya menilai dengan rezim `current`. Pasal `u
 ### Kualitas kode dan version control
 
 - **Struktur per bagian:** `langflow/` (flow), `backend/` (FastAPI), `frontend/` (React), `sync/` (sinkronisasi korpus), `deploy/` (server), dan `data/` (korpus). Lihat [Struktur repository](#struktur-repository).
-- **Git dan pull request:** 11 pull request ter-merge, satu branch per fitur atau perbaikan. Snapshot pengumpulan awal (hanya Bob + Langflow) disimpan di branch `archive/bob-only`.
+- **Git dan pull request:** 14 pull request ter-merge, satu branch per fitur atau perbaikan. Snapshot pengumpulan awal (hanya Bob + Langflow) disimpan di branch `archive/bob-only`.
 - **CI di setiap PR:** workflow `corpus-ci` menjalankan uji sinkronisasi dan validator korpus. Check `validate` bisa diwajibkan lewat ruleset branch, dan `CODEOWNERS` meminta review kedua anggota tim untuk perubahan korpus.
 - **Rahasia tidak masuk repository:** kunci disimpan sebagai Global Variables Langflow dan di `.env` yang di-ignore; `.env.example` hanya berisi nama variabel.
 - **Spesifikasi sebelum kode:** sinkronisasi korpus dirancang dulu di [`docs/specs/corpus-sync.md`](docs/specs/corpus-sync.md), lengkap dengan catatan perbedaan antara rencana dan hasil implementasinya.
@@ -446,7 +445,9 @@ Yang kami pelajari dari evaluasi ini:
 | 29–30 Oktober | Deploy produksi | Konfigurasi Langflow publik dihapus; Langflow hanya bisa diakses lewat SSH tunnel |
 | 30 Oktober | Sinkronisasi korpus harian, PR #7 dan #8 | Status `belum_berlaku`/`tidak_berlaku` dan rezim `uu_pk_2026`; ingest mengganti entri berdasarkan `id` sehingga tidak ada entri ganda; ID node dicari di server |
 | 30 Oktober | PR #15–#17 | Sinkronisasi dipindah ke runner di server karena situs pemerintah memblokir IP runner GitHub di luar negeri |
-| 31 Oktober | Draf email tanpa Composio | Mode testing OAuth Google tidak bisa melayani semua pengguna, jadi flow kini hanya menulis teks dan pengguna membukanya di akun Gmail, aplikasi email, atau WhatsApp miliknya |
+| 30 Oktober | Persiapan penjurian, PR #18 | Langflow tidak lagi menyimpan kontrak, laporan, dan draf HR ke riwayat pesan; semua baris upah minimum dibaca sehingga wilayah pengguna tidak pernah terlewat; CSV korpus dikunci ke line ending LF agar validator lolos di Windows; README disusun ulang mengikuti kriteria penjurian |
+| 31 Oktober | Draf email tanpa Composio, PR #19 | Mode testing OAuth Google tidak bisa melayani semua pengguna, jadi flow kini hanya menulis teks dan pengguna membukanya di akun Gmail, aplikasi email, atau WhatsApp miliknya |
+| 31 Oktober | Verifikasi korpus, PR #20 | 22 baris yang sebelumnya bersumber sekunder dicocokkan dengan dokumen resmi, sehingga 63 dari 64 baris kini `checked_official` (sisanya satu `system_note`); pemeriksaan angka upah minimum bot diperbaiki untuk tabel SK bernomor; bot mengunduh PDF BPK lewat tautan unduhan, bukan halaman penampil |
 
 ### Keterbatasan
 
@@ -545,13 +546,6 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 | "Apa itu kompensasi akhir PKWT?" | `answer_labor_rule_question` |
 | "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?" | `answer_labor_rule_question` |
 | "Bantu buatkan email ke HR (hr@perusahaan.co.id) soal temuan tadi" | `draft_hr_questions` |
-
-## Tim
-
-| Nama | GitHub | Peran |
-|---|---|---|
-| Brian Nich | [@britoddd](https://github.com/britoddd) | [PERAN] |
-| Joel Chriscendo | [@Joelcrl](https://github.com/Joelcrl) | [PERAN] |
 
 ---
 
