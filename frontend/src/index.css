@@ -262,7 +262,7 @@ mark {
 .finding-head .badge { flex: none; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
 @media (max-width: 640px) { .finding-head { flex-wrap: wrap; } }
 /* Outline-less text button at the card's foot; its chevron points up while the details are shown. */
-.finding-toggle { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.finding-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .finding-toggle .icon { transition: rotate 0.15s ease; }
 .finding-toggle[aria-expanded="true"] .icon { rotate: 180deg; }
