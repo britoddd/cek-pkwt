@@ -220,22 +220,21 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
   }, [])
   return (
     <article id={`temuan-${index}`} className={`finding jump-target${open ? ' is-open' : ''}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
-      {/* Header island: the title button stretches over the whole card, so clicking anywhere on it toggles the details. */}
+      {/* Header island (always shown): number | title | badge, then the contract clause under the title.
+          The title button stretches over the whole card, so clicking anywhere on it toggles the details. */}
       <div className="card finding-card">
-        <div className="finding-head">
-          <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-            <button type="button" ref={headBtn} className="finding-head-btn" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
-              <span className="finding-num">{String(index).padStart(2, '0')}</span>
-              <span>{f.title}</span>
-            </button>
-          </h3>
-          {f.severity && <SeverityBadge level={f.severity} />}
-        </div>
+        <span className="finding-num">{String(index).padStart(2, '0')}</span>
+        <h3 id={`temuan-${index}-judul`} className="finding-title balance">
+          <button type="button" ref={headBtn} className="finding-head-btn" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
+            {f.title}
+          </button>
+        </h3>
+        {f.severity && <SeverityBadge level={f.severity} />}
+        {missingQuote
+          ? <p className="missing finding-clause">Tidak disebutkan di kontrak.</p>
+          : <blockquote className="quote finding-clause"><mark>“{f.quote}”</mark></blockquote>}
       </div>
       <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
-      {missingQuote
-        ? <p className="missing">Tidak disebutkan di kontrak.</p>
-        : <blockquote className="quote"><mark>“{f.quote}”</mark></blockquote>}
       {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
       {f.references.length > 0 && (
         <div className="finding-section">
