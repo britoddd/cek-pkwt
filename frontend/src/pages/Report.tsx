@@ -74,7 +74,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
       <Steps current={2} />
       <section className="stack-lg" aria-label="Ringkasan">
         {header}
-        <div className="card stack-lg">
+        <div className="card report-summary stack-lg">
           <p className="summary-lead">
             {lead.split(/(\d+ potensi masalah)/i).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : <CitedText key={i} text={part} />))}
           </p>
@@ -209,7 +209,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
   return (
-    <article id={`temuan-${index}`} className="card finding jump-target" aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+    <article id={`temuan-${index}`} className="card finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
       <div className="finding-head">
         <h3 id={`temuan-${index}-judul`} className="finding-title balance">
           <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}

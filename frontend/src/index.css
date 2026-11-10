@@ -234,14 +234,25 @@ mark {
 @media (min-width: 921px) { .report-aside { position: sticky; top: 112px; } }
 @media (max-width: 920px) { .toc { display: none; } }
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
-.finding { display: flex; flex-direction: column; gap: 18px; }
+/* Report surfaces lift off the cream page; findings carry their severity colour down the left edge. */
+.report-summary, .finding, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
+.report-summary { border-top: 4px solid var(--color-primary); }
+.sev-tinggi, .sev-sedang, .sev-rendah, .sev-ok { border: 1px solid color-mix(in srgb, currentColor 40%, transparent); }
+.finding { display: flex; flex-direction: column; gap: 18px; border-left: 5px solid var(--primitive-color-tinta-300); }
+.finding[data-severity="tinggi"] { border-left-color: var(--color-severity-high); }
+.finding[data-severity="sedang"] { border-left-color: var(--color-severity-medium); }
+.finding[data-severity="rendah"] { border-left-color: var(--color-severity-low); }
 .finding-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
-.finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 19px; line-height: 1.35; color: var(--color-text); }
-.finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 400; color: var(--color-text-muted); }
+.finding-head .badge { gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+.finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
+.finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
+.finding strong { color: var(--color-primary); }
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.hr-question { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--color-surface-sunken); }
+.hr-question { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--primitive-color-tinta-50); border-left: 4px solid var(--color-primary); }
 .hr-question > div { flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; }
-.check-list { list-style: none; padding: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); }
+.hr-question .kicker { letter-spacing: 0.06em; text-transform: uppercase; }
+.hr-question > div > span:last-child { font-weight: 600; color: var(--color-text); }
+.check-list { list-style: none; padding: 0; background: var(--color-surface); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); }
 .check-list li { display: flex; gap: 12px; align-items: flex-start; padding: 18px 24px; border-bottom: 1px solid var(--color-border); }
 .check-list li:last-child { border-bottom: 0; }
 .check-list .icon { margin-top: 3px; color: var(--color-severity-ok); }
@@ -260,7 +271,21 @@ mark {
 .chat-page { flex: 1 1 auto; min-height: 0; display: flex; max-width: 960px; padding-block: 24px; }
 .chat-window { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--card-radius); overflow: hidden; }
 .chat-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-behavior: smooth; padding: 24px; }
-.chat-turns { display: flex; flex-direction: column; gap: 24px; max-width: 760px; margin-inline: auto; }
+.chat-turns { display: flex; flex-direction: column; gap: 24px; width: 100%; max-width: 760px; margin-inline: auto; }
+/* Messages sit at the bottom and grow upwards, like any chat app; the auto margin collapses once they overflow. */
+.chat-window.is-started .chat-log { display: flex; flex-direction: column; }
+.chat-window.is-started .chat-turns { margin-top: auto; }
+.chat-header { flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 24px; border-bottom: 1px solid var(--color-border); background: var(--color-surface); }
+.chat-header img { flex: none; border-radius: 9px; }
+.chat-header-text { flex: 1 1 auto; min-width: 0; }
+.chat-header-title { font-weight: 700; line-height: 1.3; }
+.chat-header-status { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text-muted); }
+.status-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--color-severity-ok); }
+.status-dot.is-busy { background: var(--color-accent); animation: pulse 1s ease-in-out infinite alternate; }
+@keyframes pulse { to { opacity: 0.3; } }
+.answer-body.is-typing > :last-child::after { content: ""; display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: text-bottom; background: currentColor; animation: pulse 0.5s steps(1) infinite alternate; }
+.suggestions-scroll { display: flex; overflow-x: auto; scrollbar-width: none; }
+.suggestions-scroll .suggestion { flex: none; min-height: 36px; font-size: 13px; }
 .chat-window .answer-body:not(.unknown) { background: var(--color-background); }
 .composer { display: flex; flex-direction: column; gap: 12px; padding: 16px 24px 20px; background: var(--color-surface); view-transition-name: composer; }
 .composer > * { width: 100%; max-width: 760px; margin-inline: auto; }
@@ -331,6 +356,7 @@ mark {
   .section { padding-block: 64px; }
   .chat-page { padding-block: 12px; }
   .chat-log { padding: 16px; }
+  .chat-header { padding: 10px 16px; }
   .composer { padding: 12px 16px 16px; }
   /* Keep the chat window usable on phones: the chat footer shrinks to the disclaimer only. */
   .app-fixed .footer-base { font-size: 12px; }
@@ -347,6 +373,7 @@ mark {
 @media (prefers-reduced-motion: reduce) {
   .btn, .site-header, .site-header .container { transition: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
+  .status-dot.is-busy { animation: none; }
   html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
