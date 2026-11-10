@@ -249,29 +249,27 @@ mark {
 }
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
 /* Report surfaces lift off the cream page; findings carry their severity colour down the left edge. */
-.report-summary, .finding, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
+.report-summary, .finding-card, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
 .report-summary { border-top: 4px solid var(--color-primary); }
 .sev-tinggi, .sev-sedang, .sev-rendah, .sev-ok { border: 1px solid color-mix(in srgb, currentColor 40%, transparent); }
-.finding { display: flex; flex-direction: column; gap: 18px; border-left: 5px solid var(--primitive-color-tinta-300); }
-.finding[data-severity="tinggi"] { border-left-color: var(--color-severity-high); }
-.finding[data-severity="sedang"] { border-left-color: var(--color-severity-medium); }
-.finding[data-severity="rendah"] { border-left-color: var(--color-severity-low); }
+/* A finding is two islands: the header card (severity edge) and, when open, a details island below it. */
+.finding { display: flex; flex-direction: column; gap: 8px; }
+.finding-card { display: flex; flex-direction: column; gap: 18px; border-left: 5px solid var(--primitive-color-tinta-300); }
+.finding[data-severity="tinggi"] > .finding-card { border-left-color: var(--color-severity-high); }
+.finding[data-severity="sedang"] > .finding-card { border-left-color: var(--color-severity-medium); }
+.finding[data-severity="rendah"] > .finding-card { border-left-color: var(--color-severity-low); }
 /* Title and severity badge share one row; the title wraps beside the badge. Phones stack them. */
 .finding-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
 .finding-head .finding-title { flex: 1 1 auto; min-width: 0; }
 .finding-head .badge { flex: none; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
 @media (max-width: 640px) { .finding-head { flex-wrap: wrap; } }
-/* Outline-less text button at the card's foot; its chevron points up while the details are shown. */
+/* Outline-less text button centred under the title; its chevron points up while the details island is shown. */
 .finding-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .finding-toggle .icon { transition: rotate 0.15s ease; }
 .finding-toggle[aria-expanded="true"] .icon { rotate: 180deg; }
-/* Collapsed: a flat, compact row on the sunken surface (severity edge kept), chevron at the far right. */
-.finding.is-collapsed { flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px 12px 24px; background: var(--color-surface-sunken); box-shadow: none; }
-.finding.is-collapsed .finding-head { flex: 1 1 auto; min-width: 0; align-items: center; }
-.finding.is-collapsed .finding-title { font-size: 17px; }
-.finding.is-collapsed .finding-toggle { margin: 0; justify-content: center; min-width: 36px; }
-.finding-body { display: flex; flex-direction: column; gap: 18px; }
+.finding-body { display: flex; flex-direction: column; gap: 18px; padding: 24px 28px; background: var(--color-surface-sunken); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); }
+@media (max-width: 640px) { .finding-body { padding: 20px; } }
 .finding-body[hidden] { display: none; }
 .finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }

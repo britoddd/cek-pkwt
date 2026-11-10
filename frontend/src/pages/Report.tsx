@@ -15,7 +15,7 @@ function jumpTo(id: string) {
   const el = document.getElementById(id)
   if (!el) return
   // A jump to a collapsed finding opens it.
-  el.querySelector<HTMLButtonElement>(':scope > .finding-toggle[aria-expanded="false"]')?.click()
+  el.querySelector<HTMLButtonElement>('.finding-toggle[aria-expanded="false"]')?.click()
   const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   el.focus({ preventScroll: true })
@@ -218,12 +218,19 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
     return () => removeEventListener('beforeprint', expand)
   }, [])
   return (
-    <article id={`temuan-${index}`} className={`card finding jump-target${open ? '' : ' is-collapsed'}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
-      <div className="finding-head">
-        <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-          <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
-        </h3>
-        {f.severity && <SeverityBadge level={f.severity} />}
+    <article id={`temuan-${index}`} className="finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+      {/* Header island: title, severity, and the toggle for the details island below it. */}
+      <div className="card finding-card">
+        <div className="finding-head">
+          <h3 id={`temuan-${index}-judul`} className="finding-title balance">
+            <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
+          </h3>
+          {f.severity && <SeverityBadge level={f.severity} />}
+        </div>
+        <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
+          <Icon name="chevronDown" size={18} />{open ? 'Sembunyikan detail' : 'Tampilkan detail'}
+          <span className="sr-only">: {f.title}</span>
+        </button>
       </div>
       <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
       {missingQuote
@@ -246,11 +253,6 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         </div>
       )}
       </div>
-      <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
-        <Icon name="chevronDown" size={18} />
-        <span className={open ? undefined : 'sr-only'}>{open ? 'Sembunyikan detail' : 'Tampilkan detail'}</span>
-        <span className="sr-only">: {f.title}</span>
-      </button>
     </article>
   )
 }
