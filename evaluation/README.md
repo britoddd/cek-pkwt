@@ -112,14 +112,14 @@ Per jenis masalah: bahasa kontrak, kompensasi ditiadakan, lembur tanpa upah, pen
 
 | Uji | Hasil |
 |---|---|
-| Format yang didukung (label `Nama:`, `Alamat:`, `TTL:`, NIK, NPWP berformat, email, HP, telepon 02x, rekening dengan kata "rekening", nama di blok tanda tangan) | **38 dari 38 tersamarkan** |
+| Format yang didukung (label `Nama:`, `Alamat:`, `TTL:`, NIK, NPWP berformat, email, HP, telepon 02x, rekening dengan kata "rekening", nama di blok tanda tangan, "Nama saya …") | **41 dari 41 tersamarkan** |
 | Format tidak umum tetapi realistis | **26 dari 30 tersamarkan** |
 | Penyamaran sengaja (email `[at]`, zero-width space, angka diucapkan) | 1 dari 4 |
 | Teks bukan data pribadi tetap utuh (upah, tanggal, nomor kontrak, pasal, wilayah kerja, nama dan alamat perusahaan) | 24 dari 24 |
 | Data pribadi di 15 kontrak uji yang tersamarkan sebelum sampai ke model | **89 dari 89 (100%)** |
 | Wilayah kerja dan semua nominal rupiah tetap terbaca setelah redaksi | 15 dari 15 kontrak |
 | Data pribadi mentah yang muncul di laporan | 0 dari 45 laporan |
-| Pratinjau browser sama dengan redaksi di server | 103 dari 104 masukan |
+| Pratinjau browser sama dengan redaksi di server | 105 dari 106 masukan |
 
 Angka redaksi di atas dari `pii_eval.py` setelah perbaikan PII Redactor pada 10 November 2026. Sebelum perbaikan, 60 dari 89 nilai (67%) tersamarkan: nama di blok tanda tangan lolos di 15 dari 15 kontrak, dan di blok PIHAK PERTAMA baris `Nama : PT …` dan `Alamat : …` ikut disamarkan sehingga nama dan alamat perusahaan hilang. Baris "0 dari 45 laporan" berasal dari run 31 Oktober dengan redaktor lama.
 

@@ -67,6 +67,8 @@ _PARTY = re.compile(
 _NAME = r"[A-Z][A-Za-z'’.-]*(?:\s+[A-Z][A-Za-z'’.-]*){0,4}"
 # Same line only: "di bawah ini:" followed by a "PIHAK PERTAMA" heading must not be read as a name.
 _SIGNED = re.compile(r"(?i:(bertanda[ \t]+tangan[ \t]+di[ \t]+bawah[ \t]+ini[ \t]*[,:]?[ \t]*))(" + _NAME + r")(?=[ \t]*[,(])")
+# "Nama saya Budi Santoso" / "My name is Budi Santoso", typical in a question to the ask flow.
+_MY_NAME = re.compile(r"(?i:(\bnama[ \t]+saya[ \t]+(?:adalah[ \t]+)?|\bmy[ \t]+name[ \t]+is[ \t]+))(" + _NAME + r")")
 _HONORIFIC = re.compile(
     r"\b((?:Sdr|Sdri|Bpk|Tn|Ny|Nn|Mr|Mrs|Ms)\.?\s+|(?:Saudara|Saudari|Bapak|Ibu(?!\s+(?:Kota|Kandung)))\s+)(" + _NAME + r")"
 )
@@ -159,6 +161,8 @@ def redact(text: str) -> tuple[str, dict[str, int]]:
 
     # Names introduced in a sentence, then every repeat of a known name (signature columns included).
     for m in _SIGNED.finditer(text):
+        names.add(m.group(2).strip())
+    for m in _MY_NAME.finditer(text):
         names.add(m.group(2).strip())
     # Never spread a company or a role ("PIHAK PERTAMA", "PT ...") as if it were a person's name.
     names = {n for n in names if len(n) >= 3 and _sign_cell(n)}

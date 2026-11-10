@@ -36,6 +36,13 @@ const SIGNED = new RegExp(
     String.raw`)(?=[ \t]*[,(])`,
   'g',
 )
+// "Nama saya Budi Santoso" / "My name is Budi Santoso", typical in a question to the ask flow.
+const MY_NAME = new RegExp(
+  String.raw`(\b[Nn][Aa][Mm][Aa][ \t]+[Ss][Aa][Yy][Aa][ \t]+(?:[Aa][Dd][Aa][Ll][Aa][Hh][ \t]+)?|\b[Mm][Yy][ \t]+[Nn][Aa][Mm][Ee][ \t]+[Ii][Ss][ \t]+)(` +
+    NAME +
+    ')',
+  'g',
+)
 const HONORIFIC = new RegExp(
   String.raw`\b((?:Sdr|Sdri|Bpk|Tn|Ny|Nn|Mr|Mrs|Ms)\.?\s+|(?:Saudara|Saudari|Bapak|Ibu(?!\s+(?:Kota|Kandung)))\s+)(` + NAME + ')',
   'g',
@@ -125,6 +132,7 @@ export function redact(text: string): { text: string; count: number } {
 
   // Names introduced in a sentence, then every repeat of a known name (signature columns included).
   for (const m of out.matchAll(SIGNED)) names.add(m[2].trim())
+  for (const m of out.matchAll(MY_NAME)) names.add(m[2].trim())
   // Never spread a company or a role ("PIHAK PERTAMA", "PT ...") as if it were a person's name.
   const known = [...names].filter((n) => n.length >= 3 && signCell(n)).sort((a, b) => b.length - a.length)
   for (const name of known) {

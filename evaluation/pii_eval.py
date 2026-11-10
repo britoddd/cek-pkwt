@@ -63,6 +63,9 @@ CASES = [
     ("blok_pekerja_setelah_perusahaan", "umum",
      "PIHAK PERTAMA\nNama : PT Maju Jaya\nAlamat : Jl. Industri No. 1, Kota Bekasi\n\nPIHAK KEDUA\nNama : Budi Santoso\nAlamat : Jl. Melati No. 5",
      ["Budi Santoso", "Jl. Melati No. 5"], []),
+    ("nama_saya", "umum", "Nama saya Budi Santoso NIK 3201019999990001, apakah saya berhak kompensasi?",
+     ["Budi Santoso", "3201019999990001"], ["kompensasi"]),
+    ("my_name_is", "umum", "My name is Andi Wijaya, can my employer hold my diploma?", ["Andi Wijaya"], ["diploma"]),
     ("ttd_english", "umum", "Company                             Employee\n\nHR Director                         Andi Wijaya",
      ["Andi Wijaya"], ["HR Director"]),
 

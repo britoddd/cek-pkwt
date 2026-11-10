@@ -317,13 +317,13 @@ Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal pe
 ![Flow answer_labor_rule_question di Langflow](docs/screenshots/answer-labor-rule-question-flow.png)
 
 ```
-Chat Input ─┬─► Regulation Search ─┬─► pasal berlaku (top-4) ─► Parser <kutipan> ─┐
-            │                     └─► aturan baru (top-2)    ─► Parser <kutipan> ─┤
-            └─────────────────────────────────────────────────────────────────────┴─► Prompt Template ─► Agent ─► Chat Output
+Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal berlaku (top-4) ─► Parser <kutipan> ─┐
+                           │                     └─► aturan baru (top-2)    ─► Parser <kutipan> ─┤
+                           └─────────────────────────────────────────────────────────────────────┴─► Prompt Template ─► Agent ─► Chat Output
 ```
 
-- **Input:** pertanyaan pengguna.
-- **Aturan jawaban:** hanya dari kutipan yang ditemukan. Sitasi disalin persis dari header kutipan dengan format `(Regulasi, Pasal, status)`. Jika jawabannya tidak ada, sistem menjawab "Saya tidak menemukan jawabannya di sumber regulasi yang saya miliki." Jika pertanyaan mengandung klaim yang bertentangan dengan kutipan, kalimat pertama jawaban langsung membantahnya.
+- **Input:** pertanyaan pengguna. PII Redactor yang sama dengan flow pemeriksaan (tanpa penanda kontrak) menyamarkan data pribadi di pertanyaan, misalnya "Nama saya …" atau NIK, sebelum pertanyaan dipakai untuk pencarian atau dikirim ke LLM.
+- **Aturan jawaban:** hanya dari kutipan yang ditemukan. Sitasi disalin persis dari header kutipan dengan format `(Regulasi, Pasal, status)`. Jika jawabannya tidak ada, sistem menjawab "Saya tidak menemukan jawabannya di sumber regulasi yang saya miliki." Jika pertanyaan mengandung klaim yang bertentangan dengan kutipan, kalimat pertama jawaban langsung membantahnya. Untuk pertanyaan ya/tidak, kata pertama menjawab pertanyaan itu ("Tidak, …" jika kutipan melarangnya). Pertanyaan berbahasa Inggris dijawab dalam bahasa Inggris; hanya baris penutup "Rezim aturan" yang tetap berbahasa Indonesia.
 - **Output:** jawaban beserta sitasi pasal.
 
 #### 3. `draft_hr_questions`
@@ -403,7 +403,7 @@ Flow pemeriksaan dan tanya aturan hanya menilai dengan rezim `current`. Pasal `u
 | Type-check frontend | Seluruh kode TypeScript (bagian dari `npm run build`) | `cd frontend && npx tsc --noEmit` |
 | CI `corpus-ci` | Uji sinkronisasi dan validator di setiap pull request | GitHub Actions |
 | `evaluation/run_eval.py` | Evaluasi end-to-end: 15 kontrak fiktif dikirim ke API, lalu deteksi masalah tertanam, alarm palsu, sitasi, dan waktu proses dihitung | `python evaluation/run_eval.py run`, lalu `score` (`selftest` tanpa jaringan) |
-| `evaluation/pii_eval.py` (tanpa jaringan dan tanpa LLM) | Ketahanan redaksi data pribadi pada 89 potongan teks dan 15 kontrak utuh, serta kesamaannya dengan pratinjau di browser | `python evaluation/pii_eval.py` |
+| `evaluation/pii_eval.py` (tanpa jaringan dan tanpa LLM) | Ketahanan redaksi data pribadi pada 91 potongan teks dan 15 kontrak utuh, serta kesamaannya dengan pratinjau di browser | `python evaluation/pii_eval.py` |
 
 Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober 2026).
 
@@ -417,7 +417,7 @@ Diukur pada 10 November 2026, setelah perbaikan retrieval (angka 31 Oktober di d
 | Alarm palsu pada kontrak bersih | 6 temuan pada 5 kontrak (15 laporan, 9 di antaranya tanpa temuan; sebelumnya 9 temuan). 5 dari 6 adalah temuan upah minimum padahal upah sudah di atas UMK |
 | Sitasi pasal | Pasal yang dirujuk ada di korpus untuk 188 dari 191 rujukan (98%), tanpa status yang salah; hanya 2 dari 100 temuan tanpa rujukan pasal (sebelumnya 22 dari 104). Verifikasi manual run 31 Oktober: 72% (102 dari 142) rujukan sesuai teks resmi dan mendukung klaim temuan |
 | Waktu review kontrak | Belum diukur dengan responden. Waktu proses sistem: median 9,7 detik per kontrak, p90 11,5 detik (sebelumnya 20 dan 33 detik) |
-| Redaksi data pribadi, format yang didukung | 38 dari 38 tersamarkan |
+| Redaksi data pribadi, format yang didukung | 41 dari 41 tersamarkan |
 | Redaksi data pribadi, format tidak umum tetapi realistis | 26 dari 30 tersamarkan |
 | Redaksi pada 15 kontrak uji utuh | 89 dari 89 nilai data pribadi tersamarkan, termasuk nama di blok tanda tangan; nama dan alamat perusahaan tetap utuh (setelah perbaikan 10 November 2026; sebelumnya 60 dari 89) |
 | Prompt injection di dalam kontrak | Dilaporkan di "Catatan" dan tidak diikuti pada 3 dari 3 run |
@@ -461,7 +461,7 @@ Yang kami pelajari dari evaluasi ini:
 - Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup 18 wilayah di Pulau Jawa. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
 - Pasal dicari dengan 14 kueri topik tetap. Klausul di luar topik itu (misalnya cuti melahirkan atau keterlambatan upah) hanya terbaca jika pasalnya ikut terambil oleh topik lain. Model masih kadang menyatakan klausul sesuai padahal pasal di input menyatakan sebaliknya (misalnya jam kerja dan cuti).
-- Redaksi data pribadi berbasis regex. Semua data pribadi di 15 kontrak uji tersamarkan, tetapi format di luar pola (label dalam tabel, `Pekerja :`, nama tanpa label di luar blok tanda tangan, nomor paspor) masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan tidak melewati redaksi.
+- Redaksi data pribadi berbasis regex. Semua data pribadi di 15 kontrak uji tersamarkan, tetapi format di luar pola (label dalam tabel, `Pekerja :`, nama tanpa label di luar blok tanda tangan, nomor paspor) masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan melewati redaksi yang sama, tetapi nama tanpa label (selain "Nama saya …" atau "My name is …") tetap sampai ke model.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
 - Backend, Langflow, dan runner sinkronisasi korpus berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
 - Pembatasan jumlah permintaan baru diterapkan di nginx per pengunjung. Belum ada kuota per pengguna atau autentikasi pengguna.
@@ -504,7 +504,7 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 
 ### Risiko yang masih ada
 
-- Redaksi berbasis regex melewatkan format yang tidak umum, misalnya label dalam tabel atau nama tanpa label di luar blok tanda tangan. Pertanyaan di Tanya aturan tidak melewati redaksi.
+- Redaksi berbasis regex melewatkan format yang tidak umum, misalnya label dalam tabel atau nama tanpa label di luar blok tanda tangan, termasuk di pertanyaan Tanya aturan.
 - Langflow 1.12.4 tidak bisa mematikan log transaksinya (masukan dan keluaran setiap komponen). Dengan `LANGFLOW_MAX_TRANSACTIONS_TO_KEEP=1`, hanya entri terbaru per flow yang tersimpan, dan entri itu tertimpa pada langkah berikutnya.
 - Evaluasi menemukan alarm palsu upah minimum (upah di atas UMK ditandai "di bawah UMK") dan rujukan pasal yang keliru saat pasal yang tepat tidak terambil; lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi).
 

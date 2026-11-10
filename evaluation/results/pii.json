@@ -2,8 +2,8 @@
   "summary": {
     "groups": {
       "umum": {
-        "cases": 36,
-        "values": 38,
+        "cases": 38,
+        "values": 41,
         "failed": 0,
         "failed_ids": []
       },
@@ -44,7 +44,7 @@
       "all_amounts_kept": 15
     },
     "frontend_parity": {
-      "compared": 104,
+      "compared": 106,
       "mismatches": [
         "nik_fullwidth"
       ]
@@ -328,6 +328,22 @@
       "group": "umum",
       "input": "PIHAK PERTAMA\nNama : PT Maju Jaya\nAlamat : Jl. Industri No. 1, Kota Bekasi\n\nPIHAK KEDUA\nNama : Budi Santoso\nAlamat : Jl. Melati No. 5",
       "output": "PIHAK PERTAMA\nNama : PT Maju Jaya\nAlamat : Jl. Industri No. 1, Kota Bekasi\n\nPIHAK KEDUA\nNama : [NAMA]\nAlamat : [ALAMAT]",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "nama_saya",
+      "group": "umum",
+      "input": "Nama saya Budi Santoso NIK 3201019999990001, apakah saya berhak kompensasi?",
+      "output": "Nama saya [NAMA] [NIK], apakah saya berhak kompensasi?",
+      "leaked": [],
+      "lost": []
+    },
+    {
+      "id": "my_name_is",
+      "group": "umum",
+      "input": "My name is Andi Wijaya, can my employer hold my diploma?",
+      "output": "My name is [NAMA], can my employer hold my diploma?",
       "leaked": [],
       "lost": []
     },

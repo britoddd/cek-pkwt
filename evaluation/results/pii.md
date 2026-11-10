@@ -4,7 +4,7 @@ Dijalankan dengan `python evaluation/pii_eval.py` pada kode `redact()` di `langf
 
 | Kelompok | Kasus | Nilai diuji | Berhasil |
 |---|---|---|---|
-| Format yang didukung | 36 | 38 | 38 tersamarkan (100%) |
+| Format yang didukung | 38 | 41 | 41 tersamarkan (100%) |
 | Format tidak umum tetapi realistis | 30 | 30 | 26 tersamarkan (87%) |
 | Penyamaran sengaja | 4 | 4 | 1 tersamarkan (25%) |
 | Bukan data pribadi (harus tetap utuh) | 19 | 24 | 24 tetap utuh (100%) |
@@ -14,7 +14,7 @@ Dijalankan dengan `python evaluation/pii_eval.py` pada kode `redact()` di `langf
 | Kontrak | Nilai yang lolos ke model |
 |---|---|
 
-**Paritas dengan pratinjau browser (`frontend/src/redact.ts`):** 103 dari 104 masukan menghasilkan teks yang sama; berbeda: nik_fullwidth.
+**Paritas dengan pratinjau browser (`frontend/src/redact.ts`):** 105 dari 106 masukan menghasilkan teks yang sama; berbeda: nik_fullwidth.
 
 ## Kasus yang gagal
 
