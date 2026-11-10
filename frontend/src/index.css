@@ -211,7 +211,8 @@ mark {
 /* Report */
 .summary-lead { font-size: 20px; line-height: 1.5; font-weight: 600; }
 .summary-regime { font-size: 14px; color: var(--color-text-muted); }
-.summary-actions { display: flex; flex-direction: column; gap: 10px; }
+.summary-actions { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.summary-actions .hint { margin-top: 4px; }
 .summary-notes { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 .legend summary { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-link); font-size: 15px; font-weight: 600; cursor: pointer; }
 .legend dl { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); gap: 8px 20px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--color-surface-sunken); font-size: 14px; }

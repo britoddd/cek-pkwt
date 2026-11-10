@@ -92,20 +92,6 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             </ul>
           )}
 
-          <div className="summary-actions no-print">
-            <div className="row">
-              {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
-              {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
-              <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
-            </div>
-            <p className="hint">
-              Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
-              <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
-                Hapus sekarang
-              </button>
-            </p>
-          </div>
-
           <div className="summary-notes">
             <details className="legend no-print">
               <summary>Apa arti keparahan, keyakinan, dan status pasal?</summary>
@@ -179,6 +165,17 @@ export default function Report({ result, onClear }: { result: CheckResult | null
         </div>
 
         <aside className="aside report-aside no-print" aria-label="Navigasi laporan">
+          <section className="card summary-actions" aria-label="Tindakan">
+            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
+            {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
+            <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
+            <p className="hint">
+              Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
+              <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
+                Hapus sekarang
+              </button>
+            </p>
+          </section>
           <nav className="card stack-sm toc" aria-labelledby="isi-title">
             <h2 id="isi-title" className="card-title" style={{ fontSize: 15 }}>Isi laporan</h2>
             <ul>
