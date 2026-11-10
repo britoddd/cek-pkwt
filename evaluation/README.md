@@ -14,6 +14,7 @@ Evaluasi kualitas pemeriksaan kontrak (`check_work_contract`) dan ketahanan reda
 | `results/summary.md`, `summary.json` | Metrik end-to-end beserta tabel per kontrak, per run, dan per temuan |
 | `results/citations.csv` | Setiap rujukan unik, hasil pencocokan otomatis ke korpus, dan kolom tinjauan manual |
 | `results/pii.md`, `pii.json` | Hasil uji redaksi |
+| `results/2026-11-10/` | Run 10 November 2026 setelah perbaikan retrieval (berkas yang sama dengan `results/`, tanpa tinjauan manual rujukan) |
 
 ## Cara menjalankan
 
@@ -45,7 +46,36 @@ Satu masalah dihitung terdeteksi jika ada temuan di bagian "Potensi masalah" yan
 3. pratinjau di browser (`frontend/src/redact.ts`) dengan masukan yang sama, untuk memastikan yang dilihat pengguna sama dengan yang diterima model;
 4. pemindaian semua laporan di `raw.jsonl` untuk data pribadi mentah.
 
-## Hasil
+## Hasil terbaru: 10 November 2026
+
+Dijalankan setelah tiga perubahan pada flow `check_work_contract`: komponen Regulation Search (satu proses untuk semua pencarian Astra DB), pencarian pasal per topik (14 kueri tetap, masing-masing top-2) menggantikan satu kueri berisi seluruh kontrak, dan PII Redactor yang hanya membungkus kontrak dengan penanda `<<<KONTRAK>>>`. Prompt sistem mendapat satu aturan tambahan: baris "Lokasi kerja (dipilih pengguna)" adalah teks sistem. Metode sama dengan run 31 Oktober: 45 permintaan ke API produksi (15 kontrak × 3 run), tidak ada yang gagal. Hasil lengkap di `results/2026-11-10/`.
+
+| Metrik | 31 Oktober | 10 November |
+|---|---|---|
+| Masalah tertanam terdeteksi | 66 dari 90 (73%) | **71 dari 90 (79%)** |
+| ...dan temuannya merujuk pasal pendukung yang tepat | 31 dari 90 (34%) | **69 dari 90 (77%)** |
+| Masalah yang terdeteksi di ketiga run | 20 dari 30 | 20 dari 30 |
+| Alarm palsu pada 5 kontrak bersih | 9 temuan di 15 laporan | **6 temuan di 15 laporan** (5 di antaranya alarm upah) |
+| Temuan tanpa rujukan pasal sama sekali | 22 dari 104 | **2 dari 100** |
+| Rujukan yang pasalnya ada di korpus | 139 dari 142 (98%) | 188 dari 191 (98%) |
+| Status pasal yang salah pada rujukan | 1 | 0 |
+| Teks sistem dilaporkan sebagai upaya injection | 8 dari 42 laporan | **3 dari 42** (semuanya baris "Lokasi kerja (dipilih pengguna)") |
+| Prompt injection di kontrak dilaporkan dan tidak diikuti | 3 dari 3 run | 3 dari 3 run |
+| Data pribadi mentah di laporan | 0 dari 45 | 0 dari 45 |
+| Waktu pemeriksaan per kontrak | median 20 detik, p90 33 detik | **median 9,7 detik, p90 11,5 detik** |
+
+Rujukan pada run 10 November belum ditinjau manual (61 dari 188 rujukan di korpus belum dinilai), jadi angka "rujukan valid" tidak dibandingkan.
+
+Per jenis masalah, yang membaik: masa percobaan (12 dari 12, sebelumnya 9 dari 12), THR ditiadakan (4 dari 6, sebelumnya 1 dari 6), denda pengunduran diri (9 dari 9), jam kerja (1 dari 6, sebelumnya 0), dan cuti (1 dari 3, sebelumnya 0). Yang memburuk: jangka waktu lebih dari 5 tahun (2 dari 6, sebelumnya 5 dari 6) dan iuran BPJS dibebankan ke pekerja (0 dari 3).
+
+**Yang berubah:**
+
+1. **Retrieval tidak lagi menjadi penyebab utama.** Satu kueri berisi seluruh kontrak mengembalikan pasal umum yang hampir sama untuk setiap kontrak (PP 35/2021 Pasal 13, 9, 10, 8, dan UU 13/2003 Pasal 57). Dengan kueri per topik, pasal pendukung untuk 14 dari 15 jenis masalah ikut terambil; upah minimum datang dari pencarian upah. "Tidak dapat diperiksa" karena pasal tidak terambil turun dari 12 menjadi 2.
+2. **Sisa kesalahan kini kesalahan penalaran.** Dari 19 masalah yang terlewat, 12 dinyatakan sesuai ("Klausul tanpa masalah") padahal pasalnya ada di input, misalnya "8 jam per hari, 6 hari kerja" atau "cuti 6 hari" dinyatakan sesuai sambil merujuk PP 35/2021 Pasal 21 dan UU 13/2003 Pasal 79.
+3. **Aturan prompt tambahan tidak membantu.** Versi prompt dengan daftar ekstraksi yang lebih lengkap dan aturan khusus untuk jam kerja, cuti, THR, serta perbandingan upah dengan kalkulator diuji dengan 3 run yang sama: 67 dari 90 terdeteksi, 66 dengan pasal tepat, 8 alarm palsu, median 11,2 detik. Versi itu tidak dipakai.
+4. **Alarm palsu upah masih ada.** 5 dari 6 alarm palsu di kontrak bersih adalah "Upah di bawah UMK" padahal upah sudah di atas UMK, dan kontrak Medan masih mendapat temuan upah walaupun wilayahnya di luar data.
+
+## Hasil awal: 31 Oktober 2026
 
 Dijalankan pada 31 Oktober 2026 terhadap `https://cekpkwt-api.britod.my.id`: 45 permintaan (15 kontrak × 3 run), tidak ada yang gagal. Tabel lengkap per kontrak, per run, dan per temuan ada di `results/summary.md` dan `results/pii.md`.
 

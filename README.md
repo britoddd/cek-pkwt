@@ -409,14 +409,14 @@ Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober
 
 **Evaluasi kualitas AI**
 
-Diukur pada 31 Oktober 2026. Ada 15 kontrak PKWT fiktif: 10 kontrak masing-masing berisi 3 masalah tertanam yang diatur pasal di korpus, dan 5 kontrak bersih yang sesuai aturan. Setiap kontrak dikirim 3 kali ke API produksi, sehingga ada 45 laporan. Metode, kontrak uji, laporan mentah, dan tinjauan setiap rujukan ada di [`evaluation/`](evaluation/README.md).
+Diukur pada 10 November 2026, setelah perbaikan retrieval (angka 31 Oktober di dalam kurung). Ada 15 kontrak PKWT fiktif: 10 kontrak masing-masing berisi 3 masalah tertanam yang diatur pasal di korpus, dan 5 kontrak bersih yang sesuai aturan. Setiap kontrak dikirim 3 kali ke API produksi, sehingga ada 45 laporan. Metode, kontrak uji, laporan mentah, dan tinjauan setiap rujukan ada di [`evaluation/`](evaluation/README.md).
 
 | Metrik | Hasil |
 |---|---|
-| Masalah yang sengaja ditanam dan berhasil terdeteksi | 66 dari 90 deteksi (30 masalah × 3 run) pada 10 kontrak uji fiktif (73%). Dari jumlah itu, 31 dari 90 (34%) juga merujuk pasal pendukung yang tepat |
-| Alarm palsu pada kontrak bersih | 9 temuan pada 5 kontrak (15 laporan, 7 di antaranya tanpa temuan). 7 dari 9 adalah temuan upah minimum padahal upah sudah di atas UMK |
-| Sitasi pasal yang sesuai teks resmi (verifikasi manual) | 72% (102 dari 142 rujukan): pasalnya ada di korpus terverifikasi, statusnya tidak salah, dan isinya mendukung klaim temuan. Pasal yang dirujuk ada di korpus untuk 139 dari 142 rujukan (98%) |
-| Waktu review kontrak | Belum diukur dengan responden. Waktu proses sistem: median 20 detik per kontrak (p90 33 detik) |
+| Masalah yang sengaja ditanam dan berhasil terdeteksi | 71 dari 90 deteksi (30 masalah × 3 run) pada 10 kontrak uji fiktif (79%; sebelumnya 66, 73%). Dari jumlah itu, 69 dari 90 (77%; sebelumnya 31, 34%) juga merujuk pasal pendukung yang tepat |
+| Alarm palsu pada kontrak bersih | 6 temuan pada 5 kontrak (15 laporan, 9 di antaranya tanpa temuan; sebelumnya 9 temuan). 5 dari 6 adalah temuan upah minimum padahal upah sudah di atas UMK |
+| Sitasi pasal | Pasal yang dirujuk ada di korpus untuk 188 dari 191 rujukan (98%), tanpa status yang salah; hanya 2 dari 100 temuan tanpa rujukan pasal (sebelumnya 22 dari 104). Verifikasi manual run 31 Oktober: 72% (102 dari 142) rujukan sesuai teks resmi dan mendukung klaim temuan |
+| Waktu review kontrak | Belum diukur dengan responden. Waktu proses sistem: median 9,7 detik per kontrak, p90 11,5 detik (sebelumnya 20 dan 33 detik) |
 | Redaksi data pribadi, format yang didukung | 38 dari 38 tersamarkan |
 | Redaksi data pribadi, format tidak umum tetapi realistis | 26 dari 30 tersamarkan |
 | Redaksi pada 15 kontrak uji utuh | 89 dari 89 nilai data pribadi tersamarkan, termasuk nama di blok tanda tangan; nama dan alamat perusahaan tetap utuh (setelah perbaikan 10 November 2026; sebelumnya 60 dari 89) |
@@ -424,9 +424,10 @@ Diukur pada 31 Oktober 2026. Ada 15 kontrak PKWT fiktif: 10 kontrak masing-masin
 
 Yang kami pelajari dari evaluasi ini:
 
-- **Retrieval adalah titik lemah utama.** Dari 24 masalah yang terlewat, 12 masuk "Tidak dapat diperiksa" karena pasalnya tidak ikut terambil; flow hanya mengambil 4 pasal teratas untuk seluruh kontrak. Saat pasal yang tepat tidak terambil, temuan kadang merujuk pasal yang tidak relevan, misalnya masa percobaan ke PP 35/2021 Pasal 13 (isi minimum PKWT), bukan Pasal 12.
+- **Retrieval dulu titik lemah utama, dan sudah diperbaiki.** Pada 31 Oktober, 12 dari 24 masalah yang terlewat masuk "Tidak dapat diperiksa" karena satu kueri berisi seluruh kontrak hanya mengambil pasal umum yang sama untuk setiap kontrak. Dengan pencarian per topik (10 November), angka itu turun menjadi 2 dari 19, dan rujukan ke pasal yang tepat naik dari 34% menjadi 77%.
+- **Sisa kesalahan adalah penalaran model.** 12 dari 19 masalah yang terlewat dinyatakan sesuai padahal pasalnya ada di input, misalnya 48 jam kerja seminggu atau cuti 6 hari. Aturan prompt tambahan untuk kasus ini diuji dengan 3 run dan tidak membantu (67 dari 90 terdeteksi), jadi tidak dipakai.
 - **Alarm palsu upah minimum.** Temuan "upah di bawah UMK" muncul di 14 dari 33 laporan yang upahnya sudah sesuai, padahal isi temuannya sendiri menyatakan upah di atas UMK. Untuk wilayah di luar data upah (Medan), sistem tetap membuat temuan upah, dan satu run memakai angka UMK Kota Malang.
-- **Teks sistem dianggap upaya injection.** Kalimat pembungkus dari PII Redactor atau baris wilayah dari backend dilaporkan sebagai teks yang "mencoba memberi instruksi kepada AI" di 8 dari 42 laporan tanpa injection.
+- **Teks sistem dianggap upaya injection.** Kalimat pembungkus dari PII Redactor atau baris wilayah dari backend dilaporkan sebagai teks yang "mencoba memberi instruksi kepada AI" di 8 dari 42 laporan tanpa injection. Setelah kalimat pembungkus dihapus (PII Redactor kini hanya memakai penanda `<<<KONTRAK>>>`), tinggal 3 dari 42, semuanya baris wilayah.
 - **Redaksi dulu hanya andal untuk format berlabel standar.** Saat evaluasi, nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik masih sampai ke model, dan nama serta alamat perusahaan di blok PIHAK PERTAMA ikut disamarkan. Semuanya sudah diperbaiki (lihat [`evaluation/`](evaluation/README.md)). Data pribadi mentah tidak muncul di satu pun dari 45 laporan.
 
 ### Kesiapan produksi
@@ -459,7 +460,7 @@ Yang kami pelajari dari evaluasi ini:
 - Sinkronisasi harian belum bisa membaca JDIH Banten (pencarian situsnya error), JDIH Jawa Timur, dan DPR (keduanya memblokir bot). Ketiganya dicek manual; status blokirnya tampil di ringkasan job setiap hari.
 - Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup 18 wilayah di Pulau Jawa. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
-- Retrieval mengambil 4 pasal teratas untuk seluruh kontrak, sehingga pasal yang relevan sering tidak ikut terambil. Dalam evaluasi, ini penyebab separuh masalah yang terlewat, dan saat pasal yang tepat tidak terambil, temuan cenderung merujuk pasal lain yang tidak relevan.
+- Pasal dicari dengan 14 kueri topik tetap. Klausul di luar topik itu (misalnya cuti melahirkan atau keterlambatan upah) hanya terbaca jika pasalnya ikut terambil oleh topik lain. Model masih kadang menyatakan klausul sesuai padahal pasal di input menyatakan sebaliknya (misalnya jam kerja dan cuti).
 - Redaksi data pribadi berbasis regex. Semua data pribadi di 15 kontrak uji tersamarkan, tetapi format di luar pola (label dalam tabel, `Pekerja :`, nama tanpa label di luar blok tanda tangan, nomor paspor) masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
 - Backend, Langflow, dan runner sinkronisasi korpus berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
