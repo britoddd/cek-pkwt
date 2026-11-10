@@ -276,12 +276,13 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         </p>
       )}
       {f.hr_question && (
-        <div className="hr-row">
-          <div className="hr-question">
-            <span className="kicker">Pertanyaan untuk HR</span>
-            <span>{f.hr_question}</span>
+        <div className="finding-section">
+          <span className="kicker">Pertanyaan untuk HR</span>
+          {/* Icon-only copy button, as tall as the question; its name comes from `name`. */}
+          <div className="hr-row">
+            <p className="hr-question">{f.hr_question}</p>
+            <span className="hr-copy no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
           </div>
-          <span className="no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
         </div>
       )}
       <button type="button" className="finding-toggle no-print" aria-expanded={true} aria-controls={`temuan-${index}-isi`} onClick={hide}>
