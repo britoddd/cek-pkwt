@@ -67,6 +67,14 @@ export default function Report({ result, onClear }: { result: CheckResult | null
   // A finding without a severity has no checkbox, so it only shows while nothing is hidden.
   const shows = (key: string | null) => hidden.length === 0 || (key !== null && !hidden.includes(key))
   const allHidden = chips.length > 0 && chips.every((c) => hidden.includes(c.key))
+  // Summary chips: with everything showing, a click shows only that category. After that they toggle,
+  // and clicking the last category still shown brings everything back. (The checkboxes simply toggle.)
+  const chipClick = (key: string) => {
+    const shown = chips.filter((c) => !hidden.includes(c.key))
+    if (hidden.length === 0) setHidden(chips.map((c) => c.key).filter((k) => k !== key))
+    else if (shown.length === 1 && shown[0].key === key) setHidden([])
+    else toggle(key)
+  }
   // Keep each finding's original number so its id, label and "Isi laporan" entry stay the same when filtered.
   const visible = findings.map((f, i) => ({ f, n: i + 1 })).filter(({ f }) => shows(f.severity))
 
@@ -84,7 +92,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             <ul className="chips" aria-label="Saring laporan">
               {chips.map((c) => (
                 <li key={c.key}>
-                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={shows(c.key)} onClick={() => toggle(c.key)}>
+                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={shows(c.key)} onClick={() => chipClick(c.key)}>
                     <Icon name={c.icon} size={16} />{c.count} {c.label}
                   </button>
                 </li>
