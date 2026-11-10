@@ -71,14 +71,13 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   return (
     <div className="container page">
       <Steps current={1} />
+      <div className="stack-sm" style={{ gap: 6 }}>
+        <h1 className="h1 balance" tabIndex={-1}>Tempel teks kontrakmu</h1>
+        <p className="muted measure">Salin seluruh isi kontrak PKWT tanpa diringkas. CekPKWT membaca setiap klausul, dari jangka waktu sampai denda.</p>
+      </div>
       <div className="two-col">
         <div className="main stack-lg" style={{ gap: 24 }}>
-          <form className="card stack-lg" onSubmit={submit} noValidate>
-            <div className="stack-sm">
-              <h1 className="h1" tabIndex={-1}>Tempel teks kontrakmu</h1>
-              <p className="muted measure">Salin seluruh isi kontrak PKWT tanpa diringkas. CekPKWT membaca setiap klausul, dari jangka waktu sampai denda.</p>
-            </div>
-
+          <form className="card card-lead stack-lg" onSubmit={submit} noValidate>
             <div className="field">
               <div className="row-between" style={{ alignItems: 'baseline', gap: '4px 16px' }}>
                 <label htmlFor="kontrak" className="label">Teks kontrak</label>
@@ -136,8 +135,8 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
         </div>
 
         <aside className="aside" aria-label="Tentang datamu">
-          <section className="card-dark" aria-labelledby="data-title">
-            <h2 id="data-title" className="card-title"><span style={{ color: 'var(--color-accent)', display: 'inline-flex' }}><Icon name="lock" /></span>Yang terjadi pada datamu</h2>
+          <section className="card-sunken stack" aria-labelledby="data-title">
+            <h2 id="data-title" className="card-title" style={{ fontSize: 17 }}><Icon name="lock" />Yang terjadi pada datamu</h2>
             <ul className="stack small" style={{ listStyle: 'none', padding: 0 }}>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Disamarkan sebelum dibaca AI</strong>NIK, NPWP, email, telepon, nomor rekening, serta baris nama, alamat, dan tempat/tanggal lahir.</li>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrakmu tidak disimpan</strong>Teks kontrak tidak masuk ke basis data kami. Laporannya disimpan sementara di browser ini selama {TTL_MINUTES} menit, lalu terhapus.</li>

@@ -48,7 +48,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
       <div className="container page">
         <Steps current={2} />
         {header}
-        <div className="card stack measure"><Paragraphs text={result.markdown} /></div>
+        <div className="card card-lead stack measure"><Paragraphs text={result.markdown} /></div>
       </div>
     )
   }
@@ -206,7 +206,8 @@ export default function Report({ result, onClear }: { result: CheckResult | null
   )
 }
 
-function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
+// Also the home page preview, so the example looks exactly like a real report.
+export function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
   return (
     <article id={`temuan-${index}`} className="card finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>

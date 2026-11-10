@@ -1,6 +1,24 @@
 import { useEffect, useState } from 'react'
-import { getRegions } from '../api'
-import { Citation, Icon, SeverityBadge, type IconName } from '../components'
+import { getRegions, type Finding } from '../api'
+import { Icon, type IconName } from '../components'
+import { FindingCard } from './Report'
+
+const EXAMPLE_CHIPS: [string, IconName, string][] = [
+  ['sev-tinggi', 'octagonAlert', '1 Tinggi'],
+  ['sev-sedang', 'triangleAlert', '1 Sedang'],
+  ['sev-ok', 'circleCheck', '6 Tanpa masalah'],
+  ['sev-unchecked', 'circleDashed', '1 Tidak dapat diperiksa'],
+]
+
+const EXAMPLE_FINDING: Finding = {
+  title: 'Masa percobaan dalam PKWT',
+  quote: 'Karyawan menjalani masa percobaan selama 3 (tiga) bulan.',
+  issue: 'PKWT tidak dapat mensyaratkan masa percobaan. Jika tetap disyaratkan, masa percobaan itu batal demi hukum dan masa kerja tetap dihitung.',
+  references: [{ label: 'PP 35/2021 · Pasal 12', status: 'berlaku' }],
+  severity: 'tinggi',
+  confidence: 'tinggi',
+  hr_question: 'Apakah masa percobaan 3 bulan di Pasal 4 bisa dihapus, karena kontrak ini PKWT?',
+}
 
 const PROBLEMS = [
   ['Aturannya tersebar', 'Di UU Ketenagakerjaan dan perubahannya, peraturan pemerintah, keputusan upah minimum daerah, sampai putusan Mahkamah Konstitusi.'],
@@ -55,42 +73,18 @@ export default function Home() {
           </ul>
         </div>
 
-        <figure className="doc" aria-label="Contoh: klausul masa percobaan pada draf kontrak ditandai sebagai potensi masalah">
-          <div className="doc-head">
-            <strong>Perjanjian Kerja Waktu Tertentu</strong>
-            <span className="mono muted small">Draf · belum ditandatangani</span>
+        {/* A miniature of the real report page, built from its own components so the two never drift apart. */}
+        <figure className="hero-report" aria-label="Contoh laporan: klausul masa percobaan ditandai sebagai potensi masalah">
+          <div className="card report-summary stack">
+            <p className="small muted">Contoh laporan pemeriksaan kontrak</p>
+            <p className="summary-lead">Ditemukan <mark>2 potensi masalah</mark> (1 tinggi, 1 sedang).</p>
+            <ul className="chips">
+              {EXAMPLE_CHIPS.map(([cls, icon, text]) => (
+                <li key={text}><span className={`badge badge-lg ${cls}`}><Icon name={icon} size={16} />{text}</span></li>
+              ))}
+            </ul>
           </div>
-          <div>
-            <p><strong>Pasal 3 · Jangka Waktu</strong></p>
-            <p>Perjanjian ini berlaku selama 12 (dua belas) bulan terhitung sejak tanggal mulai bekerja.</p>
-          </div>
-          <div>
-            <p><strong>Pasal 4 · Masa Percobaan</strong></p>
-            <p><mark>Karyawan menjalani masa percobaan selama 3 (tiga) bulan.</mark></p>
-          </div>
-          <div className="doc-note">
-            <SeverityBadge level="tinggi" />
-            <span>Mungkin bertentangan dengan aturan: PKWT tidak dapat mensyaratkan masa percobaan.</span>
-            <Citation label="PP 35/2021 · Pasal 12" status="berlaku" />
-          </div>
-          <div>
-            <p><strong>Pasal 5 · Upah</strong></p>
-            <p>Upah dibayarkan setiap tanggal 25 melalui transfer ke rekening <span className="pii">[NO_REKENING]</span> atas nama <span className="pii">[NAMA]</span>.</p>
-          </div>
-          <div className="signatures">
-            <div>
-              <span style={{ height: 40 }} />
-              <span className="sign-line" />
-              <span>Pihak Pertama</span>
-            </div>
-            <div>
-              <svg aria-hidden="true" width="40" height="40" viewBox="0 0 64 64" fill="none">
-                <path d="M17 30.5 L27.5 41 L47 19.5" stroke="var(--primitive-color-stabilo-500)" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span className="sign-line ready" />
-              <strong style={{ color: 'var(--color-primary)' }}>Pihak Kedua · tanda tangan setelah dicek</strong>
-            </div>
-          </div>
+          <FindingCard finding={EXAMPLE_FINDING} index={1} />
         </figure>
       </section>
 

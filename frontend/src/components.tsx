@@ -123,7 +123,7 @@ export function Steps({ current }: { current: 1 | 2 | 3 }) {
 export function EmptyState({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="container page">
-      <div className="card empty stack">
+      <div className="card card-lead empty stack">
         <h1 className="h1" tabIndex={-1}>{title}</h1>
         {children}
       </div>

@@ -91,7 +91,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
           </div>
 
           <div className="two-col">
-            <section className="main card stack-lg" aria-label="Email">
+            <section className="main card card-lead stack-lg" aria-label="Email">
               <div className="field">
                 <label htmlFor="hr-email" className="label">Email HR <span className="muted" style={{ fontWeight: 500 }}>(opsional)</span></label>
                 <input id="hr-email" type="email" className="input" autoComplete="off" placeholder="hr@perusahaan.co.id"
@@ -132,9 +132,9 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
                   ))}
                 </ol>
               </section>
-              <section className="card-dark small" aria-labelledby="kirim-title" style={{ gap: 10 }}>
-                <h2 id="kirim-title" className="card-title" style={{ fontSize: 17 }}><span style={{ color: 'var(--color-accent)', display: 'inline-flex' }}><Icon name="lock" /></span>Kenapa tidak terkirim otomatis?</h2>
-                <p>CekPKWT tidak pernah mengirim email. Kamu yang memutuskan isi, waktu, dan tujuannya.</p>
+              <section className="card-sunken stack-sm" aria-labelledby="kirim-title">
+                <h2 id="kirim-title" className="card-title" style={{ fontSize: 17 }}><Icon name="lock" />Kenapa tidak terkirim otomatis?</h2>
+                <p className="small muted">CekPKWT tidak pernah mengirim email. Kamu yang memutuskan isi, waktu, dan tujuannya.</p>
               </section>
             </aside>
           </div>
