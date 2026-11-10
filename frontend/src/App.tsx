@@ -74,7 +74,7 @@ export default function App() {
 
 function Header({ route, hasReport }: { route: string; hasReport: boolean }) {
   const home = route === '/'
-  // Once the page scrolls, the header lifts into a floating glass island (wide screens; see index.css).
+  // Once the page scrolls, the header lifts into a floating island (wide screens; see index.css).
   const [island, setIsland] = useState(false)
   useEffect(() => {
     const onScroll = () => setIsland(scrollY > 8)
@@ -94,8 +94,8 @@ function Header({ route, hasReport }: { route: string; hasReport: boolean }) {
         <nav className="nav" aria-label="Utama">
           {home && <><a href="#cara-kerja">Cara kerja</a><a href="#prinsip">Prinsip</a><a href="#batasan">Batasan</a></>}
           {!home && link('/cek', 'Cek kontrak')}
-          {link('/tanya', 'Tanya aturan')}
           {hasReport && link('/laporan', 'Laporan')}
+          {link('/tanya', 'Tanya aturan')}
           {home && <a href="#/cek" className="btn btn-primary btn-sm">Cek kontrak</a>}
         </nav>
       </div>

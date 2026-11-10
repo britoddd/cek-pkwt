@@ -71,17 +71,17 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   return (
     <div className="container page">
       <Steps current={1} />
+      {/* Same layout as the Laporan page: title above, raised cards below with the panel on the right. */}
+      <div className="stack-sm" style={{ gap: 6 }}>
+        <h1 className="h1 balance" tabIndex={-1}>Tempel teks kontrakmu</h1>
+        <p className="muted measure">Salin seluruh isi kontrak PKWT tanpa diringkas. CekPKWT membaca setiap klausul, dari jangka waktu sampai denda.</p>
+      </div>
       <div className="two-col">
         <div className="main stack-lg" style={{ gap: 24 }}>
-          <form className="card stack-lg" onSubmit={submit} noValidate>
-            <div className="stack-sm">
-              <h1 className="h1" tabIndex={-1}>Tempel teks kontrakmu</h1>
-              <p className="muted measure">Salin seluruh isi kontrak PKWT tanpa diringkas. CekPKWT membaca setiap klausul, dari jangka waktu sampai denda.</p>
-            </div>
-
+          <form className="card card-raised card-accent stack-lg" onSubmit={submit} noValidate aria-label="Periksa kontrak">
             <div className="field">
               <div className="row-between" style={{ alignItems: 'baseline', gap: '4px 16px' }}>
-                <label htmlFor="kontrak" className="label">Teks kontrak</label>
+                <label htmlFor="kontrak" className="label kicker-label">Teks kontrak</label>
                 <span className="hint">{contract.length.toLocaleString('id-ID')} karakter</span>
               </div>
               <textarea id="kontrak" className="textarea textarea-contract" rows={16} spellCheck={false}
@@ -94,7 +94,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
             </div>
 
             <div className="field" style={{ maxWidth: 420 }}>
-              <label htmlFor="lokasi" className="label">Lokasi kerja</label>
+              <label htmlFor="lokasi" className="label kicker-label">Lokasi kerja</label>
               <select id="lokasi" className="select" value={region} onChange={(e) => setRegion(e.target.value)} aria-describedby="lokasi-hint">
                 <option value="">Deteksi otomatis dari kontrak</option>
                 {regions.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -121,7 +121,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
             </div>
           </form>
 
-          <section className="card stack" aria-labelledby="preview-title">
+          <section className="card card-raised stack" aria-labelledby="preview-title">
             <div className="row-between" style={{ alignItems: 'center', gap: '8px 16px' }}>
               <h2 id="preview-title" className="card-title"><Icon name="eyeOff" />Yang dibaca AI</h2>
               {preview.count > 0 && (
@@ -137,15 +137,15 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
 
         <aside className="aside" aria-label="Tentang datamu">
           <section className="card-dark" aria-labelledby="data-title">
-            <h2 id="data-title" className="card-title"><span style={{ color: 'var(--color-accent)', display: 'inline-flex' }}><Icon name="lock" /></span>Yang terjadi pada datamu</h2>
+            <h2 id="data-title" className="card-title panel-title"><span style={{ color: 'var(--color-accent)', display: 'inline-flex' }}><Icon name="lock" /></span>Yang terjadi pada datamu</h2>
             <ul className="stack small" style={{ listStyle: 'none', padding: 0 }}>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Disamarkan sebelum dibaca AI</strong>NIK, NPWP, email, telepon, nomor rekening, serta baris nama, alamat, dan tempat/tanggal lahir.</li>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrakmu tidak disimpan</strong>Teks kontrak tidak masuk ke basis data kami. Laporannya disimpan sementara di browser ini selama {TTL_MINUTES} menit, lalu terhapus.</li>
               <li className="stack-sm" style={{ gap: 2 }}><strong>Kontrak dibaca sebagai data</strong>Kalimat di dalam kontrak yang mencoba memberi perintah ke AI tidak dijalankan dan dilaporkan di bagian Catatan.</li>
             </ul>
           </section>
-          <section className="card stack" aria-labelledby="cakupan-title">
-            <h2 id="cakupan-title" className="card-title">Cakupan pemeriksaan</h2>
+          <section className="card card-raised stack" aria-labelledby="cakupan-title">
+            <h2 id="cakupan-title" className="card-title panel-title">Cakupan pemeriksaan</h2>
             <p className="small muted">Hanya kontrak <strong>PKWT</strong>. Kontrak PKWTT, magang, outsourcing, dan kemitraan belum bisa diperiksa.</p>
             <ul className="chips">{TOPICS.map((t) => <li key={t} className="tag">{t}</li>)}</ul>
           </section>

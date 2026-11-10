@@ -4,6 +4,7 @@ import type { Reference, Severity } from './api'
 // Lucide icon paths (lucide.dev, ISC licence), inlined to avoid an icon dependency.
 const ICONS = {
   arrowRight: <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
   arrowLeft: <><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></>,
   check: <path d="M20 6 9 17l-5-5" />,
   lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
@@ -53,7 +54,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function Citation({ label, status }: Reference) {
   return (
     <span className="cite">
-      <span className="cite-dot" data-status={status ?? ''} aria-hidden="true" />
+      {status && <span className="cite-dot" data-status={status} aria-hidden="true" />}
       {label}{status && ` · ${STATUS_LABEL[status] ?? status}`}
     </span>
   )
@@ -84,7 +85,7 @@ export function CopyButton({ text, label = 'Salin', name, className = 'btn btn-s
     <>
       <button type="button" className={className} onClick={copy} aria-label={state === 'idle' ? name : undefined}>
         <Icon name={state === 'copied' ? 'check' : 'copy'} size={16} />
-        {state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin' : label}
+        <span className="copy-label">{state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin' : label}</span>
       </button>
       <span className="sr-only" aria-live="polite">
         {state === 'copied' ? 'Tersalin ke clipboard' : state === 'failed' ? 'Gagal menyalin. Pilih teksnya lalu salin manual.' : ''}
