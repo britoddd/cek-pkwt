@@ -219,7 +219,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
     return () => removeEventListener('beforeprint', expand)
   }, [])
   return (
-    <article id={`temuan-${index}`} className="finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+    <article id={`temuan-${index}`} className={`finding jump-target${open ? ' is-open' : ''}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
       {/* Header island: the title button stretches over the whole card, so clicking anywhere on it toggles the details. */}
       <div className="card finding-card">
         <div className="finding-head">
@@ -237,15 +237,16 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         ? <p className="missing">Tidak disebutkan di kontrak.</p>
         : <blockquote className="quote"><mark>“{f.quote}”</mark></blockquote>}
       {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
-      {(f.references.length > 0 || f.confidence) && (
-        <div className="meta-row">
-          {f.references.map((r, i) => <Citation key={i} {...r} />)}
-          {f.confidence && <span className="small muted">Keyakinan AI: <strong style={{ color: 'var(--color-text)' }}>{f.confidence}</strong></span>}
+      {f.references.length > 0 && (
+        <div className="finding-section">
+          <span className="kicker">Pasal terkait</span>
+          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} {...r} />)}</div>
         </div>
       )}
+      {f.confidence && <p className="small muted">Keyakinan AI: <strong style={{ color: 'var(--color-text)' }}>{f.confidence}</strong></p>}
       {f.hr_question && (
-        <div className="hr-question">
-          <div>
+        <div className="hr-row">
+          <div className="hr-question">
             <span className="kicker">Pertanyaan untuk HR</span>
             <span>{f.hr_question}</span>
           </div>
