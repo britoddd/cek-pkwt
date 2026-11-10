@@ -3,12 +3,15 @@
 Replaces the stock Astra DB components in answer_labor_rule_question and check_work_contract. The
 stock component rebuilds its Astra DB client, lists collections, counts documents, re-detects the
 collection and embeds the query on every run, once per component. This one keeps the Astra DB and
-Google clients for the life of the Langflow process, embeds the query once, and runs all searches at
-the same time:
-  - Current Rules:  vector search, regime "current"
-  - New Law Rules:  vector search, regime "uu_pk_2026"
+Google clients for the life of the Langflow process and runs all searches at the same time:
+  - Current Rules:  regime "current". With Topic Queries (the check flow): one search per topic line,
+                    top Results per Topic each, merged without duplicates. Ranking the whole contract
+                    as one query returned the same generic articles for every contract, so the article
+                    for each clause was rarely retrieved. The topic vectors are fixed and cached.
+                    Without Topic Queries (the ask flow): the query itself, top Current Rules Results.
+  - New Law Rules:  regime "uu_pk_2026", ranked by the query.
   - Minimum Wages:  filter only (topic "upah_minimum", status "berlaku"), no embedding;
-                    skipped when Minimum Wage Results is 0 (the ask flow)
+                    skipped when Minimum Wage Results is 0 (the ask flow).
 
 Paste this whole file into Langflow: Components sidebar -> "New Custom Component" -> Code -> Save.
 """
@@ -19,10 +22,12 @@ import types
 from concurrent.futures import ThreadPoolExecutor
 
 from lfx.custom.custom_component.component import Component
-from lfx.io import IntInput, MessageTextInput, Output, SecretStrInput, StrInput
+from lfx.io import IntInput, MessageTextInput, MultilineInput, Output, SecretStrInput, StrInput
 from lfx.schema.data import Data
 
 NEW_LAW_REGIME = "uu_pk_2026"
+# Wage rows come through the Minimum Wages output; keep them out of the topic searches.
+TOPIC_FILTER = {"metadata.regime": "current", "metadata.topic": {"$ne": "upah_minimum"}}
 
 # Kept in a module of its own so the clients survive Langflow re-running this file.
 _CACHE = sys.modules.setdefault("cekpkwt_regulation_search_cache", types.ModuleType("cekpkwt_regulation_search_cache")).__dict__
@@ -47,6 +52,14 @@ def _embedder(model: str, api_key: str):
     return _CACHE[key]
 
 
+def _topic_vector(embedder, model: str, topic: str) -> list[float]:
+    # Topic lines are fixed text, so each is embedded once per process. Contract text is never cached.
+    key = ("topic_vector", model, topic)
+    if key not in _CACHE:
+        _CACHE[key] = embedder.embed_query(topic)
+    return _CACHE[key]
+
+
 def _find(collection, filter_: dict, limit: int, vector: list[float] | None = None) -> list[Data]:
     # Documents follow the langchain-astradb layout written by ingest_labor_corpus. The text field is
     # "page_content" when the stock component created the collection, "content" otherwise.
@@ -66,11 +79,22 @@ def _find(collection, filter_: dict, limit: int, vector: list[float] | None = No
     ]
 
 
+def _merge(lists: list[list[Data]]) -> list[Data]:
+    seen, merged = set(), []
+    for rows in lists:
+        for row in rows:
+            key = row.data.get("id") or row.data.get("text")
+            if key not in seen:
+                seen.add(key)
+                merged.append(row)
+    return merged
+
+
 class RegulationSearch(Component):
     display_name = "Regulation Search (CekPKWT)"
     description = (
-        "Searches corpus_v1 in Astra DB for the current rules, the new labor law rules and (optionally) "
-        "the minimum wages, with one embedding and all searches in parallel."
+        "Searches corpus_v1 in Astra DB for the current rules (per topic or by query), the new labor law "
+        "rules and (optionally) the minimum wages, with all searches in parallel."
     )
     icon = "search"
     name = "RegulationSearch"
@@ -83,7 +107,14 @@ class RegulationSearch(Component):
         StrInput(name="collection_name", display_name="Collection", value="corpus_v1"),
         SecretStrInput(name="google_api_key", display_name="Google API Key", value="GOOGLE_API_KEY", required=True),
         StrInput(name="embedding_model", display_name="Embedding Model", value="models/gemini-embedding-001", advanced=True),
-        IntInput(name="current_results", display_name="Current Rules Results", value=4),
+        MultilineInput(
+            name="topic_queries",
+            display_name="Topic Queries",
+            info="One search per line for Current Rules. Empty: search with the query itself.",
+            value="",
+        ),
+        IntInput(name="topic_results", display_name="Results per Topic", value=2),
+        IntInput(name="current_results", display_name="Current Rules Results", info="Used without Topic Queries.", value=4),
         IntInput(name="new_law_results", display_name="New Law Results", value=2),
         IntInput(
             name="wage_results",
@@ -107,27 +138,34 @@ class RegulationSearch(Component):
             return results
         t0 = time.perf_counter()
         collection = _collection(self.api_endpoint, self.token, self.keyspace, self.collection_name)
+        embedder = _embedder(self.embedding_model, self.google_api_key)
         query = (self.search_query or "").strip()
-        with ThreadPoolExecutor(3) as pool:
-            # The wage search needs no embedding, so it runs while the query is being embedded.
+        topics = [t.strip() for t in (self.topic_queries or "").splitlines() if t.strip()]
+
+        def topic_search(topic: str) -> list[Data]:
+            return _find(collection, TOPIC_FILTER, self.topic_results, _topic_vector(embedder, self.embedding_model, topic))
+
+        with ThreadPoolExecutor(8) as pool:
+            # Searches that need no query vector start at once, while the query is being embedded.
             wages = (
                 pool.submit(_find, collection, {"metadata.topic": "upah_minimum", "metadata.status": "berlaku"},
                             self.wage_results)
                 if self.wage_results > 0 else None
             )
+            by_topic = [pool.submit(topic_search, t) for t in topics]
             current = new_law = None
-            embed_s = 0.0
-            if query:
-                vector = _embedder(self.embedding_model, self.google_api_key).embed_query(query)
-                embed_s = time.perf_counter() - t0
-                current = pool.submit(_find, collection, {"metadata.regime": "current"}, self.current_results, vector)
-                new_law = pool.submit(_find, collection, {"metadata.regime": NEW_LAW_REGIME}, self.new_law_results, vector)
+            if query and (self.new_law_results > 0 or not topics):
+                vector = embedder.embed_query(query)
+                if not topics:
+                    current = pool.submit(_find, collection, {"metadata.regime": "current"}, self.current_results, vector)
+                if self.new_law_results > 0:
+                    new_law = pool.submit(_find, collection, {"metadata.regime": NEW_LAW_REGIME}, self.new_law_results, vector)
             results = {
-                "current": current.result() if current else [],
+                "current": _merge([f.result() for f in by_topic]) if topics else (current.result() if current else []),
                 "new_law": new_law.result() if new_law else [],
                 "wages": wages.result() if wages else [],
             }
-        self.log(f"embed {embed_s:.2f}s, total {time.perf_counter() - t0:.2f}s, "
+        self.log(f"{time.perf_counter() - t0:.2f}s, {len(topics)} topics, "
                  + ", ".join(f"{len(v)} {k}" for k, v in results.items()))
         self.__dict__["_regulation_results"] = results
         return results

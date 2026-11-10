@@ -295,7 +295,7 @@ Semua flow ada di folder `langflow/` dan dapat diimpor langsung ke Langflow.
 ![Flow check_work_contract di Langflow](docs/screenshots/check-work-contract-flow.png)
 
 ```
-Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal relevan (top-4) ─► Parser ─┐
+Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal per topik (14×2) ─► Parser ─┐
                            │                     ├─► upah minimum 2026     ─► Parser ─┤
                            │                     └─► aturan baru (top-2)   ─► Parser ─┤
                            └─────────────────────────────────────────────────────────►├─► Prompt Template ─► Agent ─► Chat Output
@@ -303,7 +303,7 @@ Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal re
 
 - **Input:** teks kontrak.
 - **PII Redactor (CekPKWT):** komponen kustom berbasis regex yang mengganti data pribadi dengan label (`[NIK]`, `[NPWP]`, `[NOMOR_ID]`, `[EMAIL]`, `[TELEPON]`, `[NO_REKENING]`, `[NAMA]`, `[ALAMAT]`, `[TTL]`). Nama pekerja juga disamarkan di blok tanda tangan dan di setiap tempat lain nama itu muncul. Data perusahaan (blok PIHAK PERTAMA, nilai berawalan PT/CV, jabatan seperti direktur dan HRD) dibiarkan. Kodenya ada di `langflow/components/pii_redactor.py`.
-- **Retrieval (Regulation Search, komponen kustom di `langflow/components/regulation_search.py`):** teks yang sudah disamarkan di-embed sekali, lalu tiga pencarian di Astra DB berjalan bersamaan: pasal yang berlaku (top-4), aturan baru `uu_pk_2026` (top-2), dan semua data upah minimum yang sedang berlaku (hingga 30 entri, tanpa embedding), sehingga wilayah pengguna selalu ikut terbaca jika datanya ada. Klien Astra DB dan Google disimpan selama proses Langflow berjalan, jadi tidak ada panggilan penyiapan koleksi di setiap permintaan.
+- **Retrieval (Regulation Search, komponen kustom di `langflow/components/regulation_search.py`):** pasal yang berlaku dicari per topik: 14 kueri tetap (masa percobaan, jangka waktu, sifat pekerjaan, kompensasi, ganti rugi, upah minimum, jam kerja, lembur, cuti, THR, BPJS, pemotongan upah, penahanan ijazah, bentuk dan bahasa kontrak), masing-masing top-2, digabung tanpa duplikat. Satu kueri berisi seluruh kontrak dulu mengembalikan pasal umum yang sama untuk setiap kontrak, sehingga pasal untuk tiap klausul jarang terambil. Bersamaan dengan itu, aturan baru `uu_pk_2026` dicari dengan teks kontrak yang sudah disamarkan (top-2), dan semua data upah minimum yang sedang berlaku diambil tanpa embedding (hingga 30 entri), sehingga wilayah pengguna selalu ikut terbaca jika datanya ada. Vektor kueri topik, klien Astra DB, dan klien Google disimpan selama proses Langflow berjalan, jadi tidak ada panggilan penyiapan koleksi di setiap permintaan.
 - **Agent** (dengan tool kalkulator dan tanggal):
   1. mengecek cakupan (hanya PKWT; PKWTT, magang, dan kemitraan ditolak dengan sopan),
   2. mengekstrak klausul ke struktur tetap: jenis kontrak, jenis pekerjaan, jangka waktu dan perpanjangan, masa percobaan, upah dan lokasi kerja, uang kompensasi, BPJS, pengakhiran dini dan denda, penahanan dokumen, serta bentuk dan bahasa kontrak,
