@@ -231,7 +231,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
     return () => removeEventListener('beforeprint', expand)
   }, [])
   return (
-    <article id={`temuan-${index}`} className={`finding jump-target${open ? ' is-open' : ''}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+    <article id={`temuan-${index}`} className="finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
       {/* Header island (always shown): number | title | badge, then the contract clause under the title. */}
       <div className="card finding-card">
         <span className="finding-num">{String(index).padStart(2, '0')}</span>
@@ -240,13 +240,16 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         {missingQuote
           ? <p className="missing finding-clause">Tidak disebutkan di kontrak.</p>
           : <blockquote className="quote finding-clause"><mark>“{f.quote}”</mark></blockquote>}
-        {!open && (
-          <button type="button" ref={showBtn} className="finding-toggle finding-show no-print" aria-expanded={false} aria-controls={`temuan-${index}-isi`} onClick={show}>
+      </div>
+      {/* Collapsed: the details island peeks out under the header as a short strip holding the toggle. */}
+      {!open && (
+        <div className="finding-peek no-print">
+          <button type="button" ref={showBtn} className="finding-toggle finding-show" aria-expanded={false} aria-controls={`temuan-${index}-isi`} onClick={show}>
             <Icon name="chevronDown" size={18} />Tampilkan detail
             <span className="sr-only">: {f.title}</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
       <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} hidden={!open}>
       {f.issue && (
         <div className="finding-section">
