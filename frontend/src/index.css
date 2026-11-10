@@ -280,11 +280,11 @@ mark {
 .finding-body { display: flex; flex-direction: column; gap: 18px; padding: 24px 28px; background: var(--color-surface-sunken); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); }
 @media (max-width: 640px) { .finding-body { padding: 20px; } }
 /* Open, wide screens: the details island hangs under the header card like a drawer, inset on both sides
-   by the title's offset (5px edge + 28px card padding + 20px number column + 12px gap = 65px), so its
-   left edge lines up with the title. */
+   by the number's offset (5px edge + 28px card padding = 33px), so its
+   left edge lines up with the finding number. */
 @media (min-width: 641px) {
   .finding.is-open { gap: 0; }
-  .finding.is-open > .finding-body { margin-inline: 65px; border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; box-shadow: var(--shadow-card); }
+  .finding.is-open > .finding-body { margin-inline: 33px; border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; box-shadow: var(--shadow-card); }
 }
 /* Open, phones: an inset that size would leave the island too narrow, so it spans the card as one joined shape. */
 @media (max-width: 640px) {
