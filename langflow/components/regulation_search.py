@@ -44,14 +44,18 @@ def _embedder(model: str, api_key: str):
 
 
 def _find(collection, vector: list[float], regime: str, limit: int) -> list[Data]:
-    # Documents follow the langchain-astradb layout written by ingest_labor_corpus: content + metadata.
+    # Documents follow the langchain-astradb layout written by ingest_labor_corpus. The text field is
+    # "page_content" when the stock component created the collection, "content" otherwise.
     docs = collection.find(
         {"metadata.regime": regime},
         sort={"$vector": vector},
         limit=limit,
-        projection={"content": True, "metadata": True},
+        projection={"page_content": True, "content": True, "metadata": True},
     )
-    return [Data(data={**(d.get("metadata") or {}), "text": d.get("content", "")}) for d in docs]
+    return [
+        Data(data={**(d.get("metadata") or {}), "text": d.get("page_content") or d.get("content") or ""})
+        for d in docs
+    ]
 
 
 class RegulationSearch(Component):
