@@ -266,6 +266,11 @@ mark {
 .finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .finding-toggle .icon { transition: rotate 0.15s ease; }
 .finding-toggle[aria-expanded="true"] .icon { rotate: 180deg; }
+/* Collapsed: a flat, compact row on the sunken surface (severity edge kept), chevron at the far right. */
+.finding.is-collapsed { flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px 12px 24px; background: var(--color-surface-sunken); box-shadow: none; }
+.finding.is-collapsed .finding-head { flex: 1 1 auto; min-width: 0; align-items: center; }
+.finding.is-collapsed .finding-title { font-size: 17px; }
+.finding.is-collapsed .finding-toggle { margin: 0; justify-content: center; min-width: 36px; }
 .finding-body { display: flex; flex-direction: column; gap: 18px; }
 .finding-body[hidden] { display: none; }
 .finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }

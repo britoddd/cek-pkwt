@@ -218,7 +218,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
     return () => removeEventListener('beforeprint', expand)
   }, [])
   return (
-    <article id={`temuan-${index}`} className="card finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+    <article id={`temuan-${index}`} className={`card finding jump-target${open ? '' : ' is-collapsed'}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
       <div className="finding-head">
         <h3 id={`temuan-${index}-judul`} className="finding-title balance">
           <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
@@ -247,7 +247,8 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
       )}
       </div>
       <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
-        <Icon name="chevronDown" size={18} />{open ? 'Sembunyikan detail' : 'Tampilkan detail'}
+        <Icon name="chevronDown" size={18} />
+        <span className={open ? undefined : 'sr-only'}>{open ? 'Sembunyikan detail' : 'Tampilkan detail'}</span>
         <span className="sr-only">: {f.title}</span>
       </button>
     </article>
