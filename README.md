@@ -284,7 +284,7 @@ Detailnya di [Memperbarui korpus](#memperbarui-korpus).
 
 | Teknologi IBM | Peran di CekPKWT | Bukti |
 |---|---|---|
-| **IBM Langflow 1.12.4** | Menjalankan seluruh logika: empat flow, dua komponen kustom (PII Redactor dan CSV Rows to Data), Agent dengan tool kalkulator dan tanggal, serta retrieval dari Astra DB. Flow yang sama diekspos sebagai **MCP server** untuk IBM Bob, dipanggil backend web app lewat API `/api/v1/run`, dan dijalankan CI untuk mengunggah korpus. | Ekspor flow di `langflow/*.json`; screenshot flow di bawah |
+| **IBM Langflow 1.12.4** | Menjalankan seluruh logika: empat flow, tiga komponen kustom (PII Redactor, Regulation Search, dan CSV Rows to Data), Agent dengan tool kalkulator dan tanggal, serta retrieval dari Astra DB. Flow yang sama diekspos sebagai **MCP server** untuk IBM Bob, dipanggil backend web app lewat API `/api/v1/run`, dan dijalankan CI untuk mengunggah korpus. | Ekspor flow di `langflow/*.json`; screenshot flow di bawah |
 | **IBM Bob** | Antarmuka percakapan dan **MCP client**: memilih tool Langflow berdasarkan nama dan deskripsinya, mengirim teks pengguna ke Chat Input, lalu menjelaskan hasilnya dengan bahasa yang mudah dipahami. | Panduan di [Menghubungkan IBM Bob ke Langflow](#menghubungkan-ibm-bob-ke-langflow) |
 
 ### Penjelasan setiap flow
@@ -295,14 +295,15 @@ Semua flow ada di folder `langflow/` dan dapat diimpor langsung ke Langflow.
 ![Flow check_work_contract di Langflow](docs/screenshots/check-work-contract-flow.png)
 
 ```
-Chat Input → PII Redactor ─┬─► Astra DB (pasal relevan, top-4) ─► Parser ─┐
-                           │   Astra DB (upah minimum 2026)   ─► Parser ─┤
-                           └────────────────────────────────────────────►├─► Prompt Template ─► Agent ─► Chat Output
+Chat Input → PII Redactor ─┬─► Regulation Search ─┬─► pasal relevan (top-4) ─► Parser ─┐
+                           │                     ├─► upah minimum 2026     ─► Parser ─┤
+                           │                     └─► aturan baru (top-2)   ─► Parser ─┤
+                           └─────────────────────────────────────────────────────────►├─► Prompt Template ─► Agent ─► Chat Output
 ```
 
 - **Input:** teks kontrak.
 - **PII Redactor (CekPKWT):** komponen kustom berbasis regex yang mengganti data pribadi dengan label (`[NIK]`, `[NPWP]`, `[NOMOR_ID]`, `[EMAIL]`, `[TELEPON]`, `[NO_REKENING]`, `[NAMA]`, `[ALAMAT]`, `[TTL]`). Nama pekerja juga disamarkan di blok tanda tangan dan di setiap tempat lain nama itu muncul. Data perusahaan (blok PIHAK PERTAMA, nilai berawalan PT/CV, jabatan seperti direktur dan HRD) dibiarkan. Kodenya ada di `langflow/components/pii_redactor.py`.
-- **Retrieval:** teks yang sudah disamarkan dipakai sebagai query ke Astra DB. Query kedua mengambil semua data upah minimum yang sedang berlaku (hingga 30 entri), sehingga wilayah pengguna selalu ikut terbaca jika datanya ada.
+- **Retrieval (Regulation Search, komponen kustom di `langflow/components/regulation_search.py`):** teks yang sudah disamarkan di-embed sekali, lalu tiga pencarian di Astra DB berjalan bersamaan: pasal yang berlaku (top-4), aturan baru `uu_pk_2026` (top-2), dan semua data upah minimum yang sedang berlaku (hingga 30 entri, tanpa embedding), sehingga wilayah pengguna selalu ikut terbaca jika datanya ada. Klien Astra DB dan Google disimpan selama proses Langflow berjalan, jadi tidak ada panggilan penyiapan koleksi di setiap permintaan.
 - **Agent** (dengan tool kalkulator dan tanggal):
   1. mengecek cakupan (hanya PKWT; PKWTT, magang, dan kemitraan ditolak dengan sopan),
   2. mengekstrak klausul ke struktur tetap: jenis kontrak, jenis pekerjaan, jangka waktu dan perpanjangan, masa percobaan, upah dan lokasi kerja, uang kompensasi, BPJS, pengakhiran dini dan denda, penahanan dokumen, serta bentuk dan bahasa kontrak,
@@ -316,8 +317,9 @@ Chat Input → PII Redactor ─┬─► Astra DB (pasal relevan, top-4) ─► 
 ![Flow answer_labor_rule_question di Langflow](docs/screenshots/answer-labor-rule-question-flow.png)
 
 ```
-Chat Input ─┬─► Astra DB (top-4) ─► Parser <kutipan> ─┐
-            └─────────────────────────────────────────┴─► Prompt Template ─► Agent ─► Chat Output
+Chat Input ─┬─► Regulation Search ─┬─► pasal berlaku (top-4) ─► Parser <kutipan> ─┐
+            │                     └─► aturan baru (top-2)    ─► Parser <kutipan> ─┤
+            └─────────────────────────────────────────────────────────────────────┴─► Prompt Template ─► Agent ─► Chat Output
 ```
 
 - **Input:** pertanyaan pengguna.

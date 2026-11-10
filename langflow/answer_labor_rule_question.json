@@ -2397,7 +2397,7 @@
             "beta": false,
             "conditional_paths": [],
             "custom_fields": {},
-            "description": "Searches corpus_v1 in Astra DB for the current rules and the new labor law rules, with one embedding and both searches in parallel.",
+            "description": "Searches corpus_v1 in Astra DB for the current rules, the new labor law rules and (optionally) the minimum wages, with one embedding and all searches in parallel.",
             "display_name": "Regulation Search (CekPKWT)",
             "documentation": "",
             "edited": true,
@@ -2410,14 +2410,15 @@
               "google_api_key",
               "embedding_model",
               "current_results",
-              "new_law_results"
+              "new_law_results",
+              "wage_results"
             ],
             "frozen": false,
             "icon": "search",
             "legacy": false,
             "lf_version": "1.12.4",
             "metadata": {
-              "code_hash": "8af7206848f2",
+              "code_hash": "091ed9db001e",
               "dependencies": {
                 "dependencies": [
                   {
@@ -2471,6 +2472,24 @@
                   "JSON"
                 ],
                 "value": "__UNDEFINED__"
+              },
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Minimum Wages",
+                "group_outputs": false,
+                "hidden": null,
+                "loop_types": null,
+                "method": "minimum_wages",
+                "name": "minimum_wages",
+                "options": null,
+                "required_inputs": null,
+                "selected": "JSON",
+                "tool_mode": true,
+                "types": [
+                  "JSON"
+                ],
+                "value": "__UNDEFINED__"
               }
             ],
             "pinned": false,
@@ -2493,15 +2512,15 @@
                 "show": true,
                 "title_case": false,
                 "type": "code",
-                "value": "\"\"\"Regulation Search: custom Langflow component for CekPKWT.\n\nReplaces the two stock Astra DB components in answer_labor_rule_question. The stock component\nrebuilds its Astra DB client, lists collections, counts documents, re-detects the collection and\nembeds the question on every run, and the flow had two of them. This one keeps the Astra DB and\nGoogle clients for the life of the Langflow process, embeds the question once, and runs the\n\"current\" and \"uu_pk_2026\" searches at the same time.\n\nPaste this whole file into Langflow: Components sidebar -> \"New Custom Component\" -> Code -> Save.\n\"\"\"\n\nimport sys\nimport time\nimport types\nfrom concurrent.futures import ThreadPoolExecutor\n\nfrom lfx.custom.custom_component.component import Component\nfrom lfx.io import IntInput, MessageTextInput, Output, SecretStrInput, StrInput\nfrom lfx.schema.data import Data\n\nNEW_LAW_REGIME = \"uu_pk_2026\"\n\n# Kept in a module of its own so the clients survive Langflow re-running this file.\n_CACHE = sys.modules.setdefault(\"cekpkwt_regulation_search_cache\", types.ModuleType(\"cekpkwt_regulation_search_cache\")).__dict__\n\n\ndef _collection(endpoint: str, token: str, keyspace: str, name: str):\n    key = (\"collection\", endpoint, token, keyspace, name)\n    if key not in _CACHE:\n        from astrapy import DataAPIClient\n\n        _CACHE[key] = DataAPIClient().get_database(endpoint, token=token, keyspace=keyspace).get_collection(name)\n    return _CACHE[key]\n\n\ndef _embedder(model: str, api_key: str):\n    key = (\"embedder\", model, api_key)\n    if key not in _CACHE:\n        # Same class Langflow's Astra DB component uses, so query vectors match the ingested ones.\n        from langchain_google_genai import GoogleGenerativeAIEmbeddings\n\n        _CACHE[key] = GoogleGenerativeAIEmbeddings(model=model, google_api_key=api_key)\n    return _CACHE[key]\n\n\ndef _find(collection, vector: list[float], regime: str, limit: int) -> list[Data]:\n    # Documents follow the langchain-astradb layout written by ingest_labor_corpus. The text field is\n    # \"page_content\" when the stock component created the collection, \"content\" otherwise.\n    docs = collection.find(\n        {\"metadata.regime\": regime},\n        sort={\"$vector\": vector},\n        limit=limit,\n        projection={\"page_content\": True, \"content\": True, \"metadata\": True},\n    )\n    return [\n        Data(data={**(d.get(\"metadata\") or {}), \"text\": d.get(\"page_content\") or d.get(\"content\") or \"\"})\n        for d in docs\n    ]\n\n\nclass RegulationSearch(Component):\n    display_name = \"Regulation Search (CekPKWT)\"\n    description = (\n        \"Searches corpus_v1 in Astra DB for the current rules and the new labor law rules, \"\n        \"with one embedding and both searches in parallel.\"\n    )\n    icon = \"search\"\n    name = \"RegulationSearch\"\n\n    inputs = [\n        MessageTextInput(name=\"search_query\", display_name=\"Question\", info=\"Connect Chat Input here.\", required=True),\n        SecretStrInput(name=\"token\", display_name=\"Astra DB Application Token\", value=\"ASTRA_DB_PKWT\", required=True),\n        StrInput(name=\"api_endpoint\", display_name=\"Astra DB API Endpoint\", required=True),\n        StrInput(name=\"keyspace\", display_name=\"Keyspace\", value=\"default_keyspace\", advanced=True),\n        StrInput(name=\"collection_name\", display_name=\"Collection\", value=\"corpus_v1\"),\n        SecretStrInput(name=\"google_api_key\", display_name=\"Google API Key\", value=\"GOOGLE_API_KEY\", required=True),\n        StrInput(name=\"embedding_model\", display_name=\"Embedding Model\", value=\"models/gemini-embedding-001\", advanced=True),\n        IntInput(name=\"current_results\", display_name=\"Current Rules Results\", value=4),\n        IntInput(name=\"new_law_results\", display_name=\"New Law Results\", value=2),\n    ]\n\n    outputs = [\n        Output(display_name=\"Current Rules\", name=\"current_rules\", method=\"current_rules\"),\n        Output(display_name=\"New Law Rules\", name=\"new_law_rules\", method=\"new_law_rules\"),\n    ]\n\n    def _search(self) -> tuple[list[Data], list[Data]]:\n        # Both outputs are built on the same instance; search once. Stored in __dict__ directly because\n        # Component routes attribute access through its own inputs/outputs handling.\n        results = self.__dict__.get(\"_regulation_results\")\n        if results is not None:\n            return results\n        query = (self.search_query or \"\").strip()\n        if not query:\n            results = ([], [])\n        else:\n            t0 = time.perf_counter()\n            vector = _embedder(self.embedding_model, self.google_api_key).embed_query(query)\n            t1 = time.perf_counter()\n            collection = _collection(self.api_endpoint, self.token, self.keyspace, self.collection_name)\n            with ThreadPoolExecutor(2) as pool:\n                current = pool.submit(_find, collection, vector, \"current\", self.current_results)\n                new_law = pool.submit(_find, collection, vector, NEW_LAW_REGIME, self.new_law_results)\n                results = (current.result(), new_law.result())\n            self.log(f\"embed {t1 - t0:.2f}s, search {time.perf_counter() - t1:.2f}s, \"\n                     f\"{len(results[0])} current + {len(results[1])} new law\")\n        self.__dict__[\"_regulation_results\"] = results\n        return results\n\n    def current_rules(self) -> list[Data]:\n        rules = self._search()[0]\n        self.status = rules\n        return rules\n\n    def new_law_rules(self) -> list[Data]:\n        return self._search()[1]\n"
+                "value": "\"\"\"Regulation Search: custom Langflow component for CekPKWT.\n\nReplaces the stock Astra DB components in answer_labor_rule_question and check_work_contract. The\nstock component rebuilds its Astra DB client, lists collections, counts documents, re-detects the\ncollection and embeds the query on every run, once per component. This one keeps the Astra DB and\nGoogle clients for the life of the Langflow process, embeds the query once, and runs all searches at\nthe same time:\n  - Current Rules:  vector search, regime \"current\"\n  - New Law Rules:  vector search, regime \"uu_pk_2026\"\n  - Minimum Wages:  filter only (topic \"upah_minimum\", status \"berlaku\"), no embedding;\n                    skipped when Minimum Wage Results is 0 (the ask flow)\n\nPaste this whole file into Langflow: Components sidebar -> \"New Custom Component\" -> Code -> Save.\n\"\"\"\n\nimport sys\nimport time\nimport types\nfrom concurrent.futures import ThreadPoolExecutor\n\nfrom lfx.custom.custom_component.component import Component\nfrom lfx.io import IntInput, MessageTextInput, Output, SecretStrInput, StrInput\nfrom lfx.schema.data import Data\n\nNEW_LAW_REGIME = \"uu_pk_2026\"\n\n# Kept in a module of its own so the clients survive Langflow re-running this file.\n_CACHE = sys.modules.setdefault(\"cekpkwt_regulation_search_cache\", types.ModuleType(\"cekpkwt_regulation_search_cache\")).__dict__\n\n\ndef _collection(endpoint: str, token: str, keyspace: str, name: str):\n    key = (\"collection\", endpoint, token, keyspace, name)\n    if key not in _CACHE:\n        from astrapy import DataAPIClient\n\n        _CACHE[key] = DataAPIClient().get_database(endpoint, token=token, keyspace=keyspace).get_collection(name)\n    return _CACHE[key]\n\n\ndef _embedder(model: str, api_key: str):\n    key = (\"embedder\", model, api_key)\n    if key not in _CACHE:\n        # Same class Langflow's Astra DB component uses, so query vectors match the ingested ones.\n        from langchain_google_genai import GoogleGenerativeAIEmbeddings\n\n        _CACHE[key] = GoogleGenerativeAIEmbeddings(model=model, google_api_key=api_key)\n    return _CACHE[key]\n\n\ndef _find(collection, filter_: dict, limit: int, vector: list[float] | None = None) -> list[Data]:\n    # Documents follow the langchain-astradb layout written by ingest_labor_corpus. The text field is\n    # \"page_content\" when the stock component created the collection, \"content\" otherwise.\n    try:\n        docs = list(collection.find(\n            filter_,\n            sort={\"$vector\": vector} if vector is not None else None,\n            limit=limit,\n            projection={\"page_content\": True, \"content\": True, \"metadata\": True},\n        ))\n    except Exception as exc:\n        # backend/app.py looks for \"astra\" in Langflow's error to tell the user the database is waking up.\n        raise RuntimeError(f\"Astra DB search failed (the database may be hibernating): {exc}\") from exc\n    return [\n        Data(data={**(d.get(\"metadata\") or {}), \"text\": d.get(\"page_content\") or d.get(\"content\") or \"\"})\n        for d in docs\n    ]\n\n\nclass RegulationSearch(Component):\n    display_name = \"Regulation Search (CekPKWT)\"\n    description = (\n        \"Searches corpus_v1 in Astra DB for the current rules, the new labor law rules and (optionally) \"\n        \"the minimum wages, with one embedding and all searches in parallel.\"\n    )\n    icon = \"search\"\n    name = \"RegulationSearch\"\n\n    inputs = [\n        MessageTextInput(name=\"search_query\", display_name=\"Query\", info=\"Question or redacted contract.\", required=True),\n        SecretStrInput(name=\"token\", display_name=\"Astra DB Application Token\", value=\"ASTRA_DB_PKWT\", required=True),\n        StrInput(name=\"api_endpoint\", display_name=\"Astra DB API Endpoint\", required=True),\n        StrInput(name=\"keyspace\", display_name=\"Keyspace\", value=\"default_keyspace\", advanced=True),\n        StrInput(name=\"collection_name\", display_name=\"Collection\", value=\"corpus_v1\"),\n        SecretStrInput(name=\"google_api_key\", display_name=\"Google API Key\", value=\"GOOGLE_API_KEY\", required=True),\n        StrInput(name=\"embedding_model\", display_name=\"Embedding Model\", value=\"models/gemini-embedding-001\", advanced=True),\n        IntInput(name=\"current_results\", display_name=\"Current Rules Results\", value=4),\n        IntInput(name=\"new_law_results\", display_name=\"New Law Results\", value=2),\n        IntInput(\n            name=\"wage_results\",\n            display_name=\"Minimum Wage Results\",\n            info=\"Minimum wage entries currently in force, no similarity ranking. 0 skips the search.\",\n            value=0,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Current Rules\", name=\"current_rules\", method=\"current_rules\"),\n        Output(display_name=\"New Law Rules\", name=\"new_law_rules\", method=\"new_law_rules\"),\n        Output(display_name=\"Minimum Wages\", name=\"minimum_wages\", method=\"minimum_wages\"),\n    ]\n\n    def _search(self) -> dict[str, list[Data]]:\n        # All outputs are built on the same instance; search once. Stored in __dict__ directly because\n        # Component routes attribute access through its own inputs/outputs handling.\n        results = self.__dict__.get(\"_regulation_results\")\n        if results is not None:\n            return results\n        t0 = time.perf_counter()\n        collection = _collection(self.api_endpoint, self.token, self.keyspace, self.collection_name)\n        query = (self.search_query or \"\").strip()\n        with ThreadPoolExecutor(3) as pool:\n            # The wage search needs no embedding, so it runs while the query is being embedded.\n            wages = (\n                pool.submit(_find, collection, {\"metadata.topic\": \"upah_minimum\", \"metadata.status\": \"berlaku\"},\n                            self.wage_results)\n                if self.wage_results > 0 else None\n            )\n            current = new_law = None\n            embed_s = 0.0\n            if query:\n                vector = _embedder(self.embedding_model, self.google_api_key).embed_query(query)\n                embed_s = time.perf_counter() - t0\n                current = pool.submit(_find, collection, {\"metadata.regime\": \"current\"}, self.current_results, vector)\n                new_law = pool.submit(_find, collection, {\"metadata.regime\": NEW_LAW_REGIME}, self.new_law_results, vector)\n            results = {\n                \"current\": current.result() if current else [],\n                \"new_law\": new_law.result() if new_law else [],\n                \"wages\": wages.result() if wages else [],\n            }\n        self.log(f\"embed {embed_s:.2f}s, total {time.perf_counter() - t0:.2f}s, \"\n                 + \", \".join(f\"{len(v)} {k}\" for k, v in results.items()))\n        self.__dict__[\"_regulation_results\"] = results\n        return results\n\n    def current_rules(self) -> list[Data]:\n        rules = self._search()[\"current\"]\n        self.status = rules\n        return rules\n\n    def new_law_rules(self) -> list[Data]:\n        return self._search()[\"new_law\"]\n\n    def minimum_wages(self) -> list[Data]:\n        return self._search()[\"wages\"]\n"
               },
               "search_query": {
                 "_input_type": "MessageTextInput",
                 "advanced": false,
                 "api_editable": false,
-                "display_name": "Question",
+                "display_name": "Query",
                 "dynamic": false,
-                "info": "Connect Chat Input here.",
+                "info": "Question or redacted contract.",
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "search_query",
@@ -2690,6 +2709,27 @@
                 "track_in_telemetry": false,
                 "type": "int",
                 "value": 2
+              },
+              "wage_results": {
+                "_input_type": "IntInput",
+                "advanced": false,
+                "api_editable": false,
+                "display_name": "Minimum Wage Results",
+                "dynamic": false,
+                "info": "Minimum wage entries currently in force, no similarity ranking. 0 skips the search.",
+                "list": false,
+                "list_add_label": "Add More",
+                "name": "wage_results",
+                "override_skip": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": false,
+                "type": "int",
+                "value": 0
               }
             },
             "tool_mode": false
