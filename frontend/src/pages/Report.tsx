@@ -15,7 +15,7 @@ function jumpTo(id: string) {
   const el = document.getElementById(id)
   if (!el) return
   // A jump to a collapsed finding opens it.
-  el.querySelector<HTMLButtonElement>('.finding-head-btn[aria-expanded="false"]')?.click()
+  el.querySelector<HTMLButtonElement>('.finding-show')?.click()
   const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   el.focus({ preventScroll: true })
@@ -211,7 +211,11 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
   const [open, setOpen] = useState(true)
-  const headBtn = useRef<HTMLButtonElement>(null)
+  const showBtn = useRef<HTMLButtonElement>(null)
+  const details = useRef<HTMLDivElement>(null)
+  // Each toggle removes itself, so focus moves to what replaces it (flushSync renders that first).
+  const show = () => { flushSync(() => setOpen(true)); details.current?.focus() }
+  const hide = () => { flushSync(() => setOpen(false)); showBtn.current?.focus() }
   // "Simpan sebagai PDF" and Ctrl+P print every finding in full; flushSync renders before the print snapshot.
   useEffect(() => {
     const expand = () => flushSync(() => setOpen(true))
@@ -220,23 +224,22 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
   }, [])
   return (
     <article id={`temuan-${index}`} className={`finding jump-target${open ? ' is-open' : ''}`} data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
-      {/* Header island (always shown): number | title | badge, then the contract clause under the title.
-          The title button stretches over the whole card, so clicking anywhere on it toggles the details. */}
+      {/* Header island (always shown): number | title | badge, then the contract clause under the title. */}
       <div className="card finding-card">
         <span className="finding-num">{String(index).padStart(2, '0')}</span>
-        <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-          <button type="button" ref={headBtn} className="finding-head-btn" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
-            {f.title}
-          </button>
-        </h3>
+        <h3 id={`temuan-${index}-judul`} className="finding-title balance">{f.title}</h3>
         {f.severity && <SeverityBadge level={f.severity} />}
         {missingQuote
           ? <p className="missing finding-clause">Tidak disebutkan di kontrak.</p>
           : <blockquote className="quote finding-clause"><mark>“{f.quote}”</mark></blockquote>}
-        {/* Visual cue only: the whole header card is the button, so this isn't a second control. */}
-        {!open && <span className="finding-toggle finding-show no-print" aria-hidden="true"><Icon name="chevronDown" size={18} />Tampilkan detail</span>}
+        {!open && (
+          <button type="button" ref={showBtn} className="finding-toggle finding-show no-print" aria-expanded={false} aria-controls={`temuan-${index}-isi`} onClick={show}>
+            <Icon name="chevronDown" size={18} />Tampilkan detail
+            <span className="sr-only">: {f.title}</span>
+          </button>
+        )}
       </div>
-      <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
+      <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} hidden={!open}>
       {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
       {f.references.length > 0 && (
         <div className="finding-section">
@@ -254,8 +257,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           <span className="no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
         </div>
       )}
-      {/* This button hides itself, so focus moves back to the header to keep the keyboard user's place. */}
-      <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => { setOpen(false); headBtn.current?.focus() }}>
+      <button type="button" className="finding-toggle no-print" aria-expanded={true} aria-controls={`temuan-${index}-isi`} onClick={hide}>
         <Icon name="chevronDown" size={18} />Sembunyikan detail
         <span className="sr-only">: {f.title}</span>
       </button>

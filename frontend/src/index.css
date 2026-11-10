@@ -267,7 +267,6 @@ mark {
 .finding-card > .badge { grid-area: badge; align-self: start; margin-left: 4px; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
 .finding-card > .finding-clause { grid-area: clause; align-self: start; }
 .finding-card > .finding-show { grid-column: 1 / -1; justify-self: center; margin: -6px 0 -8px; }
-.finding-card:hover > .finding-show { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 @media (max-width: 640px) {
   .finding-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "num title" ". badge" ". clause"; }
   .finding-card > .badge { justify-self: start; margin-left: 0; }
@@ -275,13 +274,6 @@ mark {
 .finding[data-severity="tinggi"] > .finding-card { border-left-color: var(--color-severity-high); }
 .finding[data-severity="sedang"] > .finding-card { border-left-color: var(--color-severity-medium); }
 .finding[data-severity="rendah"] > .finding-card { border-left-color: var(--color-severity-low); }
-/* The header card is the toggle: the title button's ::after covers the card, and its focus ring rings the card. */
-.finding-card { position: relative; }
-.finding-head-btn { display: block; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.finding-head-btn::after { content: ""; position: absolute; inset: 0; border-radius: var(--card-radius); }
-.finding-head-btn:hover { color: var(--color-secondary-hover); }
-.finding-head-btn:focus-visible { outline: none; }
-.finding-head-btn:focus-visible::after { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
 /* "Sembunyikan detail": outline-less text button centred at the foot of the details island. */
 .finding-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
@@ -293,7 +285,6 @@ mark {
 .finding.is-open { gap: 0; border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
 .finding.is-open > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
 .finding.is-open > .finding-body { border-top: 0; border-top-left-radius: 0; border-top-right-radius: 0; }
-.finding.is-open .finding-head-btn::after { border-radius: var(--card-radius) var(--card-radius) 0 0; }
 .finding-body[hidden] { display: none; }
 .finding-title { font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
