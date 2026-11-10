@@ -125,9 +125,11 @@ class RegulationSearch(Component):
     ]
 
     outputs = [
-        Output(display_name="Current Rules", name="current_rules", method="current_rules"),
-        Output(display_name="New Law Rules", name="new_law_rules", method="new_law_rules"),
-        Output(display_name="Minimum Wages", name="minimum_wages", method="minimum_wages"),
+        # group_outputs=True gives each output its own handle; without it Langflow shows one handle with a
+        # dropdown, so only one output could be connected at a time.
+        Output(display_name="Current Rules", name="current_rules", method="current_rules", group_outputs=True),
+        Output(display_name="New Law Rules", name="new_law_rules", method="new_law_rules", group_outputs=True),
+        Output(display_name="Minimum Wages", name="minimum_wages", method="minimum_wages", group_outputs=True),
     ]
 
     def _search(self) -> dict[str, list[Data]]:
