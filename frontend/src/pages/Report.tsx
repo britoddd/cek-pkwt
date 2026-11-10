@@ -25,6 +25,8 @@ const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
 export default function Report({ result, onClear }: { result: CheckResult | null; onClear: () => void }) {
+  // Active summary-chip filters (severity levels, 'ok', 'unchecked'); none active shows everything.
+  const [filter, setFilter] = useState<string[]>([])
   if (!result) {
     return (
       <EmptyState title="Belum ada laporan">
@@ -63,15 +65,18 @@ export default function Report({ result, onClear }: { result: CheckResult | null
   const findings = report.findings // sorted most severe first by the backend
   const questions = findings.filter((f) => f.hr_question)
 
-  const jumps = [
+  const chips = [
     ...LEVELS.map(({ level, label, icon }) => ({
-      key: level, cls: `sev-${level}`, icon, label,
+      key: level as string, cls: `sev-${level}`, icon, label,
       count: findings.filter((f) => f.severity === level).length,
-      target: `temuan-${findings.findIndex((f) => f.severity === level) + 1}`,
     })),
-    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length, target: 'bagian-aman' },
-    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length, target: 'bagian-tidak' },
-  ].filter((j) => j.count > 0)
+    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length },
+    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length },
+  ].filter((c) => c.count > 0)
+  const toggle = (key: string) => setFilter((on) => (on.includes(key) ? on.filter((k) => k !== key) : [...on, key]))
+  const shows = (key: string | null) => filter.length === 0 || (key !== null && filter.includes(key))
+  // Keep each finding's original number so its id, label and "Isi laporan" entry stay the same when filtered.
+  const visible = findings.map((f, i) => ({ f, n: i + 1 })).filter(({ f }) => shows(f.severity))
 
   return (
     <div className="container page">
@@ -83,13 +88,12 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             {lead.split(/(\d+ potensi masalah)/i).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : <CitedText key={i} text={part} />))}
           </p>
 
-          {jumps.length > 0 && (
-            <ul className="chips" aria-label="Lompat ke bagian laporan">
-              {jumps.map((j) => (
-                <li key={j.key}>
-                  <button type="button" className={`badge badge-lg badge-btn ${j.cls}`} onClick={() => jumpTo(j.target)}>
-                    <Icon name={j.icon} size={16} />{j.count} {j.label}
-                    <span className="sr-only">, lompat ke bagian ini</span>
+          {chips.length > 0 && (
+            <ul className="chips" aria-label="Saring laporan">
+              {chips.map((c) => (
+                <li key={c.key}>
+                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={filter.includes(c.key)} onClick={() => toggle(c.key)}>
+                    <Icon name={c.icon} size={16} />{c.count} {c.label}
                   </button>
                 </li>
               ))}
@@ -122,8 +126,10 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
       <div className="two-col">
         <div className="main stack" style={{ gap: 40 }}>
-          <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
-            <h2 id="temuan-title" className="section-title">Potensi masalah ({findings.length})</h2>
+          {(filter.length === 0 || visible.length > 0) && <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
+            <h2 id="temuan-title" className="section-title">
+              Potensi masalah ({filter.length > 0 ? `${visible.length} dari ${findings.length}` : findings.length})
+            </h2>
             {findings.length === 0 ? (
               <p className="card row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
                 <span style={{ color: 'var(--color-severity-ok)', display: 'inline-flex' }}><Icon name="circleCheck" /></span>
@@ -132,10 +138,10 @@ export default function Report({ result, onClear }: { result: CheckResult | null
                   {report.unchecked.length > 0 && ' Tetap baca bagian “Tidak dapat diperiksa” di bawah.'}
                 </span>
               </p>
-            ) : findings.map((f, i) => <FindingCard key={i} finding={f} index={i + 1} />)}
-          </section>
+            ) : visible.map(({ f, n }) => <FindingCard key={n} finding={f} index={n} />)}
+          </section>}
 
-          {report.no_issues.length > 0 && (
+          {report.no_issues.length > 0 && shows('ok') && (
             <section id="bagian-aman" className="stack jump-target" aria-labelledby="aman-title" tabIndex={-1}>
               <h2 id="aman-title" className="section-title">Klausul tanpa masalah yang ditemukan</h2>
               <ul className="check-list">
@@ -144,7 +150,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             </section>
           )}
 
-          {report.unchecked.length > 0 && (
+          {report.unchecked.length > 0 && shows('unchecked') && (
             <section id="bagian-tidak" className="stack jump-target" aria-labelledby="tidak-title" tabIndex={-1}>
               <div className="stack-sm" style={{ gap: 4 }}>
                 <h2 id="tidak-title" className="section-title">Tidak dapat diperiksa</h2>
@@ -189,16 +195,16 @@ export default function Report({ result, onClear }: { result: CheckResult | null
           <nav className="card stack-sm toc" aria-labelledby="isi-title">
             <h2 id="isi-title" className="card-title" style={{ fontSize: 15 }}>Isi laporan</h2>
             <ul>
-              {findings.map((f, i) => (
-                <li key={i}>
-                  <button type="button" className="toc-link" onClick={() => jumpTo(`temuan-${i + 1}`)}>
+              {visible.map(({ f, n }) => (
+                <li key={n}>
+                  <button type="button" className="toc-link" onClick={() => jumpTo(`temuan-${n}`)}>
                     <span className="toc-dot" data-severity={f.severity ?? ''} aria-hidden="true" />
                     <span>{f.title}{f.severity && <span className="sr-only">, keparahan {f.severity}</span>}</span>
                   </button>
                 </li>
               ))}
-              {report.no_issues.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-aman')}><span className="toc-dot" data-severity="ok" aria-hidden="true" />Tanpa masalah ({report.no_issues.length})</button></li>}
-              {report.unchecked.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-tidak')}><span className="toc-dot" data-severity="unchecked" aria-hidden="true" />Tidak dapat diperiksa ({report.unchecked.length})</button></li>}
+              {report.no_issues.length > 0 && shows('ok') && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-aman')}><span className="toc-dot" data-severity="ok" aria-hidden="true" />Tanpa masalah ({report.no_issues.length})</button></li>}
+              {report.unchecked.length > 0 && shows('unchecked') && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-tidak')}><span className="toc-dot" data-severity="unchecked" aria-hidden="true" />Tidak dapat diperiksa ({report.unchecked.length})</button></li>}
               {report.notes.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-catatan')}><span className="toc-dot" aria-hidden="true" />Catatan</button></li>}
             </ul>
           </nav>

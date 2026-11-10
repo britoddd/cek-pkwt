@@ -134,7 +134,9 @@ mark {
 .badge-lg { gap: 8px; padding: 6px 12px; font-size: 14px; }
 /* Badges that act as buttons: full touch target; the severity rules below keep their colours and borders. */
 .badge-btn { min-height: 44px; padding-inline: 14px; border: 1px solid transparent; font-family: inherit; cursor: pointer; }
-.badge-btn:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
+/* Filter chips: hover firms up the border; an active filter gets a 2px stroke (inset, so the chip keeps its size). */
+.badge-btn:hover { border-color: currentColor; }
+.badge-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
 .sev-tinggi { background: var(--color-severity-high-bg); color: var(--color-severity-high); }
 .sev-sedang { background: var(--color-severity-medium-bg); color: var(--color-severity-medium); }
 .sev-rendah { background: var(--color-severity-low-bg); color: var(--color-severity-low); }
