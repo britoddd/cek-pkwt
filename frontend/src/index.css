@@ -134,9 +134,10 @@ mark {
 .badge-lg { gap: 8px; padding: 6px 12px; font-size: 14px; }
 /* Badges that act as buttons: full touch target; the severity rules below keep their colours and borders. */
 .badge-btn { min-height: 44px; padding-inline: 14px; border: 1px solid transparent; font-family: inherit; cursor: pointer; }
-/* Filter chips: hover firms up the border; an active filter gets a 2px stroke (inset, so the chip keeps its size). */
+/* Filter chips: hover firms up the border. While any filter is on, the chips that are off turn grey. */
 .badge-btn:hover { border-color: currentColor; }
-.badge-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 2px currentColor; }
+.chips:has([aria-pressed="true"]) .badge-btn[aria-pressed="false"] { background: var(--color-severity-unchecked-bg); color: var(--color-text-muted); border-color: var(--color-border); }
+.chips:has([aria-pressed="true"]) .badge-btn[aria-pressed="false"]:hover { border-color: currentColor; }
 .sev-tinggi { background: var(--color-severity-high-bg); color: var(--color-severity-high); }
 .sev-sedang { background: var(--color-severity-medium-bg); color: var(--color-severity-medium); }
 .sev-rendah { background: var(--color-severity-low-bg); color: var(--color-severity-low); }
@@ -242,9 +243,10 @@ mark {
 @media (min-width: 921px) and (min-height: 760px) {
   .report-aside { position: sticky; top: 112px; }
   .toc { max-height: calc(100dvh - 420px); overflow-y: auto; }
+  .report-aside:has(.filter-panel) .toc { max-height: calc(100dvh - 570px); } /* the filter island takes ~150px more */
 }
 @media (max-width: 920px) {
-  .toc { display: none; }
+  .toc, .filter-panel { display: none; }
   /* The aside stacks below the findings here, so its action card moves up to sit under the summary. */
   .two-col > .report-aside { display: contents; }
   .report-aside > .summary-actions { order: -1; flex: 1 1 100%; }

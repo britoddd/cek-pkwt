@@ -192,6 +192,22 @@ export default function Report({ result, onClear }: { result: CheckResult | null
               </button>
             </p>
           </section>
+          {filter.length > 0 && (
+            <section className="card stack-sm filter-panel" aria-labelledby="filter-title">
+              <h2 id="filter-title" className="card-title" style={{ fontSize: 15 }}>Filter aktif</h2>
+              <ul className="chips">
+                {chips.filter((c) => filter.includes(c.key)).map((c) => (
+                  <li key={c.key}>
+                    <button type="button" className={`badge badge-btn ${c.cls}`} onClick={() => toggle(c.key)}>
+                      <Icon name={c.icon} size={14} />{c.label}<Icon name="x" size={14} />
+                      <span className="sr-only">, hapus filter ini</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setFilter([])}>Tampilkan semua</button>
+            </section>
+          )}
           <nav className="card stack-sm toc" aria-labelledby="isi-title">
             <h2 id="isi-title" className="card-title" style={{ fontSize: 15 }}>Isi laporan</h2>
             <ul>
