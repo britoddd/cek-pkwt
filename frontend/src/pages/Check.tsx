@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { checkContract, getRegions, type CheckResult } from '../api'
 import { Icon, Loading, Steps } from '../components'
 import { redact } from '../redact'
+import { detectRegion } from '../region'
 import { TTL_MINUTES } from '../storage'
 
 // Same limits as backend/app.py.
@@ -46,6 +47,8 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const preview = redact(contract)
+  // Read from the redacted text, so a masked home address never counts as the work location.
+  const detected = detectRegion(preview.text, regions)
 
   useEffect(() => {
     getRegions().then(setRegions).catch(() => setRegions([]))
@@ -95,7 +98,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
             <div className="field" style={{ maxWidth: 420 }}>
               <label htmlFor="lokasi" className="label">Lokasi kerja</label>
               <select id="lokasi" className="select" value={region} onChange={(e) => setRegion(e.target.value)} aria-describedby="lokasi-hint">
-                <option value="">Deteksi otomatis dari kontrak</option>
+                <option value="">{detected ? `${detected} (Deteksi otomatis)` : '(Deteksi otomatis dari kontrak)'}</option>
                 {regions.map((r) => <option key={r} value={r}>{r}</option>)}
                 <option value={OTHER}>Lainnya (di luar daftar)</option>
               </select>
