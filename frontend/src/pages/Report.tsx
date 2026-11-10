@@ -263,7 +263,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           <span className="kicker">Keyakinan AI</span>
           {/* Three steps for rendah / sedang / tinggi; the word beside it carries the meaning. */}
           <span className="meter" data-level={f.confidence.toLowerCase()} aria-hidden="true"><i /><i /><i /></span>
-          <strong>{f.confidence}</strong>
+          <strong>{f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1)}</strong>
         </p>
       )}
       {f.hr_question && (
