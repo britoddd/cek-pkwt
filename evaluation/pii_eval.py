@@ -3,7 +3,7 @@
   python evaluation/pii_eval.py      # writes results/pii.json and results/pii.md
 
 Runs the exact redact() code stored in langflow/check_work_contract.json (the code Langflow executes;
-it is identical in every committed version of the flow) and the browser preview in frontend/src/redact.ts
+its source is langflow/components/pii_redactor.py) and the browser preview in frontend/src/redact.ts
 (through Node's --experimental-strip-types) on the same inputs:
   1. labelled snippets: PII that must disappear ("mask") and non-PII the checker needs ("keep"),
   2. the 15 evaluation contracts as whole documents, using the dummy PII listed in cases.json.
@@ -55,6 +55,16 @@ CASES = [
     ("telp_jakarta_spasi", "umum", "Telepon rumah: 021 555 1234", ["555 1234"], []),
     ("rekening_label", "umum", "No. Rekening: 1234567890", ["1234567890"], []),
     ("rekening_kalimat", "umum", "ditransfer ke nomor rekening BCA 123-456-7890", ["123-456-7890"], []),
+    ("ttd_nama_berlabel", "umum", "Nama : Budi Santoso\n\nPIHAK PERTAMA          PIHAK KEDUA\n\nManajer HRD            Budi Santoso",
+     ["Budi Santoso"], ["Manajer HRD"]),
+    ("ttd_kolom_tanpa_label", "umum",
+     "Jakarta, 2 November 2026\n\nPIHAK PERTAMA,                      PIHAK KEDUA,\n\n\n(Ahmad Wijaya)                      (Budi Santoso)\nManajer HRD                         Pekerja",
+     ["Ahmad Wijaya", "Budi Santoso"], ["Manajer HRD", "2 November 2026"]),
+    ("blok_pekerja_setelah_perusahaan", "umum",
+     "PIHAK PERTAMA\nNama : PT Maju Jaya\nAlamat : Jl. Industri No. 1, Kota Bekasi\n\nPIHAK KEDUA\nNama : Budi Santoso\nAlamat : Jl. Melati No. 5",
+     ["Budi Santoso", "Jl. Melati No. 5"], []),
+    ("ttd_english", "umum", "Company                             Employee\n\nHR Director                         Andi Wijaya",
+     ["Andi Wijaya"], ["HR Director"]),
 
     ("nama_huruf", "tidak_umum", "a. Nama : Budi Santoso", ["Budi Santoso"], []),
     ("nama_bullet", "tidak_umum", "- Nama: Budi Santoso", ["Budi Santoso"], []),
@@ -108,6 +118,12 @@ CASES = [
     ("lokasi_kerja", "bukan_pii", "Tempat kerja di pabrik Perusahaan di Kabupaten Karawang.", [], ["Kabupaten Karawang"]),
     ("blok_perusahaan_nama", "bukan_pii", "PIHAK PERTAMA\nNama : PT Maju Jaya Sejahtera", [], ["PT Maju Jaya Sejahtera"]),
     ("blok_perusahaan_alamat", "bukan_pii", "PIHAK PERTAMA\nAlamat : Jl. Industri Raya No. 5, Kota Bekasi", [], ["Kota Bekasi"]),
+    ("blok_perusahaan_lalu_pekerja", "bukan_pii",
+     "PIHAK PERTAMA\nNama : PT Maju Jaya\nAlamat : Jl. Industri No. 1, Kota Bekasi\n\nPIHAK KEDUA\nNama : Budi Santoso\nAlamat : Jl. Melati No. 5",
+     [], ["PT Maju Jaya", "Jl. Industri No. 1, Kota Bekasi"]),
+    ("nama_pt_tanpa_blok", "bukan_pii", "Nama : PT Maju Jaya", [], ["PT Maju Jaya"]),
+    ("ttd_perusahaan", "bukan_pii", "PIHAK PERTAMA                       PIHAK KEDUA\nPT Sinar Data Nusantara\n\n(Direktur)",
+     [], ["PT Sinar Data Nusantara", "(Direktur)"]),
 ]
 
 GROUPS = {"umum": "Format yang didukung", "tidak_umum": "Format tidak umum tetapi realistis",

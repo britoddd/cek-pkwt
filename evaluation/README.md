@@ -82,24 +82,25 @@ Per jenis masalah: bahasa kontrak, kompensasi ditiadakan, lembur tanpa upah, pen
 
 | Uji | Hasil |
 |---|---|
-| Format yang didukung (label `Nama:`, `Alamat:`, `TTL:`, NIK, NPWP berformat, email, HP, telepon 02x, rekening dengan kata "rekening") | **32 dari 32 tersamarkan** |
-| Format tidak umum tetapi realistis | **0 dari 30 tersamarkan** |
+| Format yang didukung (label `Nama:`, `Alamat:`, `TTL:`, NIK, NPWP berformat, email, HP, telepon 02x, rekening dengan kata "rekening", nama di blok tanda tangan) | **38 dari 38 tersamarkan** |
+| Format tidak umum tetapi realistis | **26 dari 30 tersamarkan** |
 | Penyamaran sengaja (email `[at]`, zero-width space, angka diucapkan) | 1 dari 4 |
-| Teks bukan data pribadi tetap utuh (upah, tanggal, nomor kontrak, pasal, wilayah kerja) | 17 dari 19 |
-| Data pribadi di 15 kontrak uji yang tersamarkan sebelum sampai ke model | **60 dari 89 (67%)** |
+| Teks bukan data pribadi tetap utuh (upah, tanggal, nomor kontrak, pasal, wilayah kerja, nama dan alamat perusahaan) | 24 dari 24 |
+| Data pribadi di 15 kontrak uji yang tersamarkan sebelum sampai ke model | **89 dari 89 (100%)** |
 | Wilayah kerja dan semua nominal rupiah tetap terbaca setelah redaksi | 15 dari 15 kontrak |
 | Data pribadi mentah yang muncul di laporan | 0 dari 45 laporan |
-| Pratinjau browser sama dengan redaksi di server | 96 dari 97 masukan |
+| Pratinjau browser sama dengan redaksi di server | 103 dari 104 masukan |
 
-Format yang lolos, dari yang paling berdampak:
+Angka redaksi di atas dari `pii_eval.py` setelah perbaikan PII Redactor pada 10 November 2026. Sebelum perbaikan, 60 dari 89 nilai (67%) tersamarkan: nama di blok tanda tangan lolos di 15 dari 15 kontrak, dan di blok PIHAK PERTAMA baris `Nama : PT …` dan `Alamat : …` ikut disamarkan sehingga nama dan alamat perusahaan hilang. Baris "0 dari 45 laporan" berasal dari run 31 Oktober dengan redaktor lama.
 
-- **Nama di blok tanda tangan** (`(Budi Santoso)` atau nama di bawah "PIHAK KEDUA"). Nama ini lolos di 15 dari 15 kontrak uji, sehingga nama pekerja sampai ke model di setiap kontrak yang memiliki blok tanda tangan. Nama dalam kalimat ("Saya yang bertanda tangan di bawah ini, …") dan setelah sapaan "Sdr." juga lolos.
-- **NIK yang diikuti koma atau titik** (`NIK 3201…0001,`) tidak disamarkan, karena pola NIK menolak angka yang diikuti `.` atau `,` agar tidak memotong nominal seperti `1.234.567`.
-- **Label dengan huruf atau tanda pisah** (`a. Nama :`, `- Nama:`), serta label lain seperti `Tgl. Lahir`, `Tanggal Lahir`, `Tempat/Tgl. Lahir`, `Alamat KTP`, `Domisili`, dan `Pekerja :`.
-- **Baris lanjutan alamat** (RT/RW dan kelurahan di baris berikutnya).
-- **Nomor lain:** NPWP 15 digit tanpa titik, telepon rumah selain kode 02x (misalnya `031-…` dan `(021) …`), `Rek.`/`No. Rek`, nomor BPJS, dan paspor.
+Cara redaktor sekarang menangani pola yang dulu lolos:
 
-Redaksi juga terlalu agresif di satu pola: di blok PIHAK PERTAMA, baris `Nama : PT …` dan `Alamat : …` ikut disamarkan, sehingga nama dan alamat perusahaan hilang. Di semua kontrak uji, wilayah kerja tetap terbaca karena juga disebut di pasal lain dan dipilih di web app. Di IBM Bob tidak ada pilihan wilayah, jadi kontrak yang hanya menyebut kota kerja di alamat perusahaan akan kehilangan informasi itu. Satu perbedaan antara pratinjau dan server adalah NIK dengan angka lebar penuh (`３２０１…`): Python menyamarkannya, sedangkan pratinjau JavaScript tidak.
+- **Nama di blok tanda tangan.** Nama dari baris `Nama :` dan dari kalimat "yang bertanda tangan di bawah ini, …" disamarkan di mana pun muncul lagi. Di blok tanda tangan (setelah baris yang hanya berisi judul pihak, misalnya `PIHAK PERTAMA      PIHAK KEDUA`, di 15 baris terakhir), sel berisi nama berhuruf kapital ikut disamarkan walaupun tanpa label, kecuali jabatan (`Manajer HRD`, `Direktur`) dan nama perusahaan (`PT …`).
+- **Blok perusahaan.** Baris berlabel di bawah judul `PIHAK PERTAMA`/`Perusahaan`/`Employer` sampai baris kosong berikutnya, dan nilai yang diawali `PT`/`CV`/`Koperasi`/`Yayasan`, tidak disamarkan.
+- **Label lain:** `a. Nama :`, `- Nama:`, `Tgl. Lahir`, `Tanggal Lahir`, `Tempat/Tgl. Lahir`, `Alamat KTP`, `Domisili`, baris lanjutan alamat yang menjorok, alamat setelah "bertempat tinggal di", tanggal setelah "lahir di … pada", dan nama setelah sapaan (`Sdr.`, `Bapak`, `Ibu`).
+- **Nomor lain:** NIK yang diikuti koma atau titik, NPWP 15 digit, BPJS/KPJ, `Rek.`/`No. Rek`, `account number`, dan telepon dengan kode area lain atau dalam kurung (`(031) …`, `0361-…`).
+
+Yang masih lolos: label dalam tabel (`| Nama | … |`), label `Pekerja :`, NIK dengan spasi ganda, nomor paspor, dan penyamaran sengaja. Nama tanpa label di luar blok tanda tangan juga tidak dikenali. Satu perbedaan antara pratinjau dan server adalah NIK dengan angka lebar penuh (`３２０１…`): Python menyamarkannya, sedangkan pratinjau JavaScript tidak.
 
 ## Batasan evaluasi
 

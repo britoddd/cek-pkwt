@@ -301,7 +301,7 @@ Chat Input → PII Redactor ─┬─► Astra DB (pasal relevan, top-4) ─► 
 ```
 
 - **Input:** teks kontrak.
-- **PII Redactor (CekPKWT):** komponen kustom berbasis regex yang mengganti data pribadi dengan label (`[NIK]`, `[NPWP]`, `[EMAIL]`, `[TELEPON]`, `[NO_REKENING]`, `[NAMA]`, `[ALAMAT]`, `[TTL]`). Label milik perusahaan (PT, CV, direktur, HRD) dibiarkan.
+- **PII Redactor (CekPKWT):** komponen kustom berbasis regex yang mengganti data pribadi dengan label (`[NIK]`, `[NPWP]`, `[NOMOR_ID]`, `[EMAIL]`, `[TELEPON]`, `[NO_REKENING]`, `[NAMA]`, `[ALAMAT]`, `[TTL]`). Nama pekerja juga disamarkan di blok tanda tangan dan di setiap tempat lain nama itu muncul. Data perusahaan (blok PIHAK PERTAMA, nilai berawalan PT/CV, jabatan seperti direktur dan HRD) dibiarkan. Kodenya ada di `langflow/components/pii_redactor.py`.
 - **Retrieval:** teks yang sudah disamarkan dipakai sebagai query ke Astra DB. Query kedua mengambil semua data upah minimum yang sedang berlaku (hingga 30 entri), sehingga wilayah pengguna selalu ikut terbaca jika datanya ada.
 - **Agent** (dengan tool kalkulator dan tanggal):
   1. mengecek cakupan (hanya PKWT; PKWTT, magang, dan kemitraan ditolak dengan sopan),
@@ -401,7 +401,7 @@ Flow pemeriksaan dan tanya aturan hanya menilai dengan rezim `current`. Pasal `u
 | Type-check frontend | Seluruh kode TypeScript (bagian dari `npm run build`) | `cd frontend && npx tsc --noEmit` |
 | CI `corpus-ci` | Uji sinkronisasi dan validator di setiap pull request | GitHub Actions |
 | `evaluation/run_eval.py` | Evaluasi end-to-end: 15 kontrak fiktif dikirim ke API, lalu deteksi masalah tertanam, alarm palsu, sitasi, dan waktu proses dihitung | `python evaluation/run_eval.py run`, lalu `score` (`selftest` tanpa jaringan) |
-| `evaluation/pii_eval.py` (tanpa jaringan dan tanpa LLM) | Ketahanan redaksi data pribadi pada 82 potongan teks dan 15 kontrak utuh, serta kesamaannya dengan pratinjau di browser | `python evaluation/pii_eval.py` |
+| `evaluation/pii_eval.py` (tanpa jaringan dan tanpa LLM) | Ketahanan redaksi data pribadi pada 89 potongan teks dan 15 kontrak utuh, serta kesamaannya dengan pratinjau di browser | `python evaluation/pii_eval.py` |
 
 Run `corpus-ci` dan `corpus-sync` terbaru di GitHub Actions berhasil (30 Oktober 2026).
 
@@ -415,9 +415,9 @@ Diukur pada 31 Oktober 2026. Ada 15 kontrak PKWT fiktif: 10 kontrak masing-masin
 | Alarm palsu pada kontrak bersih | 9 temuan pada 5 kontrak (15 laporan, 7 di antaranya tanpa temuan). 7 dari 9 adalah temuan upah minimum padahal upah sudah di atas UMK |
 | Sitasi pasal yang sesuai teks resmi (verifikasi manual) | 72% (102 dari 142 rujukan): pasalnya ada di korpus terverifikasi, statusnya tidak salah, dan isinya mendukung klaim temuan. Pasal yang dirujuk ada di korpus untuk 139 dari 142 rujukan (98%) |
 | Waktu review kontrak | Belum diukur dengan responden. Waktu proses sistem: median 20 detik per kontrak (p90 33 detik) |
-| Redaksi data pribadi, format yang didukung | 32 dari 32 tersamarkan |
-| Redaksi data pribadi, format tidak umum tetapi realistis | 0 dari 30 tersamarkan |
-| Redaksi pada 15 kontrak uji utuh | 60 dari 89 nilai data pribadi tersamarkan (67%); nama di blok tanda tangan lolos di 15 dari 15 kontrak |
+| Redaksi data pribadi, format yang didukung | 38 dari 38 tersamarkan |
+| Redaksi data pribadi, format tidak umum tetapi realistis | 26 dari 30 tersamarkan |
+| Redaksi pada 15 kontrak uji utuh | 89 dari 89 nilai data pribadi tersamarkan, termasuk nama di blok tanda tangan; nama dan alamat perusahaan tetap utuh (setelah perbaikan 10 November 2026; sebelumnya 60 dari 89) |
 | Prompt injection di dalam kontrak | Dilaporkan di "Catatan" dan tidak diikuti pada 3 dari 3 run |
 
 Yang kami pelajari dari evaluasi ini:
@@ -425,7 +425,7 @@ Yang kami pelajari dari evaluasi ini:
 - **Retrieval adalah titik lemah utama.** Dari 24 masalah yang terlewat, 12 masuk "Tidak dapat diperiksa" karena pasalnya tidak ikut terambil; flow hanya mengambil 4 pasal teratas untuk seluruh kontrak. Saat pasal yang tepat tidak terambil, temuan kadang merujuk pasal yang tidak relevan, misalnya masa percobaan ke PP 35/2021 Pasal 13 (isi minimum PKWT), bukan Pasal 12.
 - **Alarm palsu upah minimum.** Temuan "upah di bawah UMK" muncul di 14 dari 33 laporan yang upahnya sudah sesuai, padahal isi temuannya sendiri menyatakan upah di atas UMK. Untuk wilayah di luar data upah (Medan), sistem tetap membuat temuan upah, dan satu run memakai angka UMK Kota Malang.
 - **Teks sistem dianggap upaya injection.** Kalimat pembungkus dari PII Redactor atau baris wilayah dari backend dilaporkan sebagai teks yang "mencoba memberi instruksi kepada AI" di 8 dari 42 laporan tanpa injection.
-- **Redaksi hanya andal untuk format berlabel standar.** Nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik tetap sampai ke model. Data pribadi mentah tidak muncul di satu pun dari 45 laporan.
+- **Redaksi dulu hanya andal untuk format berlabel standar.** Saat evaluasi, nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik masih sampai ke model, dan nama serta alamat perusahaan di blok PIHAK PERTAMA ikut disamarkan. Semuanya sudah diperbaiki (lihat [`evaluation/`](evaluation/README.md)). Data pribadi mentah tidak muncul di satu pun dari 45 laporan.
 
 ### Kesiapan produksi
 
@@ -458,7 +458,7 @@ Yang kami pelajari dari evaluasi ini:
 - Bot tidak bisa membaca PDF hasil pindaian (tanpa lapisan teks, sering terjadi pada Surat Edaran) karena tidak ada OCR. Regulasi seperti ini muncul sebagai issue "needs manual entry".
 - Data upah minimum 2026 hanya mencakup 18 wilayah di Pulau Jawa. Lokasi kerja di luar daftar itu dilaporkan sebagai "Tidak dapat diperiksa".
 - Retrieval mengambil 4 pasal teratas untuk seluruh kontrak, sehingga pasal yang relevan sering tidak ikut terambil. Dalam evaluasi, ini penyebab separuh masalah yang terlewat, dan saat pasal yang tepat tidak terambil, temuan cenderung merujuk pasal lain yang tidak relevan.
-- Redaksi data pribadi berbasis regex. Format berlabel standar tersamarkan seluruhnya, tetapi nama di blok tanda tangan, label seperti `a. Nama :` atau `Tgl. Lahir`, baris lanjutan alamat, dan NIK yang diikuti koma atau titik masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan tidak melewati redaksi.
+- Redaksi data pribadi berbasis regex. Semua data pribadi di 15 kontrak uji tersamarkan, tetapi format di luar pola (label dalam tabel, `Pekerja :`, nama tanpa label di luar blok tanda tangan, nomor paspor) masih sampai ke model (lihat [`evaluation/`](evaluation/README.md)). Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Input berupa teks; kontrak dalam bentuk PDF atau foto perlu disalin menjadi teks terlebih dahulu.
 - Backend, Langflow, dan runner sinkronisasi korpus berjalan di satu server self-hosted, sehingga ketersediaannya bergantung pada listrik dan koneksi internet server tersebut. Belum ada server cadangan.
 - Pembatasan jumlah permintaan baru diterapkan di nginx per pengunjung. Belum ada kuota per pengguna atau autentikasi pengguna.
@@ -501,7 +501,7 @@ Kami memisahkan pengaman yang dijamin kode dari yang bergantung pada kepatuhan m
 
 ### Risiko yang masih ada
 
-- Redaksi berbasis regex melewatkan format yang tidak umum. Dalam evaluasi, nama di blok tanda tangan lolos di semua kontrak uji, sehingga nama pekerja tetap terbaca oleh model. Pertanyaan di Tanya aturan tidak melewati redaksi.
+- Redaksi berbasis regex melewatkan format yang tidak umum, misalnya label dalam tabel atau nama tanpa label di luar blok tanda tangan. Pertanyaan di Tanya aturan tidak melewati redaksi.
 - Langflow 1.12.4 tidak bisa mematikan log transaksinya (masukan dan keluaran setiap komponen). Dengan `LANGFLOW_MAX_TRANSACTIONS_TO_KEEP=1`, hanya entri terbaru per flow yang tersimpan, dan entri itu tertimpa pada langkah berikutnya.
 - Evaluasi menemukan alarm palsu upah minimum (upah di atas UMK ditandai "di bawah UMK") dan rujukan pasal yang keliru saat pasal yang tepat tidak terambil; lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi).
 
