@@ -142,7 +142,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
           {report.no_issues.length > 0 && shows('ok') && (
             <section id="bagian-aman" className="stack jump-target" aria-labelledby="aman-title" tabIndex={-1}>
-              <h2 id="aman-title" className="section-title">Klausul tanpa masalah yang ditemukan</h2>
+              <h2 id="aman-title" className="section-title title-icon title-ok"><Icon name="circleCheck" size={24} />Klausul tanpa masalah yang ditemukan</h2>
               <ul className="check-list">
                 {report.no_issues.map((item, i) => <li key={i}><Icon name="circleCheck" /><span><CitedText text={item} /></span></li>)}
               </ul>
@@ -152,7 +152,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
           {report.unchecked.length > 0 && shows('unchecked') && (
             <section id="bagian-tidak" className="stack jump-target" aria-labelledby="tidak-title" tabIndex={-1}>
               <div className="stack-sm" style={{ gap: 4 }}>
-                <h2 id="tidak-title" className="section-title">Tidak dapat diperiksa</h2>
+                <h2 id="tidak-title" className="section-title title-icon title-unchecked"><Icon name="circleDashed" size={24} />Tidak dapat diperiksa</h2>
                 <p className="muted">Klausul ini tidak cocok dengan pasal mana pun di basis regulasi kami. Ini bukan berarti aman atau bermasalah.</p>
               </div>
               <ul className="unchecked-list">
@@ -246,14 +246,26 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         )}
       </div>
       <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} hidden={!open}>
-      {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
+      {f.issue && (
+        <div className="finding-section">
+          <span className="kicker">Potensi masalah</span>
+          <p><CitedText text={f.issue} /></p>
+        </div>
+      )}
       {f.references.length > 0 && (
         <div className="finding-section">
           <span className="kicker">Pasal terkait</span>
           <div className="meta-row">{f.references.map((r, i) => <Citation key={i} {...r} />)}</div>
         </div>
       )}
-      {f.confidence && <p className="small muted">Keyakinan AI: <strong style={{ color: 'var(--color-text)' }}>{f.confidence}</strong></p>}
+      {f.confidence && (
+        <p className="confidence">
+          <span className="kicker">Keyakinan AI</span>
+          {/* Three steps for rendah / sedang / tinggi; the word beside it carries the meaning. */}
+          <span className="meter" data-level={f.confidence.toLowerCase()} aria-hidden="true"><i /><i /><i /></span>
+          <strong>{f.confidence}</strong>
+        </p>
+      )}
       {f.hr_question && (
         <div className="hr-row">
           <div className="hr-question">

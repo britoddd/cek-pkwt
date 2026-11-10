@@ -85,7 +85,7 @@ export function CopyButton({ text, label = 'Salin', name, className = 'btn btn-s
     <>
       <button type="button" className={className} onClick={copy} aria-label={state === 'idle' ? name : undefined}>
         <Icon name={state === 'copied' ? 'check' : 'copy'} size={16} />
-        {state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin' : label}
+        <span className="copy-label">{state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin' : label}</span>
       </button>
       <span className="sr-only" aria-live="polite">
         {state === 'copied' ? 'Tersalin ke clipboard' : state === 'failed' ? 'Gagal menyalin. Pilih teksnya lalu salin manual.' : ''}
