@@ -266,6 +266,8 @@ mark {
 .finding-card > .finding-title { grid-area: title; }
 .finding-card > .badge { grid-area: badge; align-self: start; margin-left: 4px; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
 .finding-card > .finding-clause { grid-area: clause; align-self: start; }
+.finding-card > .finding-show { grid-column: 1 / -1; justify-self: center; margin: -6px 0 -8px; }
+.finding-card:hover > .finding-show { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 @media (max-width: 640px) {
   .finding-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "num title" ". badge" ". clause"; }
   .finding-card > .badge { justify-self: start; margin-left: 0; }

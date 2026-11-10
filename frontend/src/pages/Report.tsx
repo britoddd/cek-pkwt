@@ -233,6 +233,8 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         {missingQuote
           ? <p className="missing finding-clause">Tidak disebutkan di kontrak.</p>
           : <blockquote className="quote finding-clause"><mark>“{f.quote}”</mark></blockquote>}
+        {/* Visual cue only: the whole header card is the button, so this isn't a second control. */}
+        {!open && <span className="finding-toggle finding-show no-print" aria-hidden="true"><Icon name="chevronDown" size={18} />Tampilkan detail</span>}
       </div>
       <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
       {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
