@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import type { CheckResult, Finding, Severity } from '../api'
 import { Citation, CitedText, CopyButton, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
@@ -15,7 +15,7 @@ function jumpTo(id: string) {
   const el = document.getElementById(id)
   if (!el) return
   // A jump to a collapsed finding opens it.
-  el.querySelector<HTMLButtonElement>('.finding-toggle[aria-expanded="false"]')?.click()
+  el.querySelector<HTMLButtonElement>('.finding-head-btn[aria-expanded="false"]')?.click()
   const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   el.focus({ preventScroll: true })
@@ -211,6 +211,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
   const [open, setOpen] = useState(true)
+  const headBtn = useRef<HTMLButtonElement>(null)
   // "Simpan sebagai PDF" and Ctrl+P print every finding in full; flushSync renders before the print snapshot.
   useEffect(() => {
     const expand = () => flushSync(() => setOpen(true))
@@ -219,18 +220,17 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
   }, [])
   return (
     <article id={`temuan-${index}`} className="finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
-      {/* Header island: title, severity, and the toggle for the details island below it. */}
+      {/* Header island: the title button stretches over the whole card, so clicking anywhere on it toggles the details. */}
       <div className="card finding-card">
         <div className="finding-head">
           <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-            <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
+            <button type="button" ref={headBtn} className="finding-head-btn" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
+              <span className="finding-num">{String(index).padStart(2, '0')}</span>
+              <span>{f.title}</span>
+            </button>
           </h3>
           {f.severity && <SeverityBadge level={f.severity} />}
         </div>
-        <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
-          <Icon name="chevronDown" size={18} />{open ? 'Sembunyikan detail' : 'Tampilkan detail'}
-          <span className="sr-only">: {f.title}</span>
-        </button>
       </div>
       <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
       {missingQuote
@@ -252,6 +252,11 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           <span className="no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
         </div>
       )}
+      {/* This button hides itself, so focus moves back to the header to keep the keyboard user's place. */}
+      <button type="button" className="finding-toggle no-print" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => { setOpen(false); headBtn.current?.focus() }}>
+        <Icon name="chevronDown" size={18} />Sembunyikan detail
+        <span className="sr-only">: {f.title}</span>
+      </button>
       </div>
     </article>
   )

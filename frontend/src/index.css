@@ -263,7 +263,14 @@ mark {
 .finding-head .finding-title { flex: 1 1 auto; min-width: 0; }
 .finding-head .badge { flex: none; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
 @media (max-width: 640px) { .finding-head { flex-wrap: wrap; } }
-/* Outline-less text button centred under the title; its chevron points up while the details island is shown. */
+/* The header card is the toggle: the title button's ::after covers the card, and its focus ring rings the card. */
+.finding-card { position: relative; }
+.finding-head-btn { display: flex; gap: 12px; align-items: baseline; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.finding-head-btn::after { content: ""; position: absolute; inset: 0; border-radius: var(--card-radius); }
+.finding-head-btn:hover { color: var(--color-secondary-hover); }
+.finding-head-btn:focus-visible { outline: none; }
+.finding-head-btn:focus-visible::after { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+/* "Sembunyikan detail": outline-less text button centred at the foot of the details island. */
 .finding-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
 .finding-toggle .icon { transition: rotate 0.15s ease; }
