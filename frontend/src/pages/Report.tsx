@@ -94,7 +94,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
           <div className="summary-notes">
             <details className="legend no-print">
-              <summary>Apa arti keparahan, keyakinan, dan status pasal?</summary>
+              <summary>Apa arti keparahan dan keyakinan?</summary>
               <dl>
                 <dt>Keparahan tinggi</dt>
                 <dd>Berdampak langsung pada upah atau hak utama.</dd>
@@ -102,12 +102,6 @@ export default function Report({ result, onClear }: { result: CheckResult | null
                 <dd>Dampaknya lebih kecil, tetapi tetap sebaiknya dikonfirmasi ke HR.</dd>
                 <dt>Keyakinan</dt>
                 <dd>Seberapa jelas dasarnya. Tinggi: klausul eksplisit dan pasalnya jelas. Sedang: perlu interpretasi. Rendah: klausulnya ambigu.</dd>
-                <dt>Status pasal</dt>
-                <dd>
-                  <strong>berlaku</strong>: berlaku sebagaimana tertulis. <strong>diubah</strong> atau <strong>disisipkan</strong>: berlaku
-                  dalam bentuk yang telah diubah atau disisipkan. <strong>dimaknai Putusan MK</strong>: dibaca sesuai pemaknaan Putusan
-                  Mahkamah Konstitusi. <strong>imbauan</strong>: surat edaran, bukan peraturan yang memuat sanksi.
-                </dd>
               </dl>
             </details>
 
@@ -255,7 +249,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
       {f.references.length > 0 && (
         <div className="finding-section">
           <span className="kicker">Pasal terkait</span>
-          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} {...r} />)}</div>
+          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} label={r.label} status={null} />)}</div>
         </div>
       )}
       {f.confidence && (

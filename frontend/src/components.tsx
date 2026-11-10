@@ -54,7 +54,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function Citation({ label, status }: Reference) {
   return (
     <span className="cite">
-      <span className="cite-dot" data-status={status ?? ''} aria-hidden="true" />
+      {status && <span className="cite-dot" data-status={status} aria-hidden="true" />}
       {label}{status && ` · ${STATUS_LABEL[status] ?? status}`}
     </span>
   )
