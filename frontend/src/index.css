@@ -337,9 +337,10 @@ mark {
 /* The HR question island with an icon-only copy button beside it, stretched to the island's height.
    The button's text ("Salin" / "Tersalin") stays readable to screen readers but is hidden on screen. */
 .hr-row { display: flex; align-items: stretch; gap: 10px; }
-.hr-question { flex: 1 1 auto; min-width: 0; padding: 14px 18px; border-radius: var(--radius-md); background: var(--primitive-color-tinta-50); border-left: 4px solid var(--color-primary); font-weight: 600; color: var(--color-text); }
+.hr-question { flex: 1 1 auto; min-width: 0; padding: 14px 18px; border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--primitive-color-tinta-100); border-left: 4px solid var(--color-primary); font-weight: 600; color: var(--color-text); }
 .hr-copy { flex: none; display: flex; }
-.hr-copy .btn { height: auto; padding-inline: 14px; border-radius: var(--radius-md); }
+.hr-copy .btn { height: auto; padding-inline: 14px; border-color: transparent; background: transparent; border-radius: var(--radius-md); }
+.hr-copy .btn:hover { background: var(--color-surface); }
 .hr-copy .copy-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .check-list { list-style: none; padding: 0; background: var(--color-surface); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); }
 .check-list li { display: flex; gap: 12px; align-items: flex-start; padding: 18px 24px; border-bottom: 1px solid var(--color-border); }
