@@ -224,29 +224,22 @@ mark {
 .jump-target { scroll-margin-top: 24px; }
 .jump-target:focus { outline: none; }
 .jump-target:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 4px; }
-.toc ul { list-style: none; padding: 0; display: flex; flex-direction: column; }
-.toc-link { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 44px; margin-inline: -8px; padding: 6px 8px; background: none; border: 0; border-radius: var(--radius-sm); color: var(--color-text); font: inherit; font-size: 14px; line-height: 1.4; text-align: left; cursor: pointer; }
-.toc-link:hover { background: var(--primitive-color-tinta-50); }
-.toc-dot { flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--primitive-color-tinta-300); }
-.toc-dot[data-severity="tinggi"] { background: var(--color-severity-high); }
-.toc-dot[data-severity="sedang"] { background: var(--color-severity-medium); }
-.toc-dot[data-severity="rendah"] { background: var(--color-severity-low); }
-.toc-dot[data-severity="ok"] { background: var(--color-severity-ok); }
-.toc-dot[data-severity="unchecked"] { background: none; border: 1.5px dashed var(--color-severity-unchecked); }
-/* The outline only helps beside a long report; on narrow screens the summary chips do the jumping. */
-/* Top clears the header island and lines up with jumped-to sections (scroll-padding 88 + scroll-margin 24). */
-/* Pinned only when the window is tall enough to show it whole; a long outline scrolls inside its card
-   (420px = top offset 112 + actions card + gaps). */
+/* Filter checkboxes in the right panel: a full-width row each, with the category's icon in its colour. */
+.filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 40px; margin-inline: -8px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
+.filter-option:hover { background: var(--primitive-color-tinta-50); }
+.filter-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
+.filter-icon { display: inline-flex; background: none; border: 0; }
+.filter-label { flex: 1 1 auto; }
+/* Pinned (top clears the header island) only when the window is tall enough to show the panel whole. */
 /* Side by side, the panel's top lines up with the first finding card, below the "Potensi masalah" title
    (section-title line height 24px × 1.3, plus the section's 20px gap). */
 @media (min-width: 921px) { .report-aside { margin-top: calc(24px * 1.3 + 20px); } }
 @media (min-width: 921px) and (min-height: 760px) {
   .report-aside { position: sticky; top: 112px; }
-  .toc { max-height: calc(100dvh - 420px); overflow-y: auto; }
-  .report-aside:has(.filter-panel) .toc { max-height: calc(100dvh - 570px); } /* the filter island takes ~150px more */
 }
 @media (max-width: 920px) {
-  .toc, .filter-panel { display: none; }
+  /* Phones and tablets filter with the summary chips; the panel would land at the bottom here. */
+  .filter-panel { display: none; }
   /* The aside stacks below the findings here, so its action card moves up to sit under the summary. */
   .two-col > .report-aside { display: contents; }
   .report-aside > .summary-actions { order: -1; flex: 1 1 100%; }

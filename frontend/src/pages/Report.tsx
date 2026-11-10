@@ -10,17 +10,6 @@ const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
   { level: 'rendah', label: 'Rendah', icon: 'info' },
 ]
 
-// Hash links would change the route, so section jumps scroll and move focus by hand.
-function jumpTo(id: string) {
-  const el = document.getElementById(id)
-  if (!el) return
-  // A jump to a collapsed finding opens it.
-  el.querySelector<HTMLButtonElement>('.finding-show')?.click()
-  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
-  el.focus({ preventScroll: true })
-}
-
 const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
@@ -180,7 +169,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
           </p>
         </div>
 
-        <aside className="aside report-aside no-print" aria-label="Navigasi laporan">
+        <aside className="aside report-aside no-print" aria-label="Tindakan dan filter laporan">
           <section className="card summary-actions" aria-label="Tindakan">
             {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
             {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
@@ -192,38 +181,23 @@ export default function Report({ result, onClear }: { result: CheckResult | null
               </button>
             </p>
           </section>
-          {filter.length > 0 && (
-            <section className="card stack-sm filter-panel" aria-labelledby="filter-title">
-              <h2 id="filter-title" className="card-title" style={{ fontSize: 15 }}>Filter aktif</h2>
-              <ul className="chips">
-                {chips.filter((c) => filter.includes(c.key)).map((c) => (
-                  <li key={c.key}>
-                    <button type="button" className={`badge badge-btn ${c.cls}`} onClick={() => toggle(c.key)}>
-                      <Icon name={c.icon} size={14} />{c.label}<Icon name="x" size={14} />
-                      <span className="sr-only">, hapus filter ini</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setFilter([])}>Tampilkan semua</button>
+          {/* The same filters as the summary chips, as checkboxes: ticked = shown. None ticked shows everything. */}
+          {chips.length > 0 && (
+            <section className="card stack-sm filter-panel" role="group" aria-labelledby="filter-title">
+              <h2 id="filter-title" className="card-title" style={{ fontSize: 15 }}>Filter</h2>
+              {chips.map((c) => (
+                <label key={c.key} className="filter-option">
+                  <input type="checkbox" checked={filter.includes(c.key)} onChange={() => toggle(c.key)} />
+                  <span className={`filter-icon ${c.cls}`}><Icon name={c.icon} size={16} /></span>
+                  <span className="filter-label">{c.label}</span>
+                  <span className="small muted">{c.count}</span>
+                </label>
+              ))}
+              {filter.length > 0 && (
+                <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setFilter([])}>Tampilkan semua</button>
+              )}
             </section>
           )}
-          <nav className="card stack-sm toc" aria-labelledby="isi-title">
-            <h2 id="isi-title" className="card-title" style={{ fontSize: 15 }}>Isi laporan</h2>
-            <ul>
-              {visible.map(({ f, n }) => (
-                <li key={n}>
-                  <button type="button" className="toc-link" onClick={() => jumpTo(`temuan-${n}`)}>
-                    <span className="toc-dot" data-severity={f.severity ?? ''} aria-hidden="true" />
-                    <span>{f.title}{f.severity && <span className="sr-only">, keparahan {f.severity}</span>}</span>
-                  </button>
-                </li>
-              ))}
-              {report.no_issues.length > 0 && shows('ok') && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-aman')}><span className="toc-dot" data-severity="ok" aria-hidden="true" />Tanpa masalah ({report.no_issues.length})</button></li>}
-              {report.unchecked.length > 0 && shows('unchecked') && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-tidak')}><span className="toc-dot" data-severity="unchecked" aria-hidden="true" />Tidak dapat diperiksa ({report.unchecked.length})</button></li>}
-              {report.notes.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-catatan')}><span className="toc-dot" aria-hidden="true" />Catatan</button></li>}
-            </ul>
-          </nav>
         </aside>
       </div>
     </div>
