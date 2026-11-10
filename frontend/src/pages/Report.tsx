@@ -196,7 +196,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
           {/* The same filters as the summary chips, as checkboxes: ticked = shown. None ticked shows everything. */}
           {chips.length > 0 && (
             <section className="card stack-sm filter-panel" role="group" aria-labelledby="filter-title">
-              <h2 id="filter-title" className="card-title" style={{ fontSize: 15 }}>Filter</h2>
+              <h2 id="filter-title" className="card-title filter-title">Filter</h2>
               {chips.map((c) => (
                 <label key={c.key} className="filter-option">
                   <input type="checkbox" checked={shows(c.key)} onChange={() => toggle(c.key)} />

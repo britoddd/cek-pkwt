@@ -225,7 +225,9 @@ mark {
 .jump-target:focus { outline: none; }
 .jump-target:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 4px; }
 /* Filter checkboxes in the right panel: a full-width row each, with the category's icon in its colour. */
-.filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 40px; margin-inline: -8px; padding: 4px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
+.filter-panel { gap: 2px; }
+.filter-title { font-size: 20px; margin-bottom: 8px; }
+.filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 32px; margin-inline: -8px; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
 .filter-option:hover { background: var(--primitive-color-tinta-50); }
 .filter-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
 .filter-option .filter-icon { display: inline-flex; background: none; border: 0; } /* colour only, not the chip fill or border */
