@@ -74,39 +74,34 @@ mark {
 
 /* Header */
 .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-.site-header .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding-block: 10px; }
-.brand { display: inline-flex; align-items: center; min-height: 44px; }
-.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--color-text); text-decoration: none; font-size: 15px; font-weight: 500; }
+/* No bottom padding: the nav links run to the bar's bottom edge, so the active page's underline sits
+   on it. The brand stays centred in its row. */
+.site-header .container { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between; gap: 0 24px; padding-block: 8px 0; border: 0 solid transparent; } /* transparent, so the island's border never fades in from the text colour */
+.brand { display: inline-flex; align-items: center; min-height: 44px; align-self: center; }
+.nav { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 4px; }
+.nav a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 12px; color: var(--color-text); text-decoration: none; font-size: 15px; font-weight: 500; }
 .nav a[aria-current="page"] { color: var(--color-primary); font-weight: 700; box-shadow: inset 0 -3px 0 var(--color-accent); }
-.nav .btn-primary { margin-left: 8px; padding: 0 18px; color: var(--button-primary-text); font-weight: 700; }
-/* Wide screens: the header sticks, and once the page scrolls (App.tsx adds .is-island) it lifts into a
-   frosted pill. Its height never changes, so nothing below it shifts. Phones and portrait tablets keep
-   the plain header: their nav wraps to two or three rows, too tall to pin. 880px leaves room for the
-   widest nav (home page with "Laporan"), which needs about 850px to fit on one row. */
+.nav .btn-primary { align-self: center; min-height: 44px; margin-left: 8px; padding: 0 18px; color: var(--button-primary-text); font-weight: 700; }
+/* Wide screens: one 64px row; the header sticks, and once the page scrolls (App.tsx adds .is-island) it
+   lifts into a solid white island with the cards' corner radius. Its height never changes, so nothing
+   below it shifts. Phones and portrait tablets keep the plain header: their nav wraps to two or three
+   rows, too tall to pin. 880px fits the widest nav (home page with "Laporan", about 850px). */
 @media (min-width: 880px) {
-  html { scroll-padding-top: 88px; } /* anchors, report jumps and focused fields land below the island */
-  .site-header { position: sticky; top: 0; z-index: 10; transition: background-color 0.25s ease, border-color 0.25s ease; }
+  html { scroll-padding-top: 88px; } /* anchors and focused fields land below the island */
+  .site-header { position: sticky; top: 0; z-index: 10; transition: border-color 0.25s ease; }
   .site-header .container {
-    width: 100%; border: 1px solid transparent; border-radius: var(--radius-full);
-    transition: width 0.3s ease, max-width 0.3s ease, padding 0.3s ease, translate 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%; padding-block: 0; border: 1px solid transparent; border-radius: var(--card-radius);
+    transition: width 0.3s ease, max-width 0.3s ease, padding 0.3s ease, translate 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
+  .nav a { min-height: 64px; }
   /* The transparent strip around the island lets clicks through to the page. */
   .site-header.is-island { background-color: transparent; border-bottom-color: transparent; pointer-events: none; }
-  /* 22px on the right keeps the "Cek kontrak" button's corners 10px from the pill's curved end, the same
-     gap as above and below it; the island is 11px longer to match, so the content keeps its width. */
   .site-header.is-island .container {
     pointer-events: auto;
-    width: calc(100% - 24px); max-width: 1091px; padding-inline: 20px 22px; translate: 0 12px;
-    background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
-    border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+    width: calc(100% - 24px); max-width: 1091px; padding-inline: 20px; translate: 0 12px;
+    background-color: var(--color-surface); border-color: var(--color-border);
     box-shadow: 0 1px 2px rgba(15, 21, 48, 0.06), 0 12px 32px rgba(15, 21, 48, 0.12);
   }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .site-header.is-island .container { background-color: var(--color-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Buttons */
@@ -226,7 +221,9 @@ mark {
 .jump-target:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 4px; }
 /* Filter checkboxes in the right panel: a full-width row each, with the category's icon in its colour. */
 .filter-panel { gap: 2px; }
-.filter-title { font-size: 20px; margin-bottom: 8px; }
+/* Title of a side-panel card (Filter, Cakupan pemeriksaan, Yang terjadi pada datamu). */
+.panel-title { font-size: 20px; }
+.filter-panel .panel-title { margin-bottom: 8px; }
 .filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 32px; margin-inline: -8px; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
 .filter-option:hover { background: var(--primitive-color-tinta-50); }
 .filter-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
@@ -248,8 +245,9 @@ mark {
 }
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
 /* Report surfaces lift off the cream page; findings carry their severity colour down the left edge. */
-.report-summary, .finding-card, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
-.report-summary { border-top: 4px solid var(--color-primary); }
+/* Shared surfaces: .card-raised lifts a card off the cream page; .card-accent adds the navy top bar. */
+.card-raised, .report-summary, .finding-card, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
+.card-accent, .report-summary { border-top: 4px solid var(--color-primary); }
 .sev-tinggi, .sev-sedang, .sev-rendah, .sev-ok { border: 1px solid color-mix(in srgb, currentColor 40%, transparent); }
 /* A finding is two islands: the header card (severity edge) and, when open, a details island below it. */
 .finding { display: flex; flex-direction: column; }
@@ -314,7 +312,8 @@ mark {
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
 .finding strong { color: var(--color-primary); }
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.finding-body .kicker { font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+/* Uppercase section labels: the report's detail headings and the Cek kontrak form's field labels. */
+.finding-body .kicker, .kicker-label { color: var(--color-primary); font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .finding-section { display: flex; flex-direction: column; gap: 8px; }
 /* Each section heading in the details island gets a bullet; the heading text and everything under it
    share one left edge, 16px in, so content lines up with the heading, not the bullet. */
