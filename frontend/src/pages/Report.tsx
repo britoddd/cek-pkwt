@@ -285,12 +285,14 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         </div>
       )}
       {f.confidence && (
-        <p className="confidence" data-level={f.confidence.toLowerCase()}>
+        <div className="finding-section confidence" data-level={f.confidence.toLowerCase()}>
           <span className="kicker">Keyakinan AI</span>
           {/* Three steps for rendah / sedang / tinggi, coloured red → amber → green; the word carries the meaning. */}
-          <span className="meter" aria-hidden="true"><i /><i /><i /></span>
-          <strong>{f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1)}</strong>
-        </p>
+          <p className="confidence-value">
+            <span className="meter" aria-hidden="true"><i /><i /><i /></span>
+            <strong>{f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1)}</strong>
+          </p>
+        </div>
       )}
       {f.hr_question && (
         <div className="finding-section">
