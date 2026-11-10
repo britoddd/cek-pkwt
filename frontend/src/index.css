@@ -316,6 +316,12 @@ mark {
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
 .finding-body .kicker { font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .finding-section { display: flex; flex-direction: column; gap: 8px; }
+/* Each section heading in the details island gets a bullet; the heading text and everything under it
+   share one left edge, 16px in, so content lines up with the heading, not the bullet. */
+.finding-body > .finding-section, .finding-body > .confidence { position: relative; padding-left: 16px; }
+.finding-body > .finding-section > .kicker::before, .finding-body > .confidence > .kicker::before {
+  content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--color-primary);
+}
 /* Keyakinan AI: label, a three-step meter (rendah / sedang / tinggi), then the word itself. */
 .confidence { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px; }
 .meter { display: inline-flex; gap: 3px; }
