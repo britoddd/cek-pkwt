@@ -285,18 +285,20 @@ mark {
   border-radius: 0 0 var(--card-radius) var(--card-radius);
 }
 .finding-body { display: flex; flex-direction: column; gap: 18px; padding: 24px 28px; }
-.finding-peek { display: flex; justify-content: center; padding: 2px 16px 4px; }
+/* Collapsed: the peek is a small tab, only as wide as its button, centred under the header. */
+.finding-peek { align-self: center; display: flex; justify-content: center; padding: 2px 18px 4px; box-shadow: var(--shadow-card); }
 .finding-peek .finding-toggle { margin: 0; }
 @media (max-width: 640px) { .finding-body { padding: 20px; } }
 /* Wide screens: the drawer is inset on both sides by the number's offset (5px edge + 28px card
    padding = 33px), so its left edge lines up with the finding number. */
 @media (min-width: 641px) {
-  .finding-body, .finding-peek { margin-inline: 33px; box-shadow: var(--shadow-card); }
+  .finding-body { margin-inline: 33px; }
+  .finding-body { box-shadow: var(--shadow-card); }
 }
 /* Phones: that inset would leave the drawer too narrow, so it spans the card as one joined shape. */
 @media (max-width: 640px) {
-  .finding { border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
-  .finding > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
+  .finding:has(> .finding-body:not([hidden])) { border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
+  .finding:has(> .finding-body:not([hidden])) > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
 }
 .finding-body[hidden] { display: none; }
 .finding-title { font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
