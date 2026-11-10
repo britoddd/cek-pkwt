@@ -14,8 +14,9 @@ const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
 export default function Report({ result, onClear }: { result: CheckResult | null; onClear: () => void }) {
-  // Active summary-chip filters (severity levels, 'ok', 'unchecked'); none active shows everything.
-  const [filter, setFilter] = useState<string[]>([])
+  // Categories the reader has hidden (severity levels, 'ok', 'unchecked'). None hidden, i.e. every
+  // checkbox ticked and every chip in colour, is the default and shows everything.
+  const [hidden, setHidden] = useState<string[]>([])
   if (!result) {
     return (
       <EmptyState title="Belum ada laporan">
@@ -62,8 +63,10 @@ export default function Report({ result, onClear }: { result: CheckResult | null
     { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length },
     { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length },
   ].filter((c) => c.count > 0)
-  const toggle = (key: string) => setFilter((on) => (on.includes(key) ? on.filter((k) => k !== key) : [...on, key]))
-  const shows = (key: string | null) => filter.length === 0 || (key !== null && filter.includes(key))
+  const toggle = (key: string) => setHidden((off) => (off.includes(key) ? off.filter((k) => k !== key) : [...off, key]))
+  // A finding without a severity has no checkbox, so it only shows while nothing is hidden.
+  const shows = (key: string | null) => hidden.length === 0 || (key !== null && !hidden.includes(key))
+  const allHidden = chips.length > 0 && chips.every((c) => hidden.includes(c.key))
   // Keep each finding's original number so its id, label and "Isi laporan" entry stay the same when filtered.
   const visible = findings.map((f, i) => ({ f, n: i + 1 })).filter(({ f }) => shows(f.severity))
 
@@ -81,7 +84,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             <ul className="chips" aria-label="Saring laporan">
               {chips.map((c) => (
                 <li key={c.key}>
-                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={filter.includes(c.key)} onClick={() => toggle(c.key)}>
+                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={shows(c.key)} onClick={() => toggle(c.key)}>
                     <Icon name={c.icon} size={16} />{c.count} {c.label}
                   </button>
                 </li>
@@ -115,9 +118,16 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
       <div className="two-col">
         <div className="main stack" style={{ gap: 40 }}>
-          {(filter.length === 0 || visible.length > 0) && <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
+          {allHidden && (
+            <p className="card">
+              Semua kategori sedang disembunyikan.{' '}
+              <button type="button" className="link-btn" onClick={() => setHidden([])}>Tampilkan semua</button>
+            </p>
+          )}
+
+          {(hidden.length === 0 || visible.length > 0) && <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
             <h2 id="temuan-title" className="section-title">
-              Potensi masalah ({filter.length > 0 ? `${visible.length} dari ${findings.length}` : findings.length})
+              Potensi masalah ({hidden.length > 0 ? `${visible.length} dari ${findings.length}` : findings.length})
             </h2>
             {findings.length === 0 ? (
               <p className="card row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
@@ -187,14 +197,14 @@ export default function Report({ result, onClear }: { result: CheckResult | null
               <h2 id="filter-title" className="card-title" style={{ fontSize: 15 }}>Filter</h2>
               {chips.map((c) => (
                 <label key={c.key} className="filter-option">
-                  <input type="checkbox" checked={filter.includes(c.key)} onChange={() => toggle(c.key)} />
+                  <input type="checkbox" checked={shows(c.key)} onChange={() => toggle(c.key)} />
                   <span className={`filter-icon ${c.cls}`}><Icon name={c.icon} size={16} /></span>
                   <span className="filter-label">{c.label}</span>
                   <span className="small muted">{c.count}</span>
                 </label>
               ))}
-              {filter.length > 0 && (
-                <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setFilter([])}>Tampilkan semua</button>
+              {hidden.length > 0 && (
+                <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setHidden([])}>Tampilkan semua</button>
               )}
             </section>
           )}
