@@ -167,7 +167,7 @@ mark {
 .empty { max-width: 40rem; }
 
 /* Contract text */
-.quote { padding: 2px 0 2px 16px; border-left: 3px solid var(--quote-rule); font-family: var(--font-quote); font-size: 17px; line-height: 1.65; }
+.quote { padding: 2px 0; font-family: var(--font-quote); font-size: 17px; line-height: 1.65; }
 .missing { padding: 12px 16px; background: var(--color-background); border: 1px dashed var(--primitive-color-tinta-300); border-radius: var(--radius-md); font-family: var(--font-quote); color: var(--color-text-muted); }
 .redaction {
   max-height: 300px; overflow: auto; padding: 16px 18px;
