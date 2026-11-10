@@ -221,9 +221,26 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
   const [open, setOpen] = useState(true)
   const showBtn = useRef<HTMLButtonElement>(null)
   const details = useRef<HTMLDivElement>(null)
+  const clip = useRef<HTMLDivElement>(null)
+  // Slide the island as one block from under the header: the clip's height and the island's offset run
+  // the same animation, so the island's bottom edge stays on the visible edge throughout. The resting
+  // open/closed states are plain CSS; this only animates between them.
+  const slide = (opening: boolean) => {
+    const c = clip.current, d = details.current
+    if (!c || !d || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    c.getAnimations().concat(d.getAnimations()).forEach((a) => a.cancel())
+    const h = d.offsetHeight
+    const timing = { duration: 300, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+    const height = [{ height: '0px' }, { height: `${h}px` }]
+    const move = [{ translate: `0 -${h}px` }, { translate: '0 0' }]
+    c.classList.add('is-animating')
+    const a = c.animate(opening ? height : height.reverse(), timing)
+    d.animate(opening ? move : move.reverse(), timing)
+    a.onfinish = a.oncancel = () => c.classList.remove('is-animating')
+  }
   // Each toggle removes itself, so focus moves to what replaces it (flushSync renders that first).
-  const show = () => { flushSync(() => setOpen(true)); details.current?.focus() }
-  const hide = () => { flushSync(() => setOpen(false)); showBtn.current?.focus() }
+  const show = () => { flushSync(() => setOpen(true)); slide(true); details.current?.focus({ preventScroll: true }) }
+  const hide = () => { flushSync(() => setOpen(false)); slide(false); showBtn.current?.focus({ preventScroll: true }) }
   // "Simpan sebagai PDF" and Ctrl+P print every finding in full; flushSync renders before the print snapshot.
   useEffect(() => {
     const expand = () => flushSync(() => setOpen(true))
@@ -250,10 +267,10 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           </button>
         </div>
       )}
-      {/* The drawer animates its height between closed and open (grid rows 0fr ↔ 1fr). Closed, the
-          details stay in the page for the animation but are inert, so focus and screen readers skip them. */}
+      {/* Closed, the details stay in the page (so they can slide) but are inert, so focus and screen
+          readers skip them. See slide() for the animation. */}
       <div className={`drawer${open ? ' is-open' : ''}`}>
-      <div className="drawer-clip">
+      <div className="drawer-clip" ref={clip}>
       <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} inert={!open}>
       {f.issue && (
         <div className="finding-section">
