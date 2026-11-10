@@ -4,6 +4,7 @@ import type { Reference, Severity } from './api'
 // Lucide icon paths (lucide.dev, ISC licence), inlined to avoid an icon dependency.
 const ICONS = {
   arrowRight: <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
   arrowLeft: <><path d="m12 19-7-7 7-7" /><path d="M19 12H5" /></>,
   check: <path d="M20 6 9 17l-5-5" />,
   lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,

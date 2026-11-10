@@ -232,8 +232,18 @@ mark {
 .toc-dot[data-severity="unchecked"] { background: none; border: 1.5px dashed var(--color-severity-unchecked); }
 /* The outline only helps beside a long report; on narrow screens the summary chips do the jumping. */
 /* Top clears the header island and lines up with jumped-to sections (scroll-padding 88 + scroll-margin 24). */
-@media (min-width: 921px) { .report-aside { position: sticky; top: 112px; } }
-@media (max-width: 920px) { .toc { display: none; } }
+/* Pinned only when the window is tall enough to show it whole; a long outline scrolls inside its card
+   (420px = top offset 112 + actions card + gaps). */
+@media (min-width: 921px) and (min-height: 760px) {
+  .report-aside { position: sticky; top: 112px; }
+  .toc { max-height: calc(100dvh - 420px); overflow-y: auto; }
+}
+@media (max-width: 920px) {
+  .toc { display: none; }
+  /* The aside stacks below the findings here, so its action card moves up to sit under the summary. */
+  .two-col > .report-aside { display: contents; }
+  .report-aside > .summary-actions { order: -1; flex: 1 1 100%; }
+}
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
 /* Report surfaces lift off the cream page; findings carry their severity colour down the left edge. */
 .report-summary, .finding, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
@@ -243,8 +253,18 @@ mark {
 .finding[data-severity="tinggi"] { border-left-color: var(--color-severity-high); }
 .finding[data-severity="sedang"] { border-left-color: var(--color-severity-medium); }
 .finding[data-severity="rendah"] { border-left-color: var(--color-severity-low); }
-.finding-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
-.finding-head .badge { gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+/* Title and severity badge share one row; the title wraps beside the badge. Phones stack them. */
+.finding-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
+.finding-head .finding-title { flex: 1 1 auto; min-width: 0; }
+.finding-head .badge { flex: none; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+@media (max-width: 640px) { .finding-head { flex-wrap: wrap; } }
+/* The whole title is the collapse button; the chevron turns to point right when collapsed. */
+.finding-toggle { display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 0; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.finding-toggle:hover { color: var(--color-secondary-hover); }
+.finding-toggle .icon { align-self: flex-start; margin-top: 4px; margin-right: -4px; color: var(--color-text-muted); transition: rotate 0.15s ease; }
+.finding-toggle[aria-expanded="false"] .icon { rotate: -90deg; }
+.finding-body { display: flex; flex-direction: column; gap: 18px; }
+.finding-body[hidden] { display: none; }
 .finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
 .finding strong { color: var(--color-primary); }
@@ -357,7 +377,7 @@ mark {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn, .site-header, .site-header .container { transition: none; }
+  .btn, .site-header, .site-header .container, .finding-toggle .icon { transition: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
   html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
@@ -371,5 +391,6 @@ mark {
   .container { max-width: none; padding-inline: 0; }
   .card { border-color: var(--primitive-color-tinta-200); }
   .finding, .check-list li, .unchecked-list li { break-inside: avoid; }
+  .finding-toggle .icon { display: none; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

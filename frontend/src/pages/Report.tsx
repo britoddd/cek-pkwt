@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import type { CheckResult, Finding, Severity } from '../api'
 import { Citation, CitedText, CopyButton, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
 import { TTL_MINUTES } from '../storage'
@@ -12,6 +14,8 @@ const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
 function jumpTo(id: string) {
   const el = document.getElementById(id)
   if (!el) return
+  // A jump to a collapsed finding opens it.
+  el.querySelector<HTMLButtonElement>(':scope > .finding-head .finding-toggle[aria-expanded="false"]')?.click()
   const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
   el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   el.focus({ preventScroll: true })
@@ -159,6 +163,12 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             </section>
           )}
 
+          <section className="card-sunken stack-sm no-print" aria-labelledby="bantuan-title">
+            <h2 id="bantuan-title" className="card-title" style={{ fontSize: 15 }}>Masih ragu?</h2>
+            <p className="small muted">Tanyakan aturannya, atau hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.</p>
+            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
+          </section>
+
           <p className="disclaimer">
             {report.disclaimer || 'Ini bukan nasihat hukum. Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas dan bisa keliru. Untuk masalah serius, hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat.'}
           </p>
@@ -192,11 +202,6 @@ export default function Report({ result, onClear }: { result: CheckResult | null
               {report.notes.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-catatan')}><span className="toc-dot" aria-hidden="true" />Catatan</button></li>}
             </ul>
           </nav>
-          <section className="card-sunken stack-sm" aria-labelledby="bantuan-title">
-            <h2 id="bantuan-title" className="card-title" style={{ fontSize: 15 }}>Masih ragu?</h2>
-            <p className="small muted">Tanyakan aturannya, atau hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.</p>
-            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
-          </section>
         </aside>
       </div>
     </div>
@@ -205,14 +210,26 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
 function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
+  const [open, setOpen] = useState(true)
+  // "Simpan sebagai PDF" and Ctrl+P print every finding in full; flushSync renders before the print snapshot.
+  useEffect(() => {
+    const expand = () => flushSync(() => setOpen(true))
+    addEventListener('beforeprint', expand)
+    return () => removeEventListener('beforeprint', expand)
+  }, [])
   return (
     <article id={`temuan-${index}`} className="card finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
       <div className="finding-head">
         <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-          <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
+          <button type="button" className="finding-toggle" aria-expanded={open} aria-controls={`temuan-${index}-isi`} onClick={() => setOpen((o) => !o)}>
+            <Icon name="chevronDown" />
+            <span className="finding-num">{String(index).padStart(2, '0')}</span>
+            <span>{f.title}</span>
+          </button>
         </h3>
         {f.severity && <SeverityBadge level={f.severity} />}
       </div>
+      <div id={`temuan-${index}-isi`} className="finding-body" hidden={!open}>
       {missingQuote
         ? <p className="missing">Tidak disebutkan di kontrak.</p>
         : <blockquote className="quote"><mark>“{f.quote}”</mark></blockquote>}
@@ -232,6 +249,7 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           <span className="no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
         </div>
       )}
+      </div>
     </article>
   )
 }
