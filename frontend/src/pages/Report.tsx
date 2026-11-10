@@ -250,7 +250,11 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
           </button>
         </div>
       )}
-      <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} hidden={!open}>
+      {/* The drawer animates its height between closed and open (grid rows 0fr ↔ 1fr). Closed, the
+          details stay in the page for the animation but are inert, so focus and screen readers skip them. */}
+      <div className={`drawer${open ? ' is-open' : ''}`}>
+      <div className="drawer-clip">
+      <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} inert={!open}>
       {f.issue && (
         <div className="finding-section">
           <span className="kicker">Potensi masalah</span>
@@ -264,10 +268,10 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         </div>
       )}
       {f.confidence && (
-        <p className="confidence">
+        <p className="confidence" data-level={f.confidence.toLowerCase()}>
           <span className="kicker">Keyakinan AI</span>
-          {/* Three steps for rendah / sedang / tinggi; the word beside it carries the meaning. */}
-          <span className="meter" data-level={f.confidence.toLowerCase()} aria-hidden="true"><i /><i /><i /></span>
+          {/* Three steps for rendah / sedang / tinggi, coloured red → amber → green; the word carries the meaning. */}
+          <span className="meter" aria-hidden="true"><i /><i /><i /></span>
           <strong>{f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1)}</strong>
         </p>
       )}
@@ -284,6 +288,8 @@ function FindingCard({ finding: f, index }: { finding: Finding; index: number })
         <Icon name="chevronDown" size={18} />Sembunyikan detail
         <span className="sr-only">: {f.title}</span>
       </button>
+      </div>
+      </div>
       </div>
     </article>
   )

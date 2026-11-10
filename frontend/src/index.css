@@ -297,10 +297,20 @@ mark {
 }
 /* Phones: that inset would leave the drawer too narrow, so it spans the card as one joined shape. */
 @media (max-width: 640px) {
-  .finding:has(> .finding-body:not([hidden])) { border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
-  .finding:has(> .finding-body:not([hidden])) > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
+  .finding:has(> .drawer.is-open) { border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
+  .finding:has(> .drawer.is-open) > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
 }
-.finding-body[hidden] { display: none; }
+/* Toggle animation. The drawer's single grid row goes 0fr ↔ 1fr, which animates to the island's real
+   height. The clip hides the closed island; the island's 16px bottom margin inside it keeps its shadow
+   from being cut off, and a matching negative margin on the open drawer cancels that extra space. */
+.drawer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s ease, margin-bottom 0.3s ease; }
+.drawer.is-open { grid-template-rows: 1fr; margin-bottom: -16px; }
+.drawer-clip { min-height: 0; overflow: hidden; }
+.drawer-clip > .finding-body { margin-bottom: 16px; }
+/* The "Tampilkan detail" tab slides out from under the header card, which sits above it. */
+.finding-card { position: relative; z-index: 1; }
+.finding-peek { animation: peek-in 0.3s ease both; }
+@keyframes peek-in { from { transform: translateY(-100%); opacity: 0; } }
 .finding-title { font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
 .finding strong { color: var(--color-primary); }
@@ -311,9 +321,14 @@ mark {
 .confidence { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 14px; }
 .meter { display: inline-flex; gap: 3px; }
 .meter i { width: 16px; height: 6px; border-radius: 3px; background: var(--primitive-color-tinta-100); }
-.meter[data-level="rendah"] i:nth-child(-n+1),
-.meter[data-level="sedang"] i:nth-child(-n+2),
-.meter[data-level="tinggi"] i:nth-child(-n+3) { background: var(--color-primary); }
+/* More confident = greener: rendah red, sedang amber, tinggi green, on both the filled bars and the word. */
+.confidence[data-level="rendah"] { --conf: var(--color-severity-high); }
+.confidence[data-level="sedang"] { --conf: var(--color-severity-medium); }
+.confidence[data-level="tinggi"] { --conf: var(--color-severity-ok); }
+.confidence[data-level="rendah"] .meter i:nth-child(-n+1),
+.confidence[data-level="sedang"] .meter i:nth-child(-n+2),
+.confidence[data-level="tinggi"] .meter i:nth-child(-n+3) { background: var(--conf); }
+.confidence[data-level] strong { color: var(--conf, var(--color-text)); }
 /* Section titles carry the same icon as their filter chip and checkbox. */
 .title-icon { display: flex; align-items: center; gap: 10px; }
 .title-ok .icon { color: var(--color-severity-ok); }
@@ -432,7 +447,8 @@ mark {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn, .site-header, .site-header .container, .finding-toggle .icon { transition: none; }
+  .btn, .site-header, .site-header .container, .finding-toggle .icon, .drawer { transition: none; }
+  .finding-peek { animation: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
   html, .chat-log { scroll-behavior: auto; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
@@ -446,5 +462,9 @@ mark {
   .container { max-width: none; padding-inline: 0; }
   .card { border-color: var(--primitive-color-tinta-200); }
   .finding, .check-list li, .unchecked-list li { break-inside: avoid; }
+  /* Every finding prints open, whatever its on-screen state or a half-finished animation. */
+  .drawer { grid-template-rows: 1fr !important; margin-bottom: 0 !important; transition: none !important; }
+  .drawer-clip { overflow: visible; }
+  .drawer-clip > .finding-body { margin-bottom: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
