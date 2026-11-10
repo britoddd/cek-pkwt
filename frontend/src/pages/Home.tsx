@@ -84,7 +84,7 @@ export default function Home() {
               ))}
             </ul>
           </div>
-          <FindingCard finding={EXAMPLE_FINDING} index={1} />
+          <FindingCard finding={EXAMPLE_FINDING} index={1} defaultOpen={false} />
         </figure>
       </section>
 
@@ -117,7 +117,7 @@ export default function Home() {
         </div>
         <ol className="grid">
           {STEPS.map(([title, text], i) => (
-            <li key={title} className="card step-card">
+            <li key={title} className="card card-raised step-card">
               <span className={`step-dot${i === 2 ? ' accent' : ''}`} aria-hidden="true">{i + 1}</span>
               <h3 className="h3">{title}</h3>
               <p className="muted">{text}</p>
@@ -134,7 +134,7 @@ export default function Home() {
           </div>
           <div className="grid">
             {PRINCIPLES.map(([icon, title, text, proof]) => (
-              <div key={title} className="card stack">
+              <div key={title} className="card card-raised stack">
                 <span className="icon-tile" aria-hidden="true"><Icon name={icon} size={22} /></span>
                 <h3 className="h3">{title}</h3>
                 <p className="muted">{text}</p>

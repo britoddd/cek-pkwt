@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import type { CheckResult, Finding, Severity } from '../api'
 import { Citation, CitedText, CopyButton, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
 import { TTL_MINUTES } from '../storage'
@@ -8,19 +10,13 @@ const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
   { level: 'rendah', label: 'Rendah', icon: 'info' },
 ]
 
-// Hash links would change the route, so section jumps scroll and move focus by hand.
-function jumpTo(id: string) {
-  const el = document.getElementById(id)
-  if (!el) return
-  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches
-  el.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
-  el.focus({ preventScroll: true })
-}
-
 const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
 export default function Report({ result, onClear }: { result: CheckResult | null; onClear: () => void }) {
+  // Categories the reader has hidden (severity levels, 'ok', 'unchecked'). None hidden, i.e. every
+  // checkbox ticked and every chip in colour, is the default and shows everything.
+  const [hidden, setHidden] = useState<string[]>([])
   if (!result) {
     return (
       <EmptyState title="Belum ada laporan">
@@ -48,7 +44,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
       <div className="container page">
         <Steps current={2} />
         {header}
-        <div className="card card-lead stack measure"><Paragraphs text={result.markdown} /></div>
+        <div className="card card-raised card-accent stack measure"><Paragraphs text={result.markdown} /></div>
       </div>
     )
   }
@@ -59,15 +55,28 @@ export default function Report({ result, onClear }: { result: CheckResult | null
   const findings = report.findings // sorted most severe first by the backend
   const questions = findings.filter((f) => f.hr_question)
 
-  const jumps = [
+  const chips = [
     ...LEVELS.map(({ level, label, icon }) => ({
-      key: level, cls: `sev-${level}`, icon, label,
+      key: level as string, cls: `sev-${level}`, icon, label,
       count: findings.filter((f) => f.severity === level).length,
-      target: `temuan-${findings.findIndex((f) => f.severity === level) + 1}`,
     })),
-    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length, target: 'bagian-aman' },
-    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length, target: 'bagian-tidak' },
-  ].filter((j) => j.count > 0)
+    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length },
+    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length },
+  ].filter((c) => c.count > 0)
+  const toggle = (key: string) => setHidden((off) => (off.includes(key) ? off.filter((k) => k !== key) : [...off, key]))
+  // A finding without a severity has no checkbox, so it only shows while nothing is hidden.
+  const shows = (key: string | null) => hidden.length === 0 || (key !== null && !hidden.includes(key))
+  const allHidden = chips.length > 0 && chips.every((c) => hidden.includes(c.key))
+  // Summary chips: with everything showing, a click shows only that category. After that they toggle,
+  // and clicking the last category still shown brings everything back. (The checkboxes simply toggle.)
+  const chipClick = (key: string) => {
+    const shown = chips.filter((c) => !hidden.includes(c.key))
+    if (hidden.length === 0) setHidden(chips.map((c) => c.key).filter((k) => k !== key))
+    else if (shown.length === 1 && shown[0].key === key) setHidden([])
+    else toggle(key)
+  }
+  // Keep each finding's original number so its id, label and "Isi laporan" entry stay the same when filtered.
+  const visible = findings.map((f, i) => ({ f, n: i + 1 })).filter(({ f }) => shows(f.severity))
 
   return (
     <div className="container page">
@@ -79,36 +88,21 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             {lead.split(/(\d+ potensi masalah)/i).map((part, i) => (i % 2 ? <mark key={i}>{part}</mark> : <CitedText key={i} text={part} />))}
           </p>
 
-          {jumps.length > 0 && (
-            <ul className="chips" aria-label="Lompat ke bagian laporan">
-              {jumps.map((j) => (
-                <li key={j.key}>
-                  <button type="button" className={`badge badge-lg badge-btn ${j.cls}`} onClick={() => jumpTo(j.target)}>
-                    <Icon name={j.icon} size={16} />{j.count} {j.label}
-                    <span className="sr-only">, lompat ke bagian ini</span>
+          {chips.length > 0 && (
+            <ul className="chips" aria-label="Saring laporan">
+              {chips.map((c) => (
+                <li key={c.key}>
+                  <button type="button" className={`badge badge-lg badge-btn ${c.cls}`} aria-pressed={shows(c.key)} onClick={() => chipClick(c.key)}>
+                    <Icon name={c.icon} size={16} />{c.count} {c.label}
                   </button>
                 </li>
               ))}
             </ul>
           )}
 
-          <div className="summary-actions no-print">
-            <div className="row">
-              {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
-              {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
-              <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
-            </div>
-            <p className="hint">
-              Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
-              <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
-                Hapus sekarang
-              </button>
-            </p>
-          </div>
-
           <div className="summary-notes">
             <details className="legend no-print">
-              <summary>Apa arti keparahan, keyakinan, dan status pasal?</summary>
+              <summary>Apa arti keparahan dan keyakinan?</summary>
               <dl>
                 <dt>Keparahan tinggi</dt>
                 <dd>Berdampak langsung pada upah atau hak utama.</dd>
@@ -116,12 +110,6 @@ export default function Report({ result, onClear }: { result: CheckResult | null
                 <dd>Dampaknya lebih kecil, tetapi tetap sebaiknya dikonfirmasi ke HR.</dd>
                 <dt>Keyakinan</dt>
                 <dd>Seberapa jelas dasarnya. Tinggi: klausul eksplisit dan pasalnya jelas. Sedang: perlu interpretasi. Rendah: klausulnya ambigu.</dd>
-                <dt>Status pasal</dt>
-                <dd>
-                  <strong>berlaku</strong>: berlaku sebagaimana tertulis. <strong>diubah</strong> atau <strong>disisipkan</strong>: berlaku
-                  dalam bentuk yang telah diubah atau disisipkan. <strong>dimaknai Putusan MK</strong>: dibaca sesuai pemaknaan Putusan
-                  Mahkamah Konstitusi. <strong>imbauan</strong>: surat edaran, bukan peraturan yang memuat sanksi.
-                </dd>
               </dl>
             </details>
 
@@ -132,8 +120,17 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
       <div className="two-col">
         <div className="main stack" style={{ gap: 40 }}>
-          <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
-            <h2 id="temuan-title" className="section-title">Potensi masalah ({findings.length})</h2>
+          {allHidden && (
+            <p className="card">
+              Semua kategori sedang disembunyikan.{' '}
+              <button type="button" className="link-btn" onClick={() => setHidden([])}>Tampilkan semua</button>
+            </p>
+          )}
+
+          {(hidden.length === 0 || visible.length > 0) && <section id="bagian-temuan" className="stack-lg jump-target" aria-labelledby="temuan-title" tabIndex={-1}>
+            <h2 id="temuan-title" className="section-title">
+              Potensi masalah ({hidden.length > 0 ? `${visible.length} dari ${findings.length}` : findings.length})
+            </h2>
             {findings.length === 0 ? (
               <p className="card row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
                 <span style={{ color: 'var(--color-severity-ok)', display: 'inline-flex' }}><Icon name="circleCheck" /></span>
@@ -142,22 +139,22 @@ export default function Report({ result, onClear }: { result: CheckResult | null
                   {report.unchecked.length > 0 && ' Tetap baca bagian “Tidak dapat diperiksa” di bawah.'}
                 </span>
               </p>
-            ) : findings.map((f, i) => <FindingCard key={i} finding={f} index={i + 1} />)}
-          </section>
+            ) : visible.map(({ f, n }) => <FindingCard key={n} finding={f} index={n} />)}
+          </section>}
 
-          {report.no_issues.length > 0 && (
+          {report.no_issues.length > 0 && shows('ok') && (
             <section id="bagian-aman" className="stack jump-target" aria-labelledby="aman-title" tabIndex={-1}>
-              <h2 id="aman-title" className="section-title">Klausul tanpa masalah yang ditemukan</h2>
+              <h2 id="aman-title" className="section-title title-icon title-ok"><Icon name="circleCheck" size={24} />Klausul tanpa masalah yang ditemukan</h2>
               <ul className="check-list">
                 {report.no_issues.map((item, i) => <li key={i}><Icon name="circleCheck" /><span><CitedText text={item} /></span></li>)}
               </ul>
             </section>
           )}
 
-          {report.unchecked.length > 0 && (
+          {report.unchecked.length > 0 && shows('unchecked') && (
             <section id="bagian-tidak" className="stack jump-target" aria-labelledby="tidak-title" tabIndex={-1}>
               <div className="stack-sm" style={{ gap: 4 }}>
-                <h2 id="tidak-title" className="section-title">Tidak dapat diperiksa</h2>
+                <h2 id="tidak-title" className="section-title title-icon title-unchecked"><Icon name="circleDashed" size={24} />Tidak dapat diperiksa</h2>
                 <p className="muted">Klausul ini tidak cocok dengan pasal mana pun di basis regulasi kami. Ini bukan berarti aman atau bermasalah.</p>
               </div>
               <ul className="unchecked-list">
@@ -173,33 +170,46 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             </section>
           )}
 
+          <section className="card-sunken stack-sm no-print" aria-labelledby="bantuan-title">
+            <h2 id="bantuan-title" className="card-title" style={{ fontSize: 15 }}>Masih ragu?</h2>
+            <p className="small muted">Tanyakan aturannya, atau hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.</p>
+            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
+          </section>
+
           <p className="disclaimer">
             {report.disclaimer || 'Ini bukan nasihat hukum. Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas dan bisa keliru. Untuk masalah serius, hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat.'}
           </p>
         </div>
 
-        <aside className="aside report-aside no-print" aria-label="Navigasi laporan">
-          <nav className="card stack-sm toc" aria-labelledby="isi-title">
-            <h2 id="isi-title" className="card-title" style={{ fontSize: 15 }}>Isi laporan</h2>
-            <ul>
-              {findings.map((f, i) => (
-                <li key={i}>
-                  <button type="button" className="toc-link" onClick={() => jumpTo(`temuan-${i + 1}`)}>
-                    <span className="toc-dot" data-severity={f.severity ?? ''} aria-hidden="true" />
-                    <span>{f.title}{f.severity && <span className="sr-only">, keparahan {f.severity}</span>}</span>
-                  </button>
-                </li>
-              ))}
-              {report.no_issues.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-aman')}><span className="toc-dot" data-severity="ok" aria-hidden="true" />Tanpa masalah ({report.no_issues.length})</button></li>}
-              {report.unchecked.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-tidak')}><span className="toc-dot" data-severity="unchecked" aria-hidden="true" />Tidak dapat diperiksa ({report.unchecked.length})</button></li>}
-              {report.notes.length > 0 && <li><button type="button" className="toc-link" onClick={() => jumpTo('bagian-catatan')}><span className="toc-dot" aria-hidden="true" />Catatan</button></li>}
-            </ul>
-          </nav>
-          <section className="card-sunken stack-sm" aria-labelledby="bantuan-title">
-            <h2 id="bantuan-title" className="card-title" style={{ fontSize: 15 }}>Masih ragu?</h2>
-            <p className="small muted">Tanyakan aturannya, atau hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.</p>
-            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
+        <aside className="aside report-aside no-print" aria-label="Tindakan dan filter laporan">
+          <section className="card summary-actions" aria-label="Tindakan">
+            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
+            {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
+            <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
+            <p className="hint">
+              Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
+              <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
+                Hapus sekarang
+              </button>
+            </p>
           </section>
+          {/* The same filters as the summary chips, as checkboxes: ticked = shown. None ticked shows everything. */}
+          {chips.length > 0 && (
+            <section className="card stack-sm filter-panel" role="group" aria-labelledby="filter-title">
+              <h2 id="filter-title" className="card-title panel-title">Filter</h2>
+              {chips.map((c) => (
+                <label key={c.key} className="filter-option">
+                  <input type="checkbox" checked={shows(c.key)} onChange={() => toggle(c.key)} />
+                  <span className={`filter-icon ${c.cls}`}><Icon name={c.icon} size={16} /></span>
+                  <span className="filter-label">{c.label}</span>
+                  <span className="small muted">{c.count}</span>
+                </label>
+              ))}
+              {hidden.length > 0 && (
+                <button type="button" className="link-btn small" style={{ alignSelf: 'flex-start' }} onClick={() => setHidden([])}>Tampilkan semua</button>
+              )}
+            </section>
+          )}
         </aside>
       </div>
     </div>
@@ -207,35 +217,102 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 }
 
 // Also the home page preview, so the example looks exactly like a real report.
-export function FindingCard({ finding: f, index }: { finding: Finding; index: number }) {
+// defaultOpen=false (home preview) starts collapsed, showing the peek with its "Tampilkan detail" toggle.
+export function FindingCard({ finding: f, index, defaultOpen = true }: { finding: Finding; index: number; defaultOpen?: boolean }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
+  const [open, setOpen] = useState(defaultOpen)
+  const showBtn = useRef<HTMLButtonElement>(null)
+  const details = useRef<HTMLDivElement>(null)
+  const clip = useRef<HTMLDivElement>(null)
+  // Slide the island as one block from under the header: the clip's height and the island's offset run
+  // the same animation, so the island's bottom edge stays on the visible edge throughout. The resting
+  // open/closed states are plain CSS; this only animates between them.
+  const slide = (opening: boolean) => {
+    const c = clip.current, d = details.current
+    if (!c || !d || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    c.getAnimations().concat(d.getAnimations()).forEach((a) => a.cancel())
+    const h = d.offsetHeight
+    const timing = { duration: 300, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+    const height = [{ height: '0px' }, { height: `${h}px` }]
+    const move = [{ translate: `0 -${h}px` }, { translate: '0 0' }]
+    c.classList.add('is-animating')
+    const a = c.animate(opening ? height : height.reverse(), timing)
+    d.animate(opening ? move : move.reverse(), timing)
+    a.onfinish = a.oncancel = () => c.classList.remove('is-animating')
+  }
+  // Each toggle removes itself, so focus moves to what replaces it (flushSync renders that first).
+  const show = () => { flushSync(() => setOpen(true)); slide(true); details.current?.focus({ preventScroll: true }) }
+  const hide = () => { flushSync(() => setOpen(false)); slide(false); showBtn.current?.focus({ preventScroll: true }) }
+  // "Simpan sebagai PDF" and Ctrl+P print every finding in full; flushSync renders before the print snapshot.
+  useEffect(() => {
+    const expand = () => flushSync(() => setOpen(true))
+    addEventListener('beforeprint', expand)
+    return () => removeEventListener('beforeprint', expand)
+  }, [])
   return (
-    <article id={`temuan-${index}`} className="card finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
-      <div className="finding-head">
-        <h3 id={`temuan-${index}-judul`} className="finding-title balance">
-          <span className="finding-num">{String(index).padStart(2, '0')}</span>{f.title}
-        </h3>
+    <article id={`temuan-${index}`} className="finding jump-target" data-severity={f.severity ?? ''} aria-labelledby={`temuan-${index}-judul`} tabIndex={-1}>
+      {/* Header island (always shown): number | title | badge, then the contract clause under the title. */}
+      <div className="card finding-card">
+        <span className="finding-num">{String(index).padStart(2, '0')}</span>
+        <h3 id={`temuan-${index}-judul`} className="finding-title balance">{f.title}</h3>
         {f.severity && <SeverityBadge level={f.severity} />}
+        {missingQuote
+          ? <p className="missing finding-clause">Tidak disebutkan di kontrak.</p>
+          : <blockquote className="quote finding-clause"><mark>“{f.quote}”</mark></blockquote>}
       </div>
-      {missingQuote
-        ? <p className="missing">Tidak disebutkan di kontrak.</p>
-        : <blockquote className="quote"><mark>“{f.quote}”</mark></blockquote>}
-      {f.issue && <p><strong>Potensi masalah:</strong> <CitedText text={f.issue} /></p>}
-      {(f.references.length > 0 || f.confidence) && (
-        <div className="meta-row">
-          {f.references.map((r, i) => <Citation key={i} {...r} />)}
-          {f.confidence && <span className="small muted">Keyakinan AI: <strong style={{ color: 'var(--color-text)' }}>{f.confidence}</strong></span>}
+      {/* Collapsed: the details island peeks out under the header as a short strip holding the toggle. */}
+      {!open && (
+        <div className="finding-peek no-print">
+          <button type="button" ref={showBtn} className="finding-toggle finding-show" aria-expanded={false} aria-controls={`temuan-${index}-isi`} onClick={show}>
+            <Icon name="chevronDown" size={18} />Tampilkan detail
+            <span className="sr-only">: {f.title}</span>
+          </button>
+        </div>
+      )}
+      {/* Closed, the details stay in the page (so they can slide) but are inert, so focus and screen
+          readers skip them. See slide() for the animation. */}
+      <div className={`drawer${open ? ' is-open' : ''}`}>
+      <div className="drawer-clip" ref={clip}>
+      <div id={`temuan-${index}-isi`} ref={details} className="finding-body jump-target" tabIndex={-1} inert={!open}>
+      {f.issue && (
+        <div className="finding-section">
+          <span className="kicker">Potensi masalah</span>
+          <p><CitedText text={f.issue} /></p>
+        </div>
+      )}
+      {f.references.length > 0 && (
+        <div className="finding-section">
+          <span className="kicker">Pasal terkait</span>
+          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} label={r.label} status={null} />)}</div>
+        </div>
+      )}
+      {f.confidence && (
+        <div className="finding-section confidence" data-level={f.confidence.toLowerCase()}>
+          <span className="kicker">Keyakinan AI</span>
+          {/* Three steps for rendah / sedang / tinggi, coloured red → amber → green; the word carries the meaning. */}
+          <p className="confidence-value">
+            <span className="meter" aria-hidden="true"><i /><i /><i /></span>
+            <strong>{f.confidence.charAt(0).toUpperCase() + f.confidence.slice(1)}</strong>
+          </p>
         </div>
       )}
       {f.hr_question && (
-        <div className="hr-question">
-          <div>
-            <span className="kicker">Pertanyaan untuk HR</span>
-            <span>{f.hr_question}</span>
+        <div className="finding-section">
+          <span className="kicker">Pertanyaan untuk HR</span>
+          {/* Icon-only copy button, as tall as the question; its name comes from `name`. */}
+          <div className="hr-row">
+            <p className="hr-question">{f.hr_question}</p>
+            <span className="hr-copy no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
           </div>
-          <span className="no-print"><CopyButton text={f.hr_question} name={`Salin pertanyaan ${index}`} /></span>
         </div>
       )}
+      <button type="button" className="finding-toggle no-print" aria-expanded={true} aria-controls={`temuan-${index}-isi`} onClick={hide}>
+        <Icon name="chevronDown" size={18} />Sembunyikan detail
+        <span className="sr-only">: {f.title}</span>
+      </button>
+      </div>
+      </div>
+      </div>
     </article>
   )
 }

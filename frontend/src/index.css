@@ -74,39 +74,34 @@ mark {
 
 /* Header */
 .site-header { background: var(--color-surface); border-bottom: 1px solid var(--color-border); }
-.site-header .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding-block: 10px; }
-.brand { display: inline-flex; align-items: center; min-height: 44px; }
-.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
-.nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; color: var(--color-text); text-decoration: none; font-size: 15px; font-weight: 500; }
+/* No bottom padding: the nav links run to the bar's bottom edge, so the active page's underline sits
+   on it. The brand stays centred in its row. */
+.site-header .container { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between; gap: 0 24px; padding-block: 8px 0; border: 0 solid transparent; } /* transparent, so the island's border never fades in from the text colour */
+.brand { display: inline-flex; align-items: center; min-height: 44px; align-self: center; }
+.nav { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0 4px; }
+.nav a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 12px; color: var(--color-text); text-decoration: none; font-size: 15px; font-weight: 500; }
 .nav a[aria-current="page"] { color: var(--color-primary); font-weight: 700; box-shadow: inset 0 -3px 0 var(--color-accent); }
-.nav .btn-primary { margin-left: 8px; padding: 0 18px; color: var(--button-primary-text); font-weight: 700; }
-/* Wide screens: the header sticks, and once the page scrolls (App.tsx adds .is-island) it lifts into a
-   frosted pill. Its height never changes, so nothing below it shifts. Phones and portrait tablets keep
-   the plain header: their nav wraps to two or three rows, too tall to pin. 880px leaves room for the
-   widest nav (home page with "Laporan"), which needs about 850px to fit on one row. */
+.nav .btn-primary { align-self: center; min-height: 44px; margin-left: 8px; padding: 0 18px; color: var(--button-primary-text); font-weight: 700; }
+/* Wide screens: one 64px row; the header sticks, and once the page scrolls (App.tsx adds .is-island) it
+   lifts into a solid white island with the cards' corner radius. Its height never changes, so nothing
+   below it shifts. Phones and portrait tablets keep the plain header: their nav wraps to two or three
+   rows, too tall to pin. 880px fits the widest nav (home page with "Laporan", about 850px). */
 @media (min-width: 880px) {
-  html { scroll-padding-top: 88px; } /* anchors, report jumps and focused fields land below the island */
-  .site-header { position: sticky; top: 0; z-index: 10; transition: background-color 0.25s ease, border-color 0.25s ease; }
+  html { scroll-padding-top: 88px; } /* anchors and focused fields land below the island */
+  .site-header { position: sticky; top: 0; z-index: 10; transition: border-color 0.25s ease; }
   .site-header .container {
-    width: 100%; border: 1px solid transparent; border-radius: var(--radius-full);
-    transition: width 0.3s ease, max-width 0.3s ease, padding 0.3s ease, translate 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    width: 100%; padding-block: 0; border: 1px solid transparent; border-radius: var(--card-radius);
+    transition: width 0.3s ease, max-width 0.3s ease, padding 0.3s ease, translate 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
   }
+  .nav a { min-height: 64px; }
   /* The transparent strip around the island lets clicks through to the page. */
   .site-header.is-island { background-color: transparent; border-bottom-color: transparent; pointer-events: none; }
-  /* 22px on the right keeps the "Cek kontrak" button's corners 10px from the pill's curved end, the same
-     gap as above and below it; the island is 11px longer to match, so the content keeps its width. */
   .site-header.is-island .container {
     pointer-events: auto;
-    width: calc(100% - 24px); max-width: 1091px; padding-inline: 20px 22px; translate: 0 12px;
-    background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
-    border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
+    width: calc(100% - 24px); max-width: 1091px; padding-inline: 20px; translate: 0 12px;
+    background-color: var(--color-surface); border-color: var(--color-border);
     box-shadow: 0 1px 2px rgba(15, 21, 48, 0.06), 0 12px 32px rgba(15, 21, 48, 0.12);
   }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .site-header.is-island .container { background-color: var(--color-surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
 /* Buttons */
@@ -134,7 +129,10 @@ mark {
 .badge-lg { gap: 8px; padding: 6px 12px; font-size: 14px; }
 /* Badges that act as buttons: full touch target; the severity rules below keep their colours and borders. */
 .badge-btn { min-height: 44px; padding-inline: 14px; border: 1px solid transparent; font-family: inherit; cursor: pointer; }
-.badge-btn:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
+/* Filter chips: hover firms up the border; a hidden category's chip turns grey and loses its fill (so it differs from the grey "Tidak dapat diperiksa" chip). */
+.badge-btn:hover { border-color: currentColor; }
+.badge-btn[aria-pressed="false"] { background: transparent; color: var(--color-text-muted); border-color: var(--color-border); }
+.badge-btn[aria-pressed="false"]:hover { border-color: currentColor; }
 .sev-tinggi { background: var(--color-severity-high-bg); color: var(--color-severity-high); }
 .sev-sedang { background: var(--color-severity-medium-bg); color: var(--color-severity-medium); }
 .sev-rendah { background: var(--color-severity-low-bg); color: var(--color-severity-low); }
@@ -157,15 +155,15 @@ mark {
 .cite-inline { font-family: var(--font-mono); font-size: 0.85em; color: var(--citation-text); }
 
 /* Surfaces */
-.card { background: var(--card-bg); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); padding: 28px; box-shadow: var(--shadow-card); }
-/* The main card on a page (report summary, contract form, email draft, chat): a navy top edge. */
-.card-lead { border-top: 4px solid var(--color-primary); }
+.card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--card-radius); padding: 28px; }
+.card-dark { background: var(--color-primary); color: var(--primitive-color-tinta-200); border-radius: var(--card-radius); padding: 28px; display: flex; flex-direction: column; gap: 16px; }
+.card-dark h2, .card-dark strong { color: #FFFFFF; }
 .card-sunken { background: var(--color-surface-sunken); border-radius: var(--card-radius); padding: 24px; }
 .card-sunken .card-title .icon { color: var(--color-primary); }
 .empty { max-width: 40rem; }
 
 /* Contract text */
-.quote { padding: 2px 0 2px 16px; border-left: 3px solid var(--quote-rule); font-family: var(--font-quote); font-size: 17px; line-height: 1.65; }
+.quote { padding: 2px 0; font-family: var(--font-quote); font-size: 17px; line-height: 1.65; }
 .missing { padding: 12px 16px; background: var(--color-background); border: 1px dashed var(--primitive-color-tinta-300); border-radius: var(--radius-md); font-family: var(--font-quote); color: var(--color-text-muted); }
 .redaction {
   max-height: 300px; overflow: auto; padding: 16px 18px;
@@ -212,7 +210,8 @@ mark {
 /* Report */
 .summary-lead { font-size: 20px; line-height: 1.5; font-weight: 600; }
 .summary-regime { font-size: 14px; color: var(--color-text-muted); }
-.summary-actions { display: flex; flex-direction: column; gap: 10px; }
+.summary-actions { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.summary-actions .hint { margin-top: 4px; }
 .summary-notes { display: flex; flex-direction: column; gap: 4px; padding-top: 12px; border-top: 1px solid var(--color-border); }
 .legend summary { display: inline-flex; align-items: center; min-height: 44px; color: var(--color-link); font-size: 15px; font-weight: 600; cursor: pointer; }
 .legend dl { display: grid; grid-template-columns: minmax(0, 12rem) minmax(0, 1fr); gap: 8px 20px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--color-surface-sunken); font-size: 14px; }
@@ -221,39 +220,133 @@ mark {
 .jump-target { scroll-margin-top: 24px; }
 .jump-target:focus { outline: none; }
 .jump-target:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 4px; }
-.toc ul { list-style: none; padding: 0; display: flex; flex-direction: column; }
-.toc-link { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 44px; margin-inline: -8px; padding: 6px 8px; background: none; border: 0; border-radius: var(--radius-sm); color: var(--color-text); font: inherit; font-size: 14px; line-height: 1.4; text-align: left; cursor: pointer; }
-.toc-link:hover { background: var(--primitive-color-tinta-50); }
-.toc-dot { flex: none; width: 10px; height: 10px; border-radius: 3px; background: var(--primitive-color-tinta-300); }
-.toc-dot[data-severity="tinggi"] { background: var(--color-severity-high); }
-.toc-dot[data-severity="sedang"] { background: var(--color-severity-medium); }
-.toc-dot[data-severity="rendah"] { background: var(--color-severity-low); }
-.toc-dot[data-severity="ok"] { background: var(--color-severity-ok); }
-.toc-dot[data-severity="unchecked"] { background: none; border: 1.5px dashed var(--color-severity-unchecked); }
-/* The outline only helps beside a long report; on narrow screens the summary chips do the jumping. */
-/* Top clears the header island and lines up with jumped-to sections (scroll-padding 88 + scroll-margin 24). */
-@media (min-width: 921px) { .report-aside { position: sticky; top: 112px; } }
-@media (max-width: 920px) { .toc { display: none; } }
+/* Filter checkboxes in the right panel: a full-width row each, with the category's icon in its colour. */
+.filter-panel { gap: 2px; }
+/* Title of a side-panel card (Filter, Cakupan pemeriksaan, Yang terjadi pada datamu). */
+.panel-title { font-size: 20px; }
+.filter-panel .panel-title { margin-bottom: 8px; }
+.filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 32px; margin-inline: -8px; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
+.filter-option:hover { background: var(--primitive-color-tinta-50); }
+.filter-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
+.filter-option .filter-icon { display: inline-flex; background: none; border: 0; } /* colour only, not the chip fill or border */
+.filter-label { flex: 1 1 auto; }
+/* Pinned (top clears the header island) only when the window is tall enough to show the panel whole. */
+/* Side by side, the panel's top lines up with the first finding card, below the "Potensi masalah" title
+   (section-title line height 24px × 1.3, plus the section's 20px gap). */
+@media (min-width: 921px) { .report-aside { margin-top: calc(24px * 1.3 + 20px); } }
+@media (min-width: 921px) and (min-height: 760px) {
+  .report-aside { position: sticky; top: 112px; }
+}
+@media (max-width: 920px) {
+  /* Phones and tablets filter with the summary chips; the panel would land at the bottom here. */
+  .filter-panel { display: none; }
+  /* The aside stacks below the findings here, so its action card moves up to sit under the summary. */
+  .two-col > .report-aside { display: contents; }
+  .report-aside > .summary-actions { order: -1; flex: 1 1 100%; }
+}
 @media (max-width: 640px) { .legend dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .legend dd { margin-bottom: 10px; } }
 /* Report surfaces lift off the cream page; findings carry their severity colour down the left edge. */
-/* Report surfaces: .card already carries the border and shadow; the check list is a plain list styled as a card. */
-.check-list { box-shadow: var(--shadow-card); }
-.report-summary { border-top: 4px solid var(--color-primary); }
+/* Shared surfaces: .card-raised lifts a card off the cream page; .card-accent adds the navy top bar. */
+.card-raised, .report-summary, .finding-card, .check-list { border-color: var(--primitive-color-tinta-100); box-shadow: var(--shadow-card); }
+.card-accent, .report-summary { border-top: 4px solid var(--color-primary); }
 .sev-tinggi, .sev-sedang, .sev-rendah, .sev-ok { border: 1px solid color-mix(in srgb, currentColor 40%, transparent); }
-.finding { display: flex; flex-direction: column; gap: 18px; border-left: 5px solid var(--primitive-color-tinta-300); }
-.finding[data-severity="tinggi"] { border-left-color: var(--color-severity-high); }
-.finding[data-severity="sedang"] { border-left-color: var(--color-severity-medium); }
-.finding[data-severity="rendah"] { border-left-color: var(--color-severity-low); }
-.finding-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
-.finding-head .badge { gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
-.finding-title { display: flex; gap: 12px; align-items: baseline; font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
+/* A finding is two islands: the header card (severity edge) and, when open, a details island below it. */
+.finding { display: flex; flex-direction: column; }
+/* Header grid: number | title | badge, and the contract clause below in the title's column, so its left
+   edge lines up with the title text. Phones move the badge under the title. */
+/* The number column is a fixed 20px ("01"–"99" fit), so the title's offset is known: see .finding-body. */
+.finding-card {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-areas: "num title badge" ". clause clause";
+  align-items: baseline; gap: 14px 12px;
+  border-left: 5px solid var(--primitive-color-tinta-300);
+}
+.finding-card > .finding-num { grid-area: num; }
+.finding-card > .finding-title { grid-area: title; }
+.finding-card > .badge { grid-area: badge; align-self: start; margin-left: 4px; gap: 8px; padding: 6px 12px; font-size: 14px; font-weight: 700; }
+.finding-card > .finding-clause { grid-area: clause; align-self: start; }
+@media (max-width: 640px) {
+  .finding-card { grid-template-columns: 20px minmax(0, 1fr); grid-template-areas: "num title" ". badge" ". clause"; }
+  .finding-card > .badge { justify-self: start; margin-left: 0; }
+}
+.finding[data-severity="tinggi"] > .finding-card { border-left-color: var(--color-severity-high); }
+.finding[data-severity="sedang"] > .finding-card { border-left-color: var(--color-severity-medium); }
+.finding[data-severity="rendah"] > .finding-card { border-left-color: var(--color-severity-low); }
+/* "Sembunyikan detail": outline-less text button centred at the foot of the details island. */
+.finding-toggle { align-self: center; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: -8px 0 -6px; padding: 0; background: none; border: 0; color: var(--color-link); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.finding-toggle:hover { color: var(--color-secondary-hover); text-decoration: underline; text-underline-offset: 2px; }
+.finding-toggle .icon { transition: rotate 0.15s ease; }
+.finding-toggle[aria-expanded="true"] .icon { rotate: 180deg; }
+/* The drawer under each header card: the full details island when open, or a short peek of it holding
+   "Tampilkan detail" when collapsed. Both hang flush under the header with a flat top. */
+.finding-body, .finding-peek {
+  background: var(--color-surface-sunken); border: 1px solid var(--primitive-color-tinta-100); border-top: 0;
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+}
+.finding-body { display: flex; flex-direction: column; gap: 18px; padding: 24px 28px; }
+/* Collapsed: the peek is a small tab, only as wide as its button, centred under the header. */
+.finding-peek { align-self: center; display: flex; justify-content: center; padding: 2px 18px 4px; box-shadow: var(--shadow-card); }
+.finding-peek .finding-toggle { margin: 0; }
+@media (max-width: 640px) { .finding-body { padding: 20px; } }
+/* Wide screens: the drawer is inset on both sides by the number's offset (5px edge + 28px card
+   padding = 33px), so its left edge lines up with the finding number. */
+@media (min-width: 641px) {
+  .finding-body { margin-inline: 33px; }
+  .finding-body { box-shadow: var(--shadow-card); }
+}
+/* Phones: that inset would leave the drawer too narrow, so it spans the card as one joined shape. */
+@media (max-width: 640px) {
+  .finding:has(> .drawer.is-open) { border-radius: var(--card-radius); box-shadow: var(--shadow-card); }
+  .finding:has(> .drawer.is-open) > .finding-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; box-shadow: none; }
+}
+/* Resting states of the drawer; FindingCard's slide() animates between them. Closed, the clip hides
+   the island. Open, nothing is clipped, so the island's shadow shows; it is clipped only mid-slide. */
+.drawer-clip { height: 0; overflow: hidden; }
+.drawer.is-open > .drawer-clip { height: auto; overflow: visible; }
+.drawer-clip.is-animating { overflow: hidden; }
+/* The "Tampilkan detail" tab slides out from under the header card, which sits above it. */
+.finding-card { position: relative; z-index: 1; }
+/* The tab appears once the island has slid back under the header. */
+.finding-peek { animation: peek-in 0.2s ease 0.25s both; }
+@keyframes peek-in { from { transform: translateY(-100%); opacity: 0; } }
+.finding-title { font-size: 21px; font-weight: 800; line-height: 1.3; color: var(--color-primary); }
 .finding-num { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--color-secondary); }
 .finding strong { color: var(--color-primary); }
 .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.hr-question { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px 16px; padding: 16px 18px; border-radius: var(--radius-md); background: var(--primitive-color-tinta-50); border-left: 4px solid var(--color-primary); }
-.hr-question > div { flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px; }
-.hr-question .kicker { letter-spacing: 0.06em; text-transform: uppercase; }
-.hr-question > div > span:last-child { font-weight: 600; color: var(--color-text); }
+/* Uppercase section labels: the report's detail headings and the Cek kontrak form's field labels. */
+.finding-body .kicker, .kicker-label { color: var(--color-primary); font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.finding-section { display: flex; flex-direction: column; gap: 8px; }
+/* Each section heading in the details island gets a bullet; the heading text and everything under it
+   share one left edge, 16px in, so content lines up with the heading, not the bullet. */
+.finding-body > .finding-section { position: relative; padding-left: 16px; }
+.finding-body > .finding-section > .kicker::before {
+  content: ""; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--color-primary);
+}
+/* Keyakinan AI: under its heading, a three-step meter (rendah / sedang / tinggi), then the word itself. */
+.confidence-value { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.meter { display: inline-flex; gap: 3px; }
+.meter i { width: 16px; height: 6px; border-radius: 3px; background: var(--primitive-color-tinta-100); }
+/* More confident = greener: rendah red, sedang amber, tinggi green, on both the filled bars and the word. */
+.confidence[data-level="rendah"] { --conf: var(--color-severity-high); }
+.confidence[data-level="sedang"] { --conf: var(--color-severity-medium); }
+.confidence[data-level="tinggi"] { --conf: var(--color-severity-ok); }
+.confidence[data-level="rendah"] .meter i:nth-child(-n+1),
+.confidence[data-level="sedang"] .meter i:nth-child(-n+2),
+.confidence[data-level="tinggi"] .meter i:nth-child(-n+3) { background: var(--conf); }
+.confidence[data-level] strong { color: var(--conf, var(--color-text)); }
+/* Section titles carry the same icon as their filter chip and checkbox. */
+.title-icon { display: flex; align-items: center; gap: 10px; }
+.title-ok .icon { color: var(--color-severity-ok); }
+.title-unchecked .icon { color: var(--color-severity-unchecked); }
+@media (max-width: 640px) { .finding-title { font-size: 18px; } }
+/* The HR question island with an icon-only copy button beside it, stretched to the island's height.
+   The button's text ("Salin" / "Tersalin") stays readable to screen readers but is hidden on screen. */
+.hr-row { display: flex; align-items: stretch; gap: 10px; }
+.hr-question { flex: 1 1 auto; min-width: 0; padding: 14px 18px; border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--primitive-color-tinta-100); border-left: 4px solid var(--color-primary); font-weight: 600; color: var(--color-text); }
+.hr-copy { flex: none; display: flex; }
+.hr-copy .btn { height: auto; padding-inline: 7px; border-color: transparent; background: transparent; border-radius: var(--radius-md); }
+.hr-copy .btn:hover { background: var(--color-surface); }
+.hr-copy .copy-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .check-list { list-style: none; padding: 0; background: var(--color-surface); border: 1px solid var(--primitive-color-tinta-100); border-radius: var(--card-radius); }
 .check-list li { display: flex; gap: 12px; align-items: flex-start; padding: 18px 24px; border-bottom: 1px solid var(--color-border); }
 .check-list li:last-child { border-bottom: 0; }
@@ -319,9 +412,7 @@ mark {
 .hero-report { flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .hero-report .card { padding: 24px; }
 .hero-report .summary-lead { font-size: 18px; }
-.hero-report .finding { gap: 14px; }
 .hero-report .finding-title { font-size: 19px; }
-.hero-report .quote { font-size: 16px; }
 .hero-report .badge-lg { gap: 6px; padding: 5px 10px; font-size: 13px; }
 .band { background: var(--color-surface); border-block: 1px solid var(--color-border); }
 .section { padding-block: 88px; display: flex; flex-direction: column; gap: 40px; }
@@ -372,7 +463,8 @@ mark {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn, .site-header, .site-header .container { transition: none; }
+  .btn, .site-header, .site-header .container, .finding-toggle .icon { transition: none; }
+  .finding-peek { animation: none; }
   .marker-bar::after { animation: none; width: 100%; opacity: 0.6; }
   .status-dot.is-busy { animation: none; }
   html, .chat-log { scroll-behavior: auto; }
@@ -387,5 +479,8 @@ mark {
   .container { max-width: none; padding-inline: 0; }
   .card { border-color: var(--primitive-color-tinta-200); }
   .finding, .check-list li, .unchecked-list li { break-inside: avoid; }
+  /* Every finding prints open, whatever its on-screen state or a half-finished animation. */
+  .drawer-clip { height: auto !important; }
+  .drawer-clip { overflow: visible; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

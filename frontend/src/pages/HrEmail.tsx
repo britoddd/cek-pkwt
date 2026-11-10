@@ -91,7 +91,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
           </div>
 
           <div className="two-col">
-            <section className="main card card-lead stack-lg" aria-label="Email">
+            <section className="main card card-raised card-accent stack-lg" aria-label="Email">
               <div className="field">
                 <label htmlFor="hr-email" className="label">Email HR <span className="muted" style={{ fontWeight: 500 }}>(opsional)</span></label>
                 <input id="hr-email" type="email" className="input" autoComplete="off" placeholder="hr@perusahaan.co.id"
@@ -117,7 +117,7 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
             </section>
 
             <aside className="aside" aria-label="Tips">
-              <section className="card stack" aria-labelledby="tips-title">
+              <section className="card card-raised stack" aria-labelledby="tips-title">
                 <h2 id="tips-title" className="card-title">Sebelum mengirim</h2>
                 <ol className="stack small" style={{ listStyle: 'none', padding: 0 }}>
                   {[
