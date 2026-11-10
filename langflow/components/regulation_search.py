@@ -81,12 +81,15 @@ class RegulationSearch(Component):
     ]
 
     def _search(self) -> tuple[list[Data], list[Data]]:
-        # Both outputs are built on the same instance; search once.
-        if "_results" not in self.__dict__:
-            query = (self.search_query or "").strip()
-            if not query:
-                self._results = ([], [])
-                return self._results
+        # Both outputs are built on the same instance; search once. Stored in __dict__ directly because
+        # Component routes attribute access through its own inputs/outputs handling.
+        results = self.__dict__.get("_regulation_results")
+        if results is not None:
+            return results
+        query = (self.search_query or "").strip()
+        if not query:
+            results = ([], [])
+        else:
             t0 = time.perf_counter()
             vector = _embedder(self.embedding_model, self.google_api_key).embed_query(query)
             t1 = time.perf_counter()
@@ -94,13 +97,16 @@ class RegulationSearch(Component):
             with ThreadPoolExecutor(2) as pool:
                 current = pool.submit(_find, collection, vector, "current", self.current_results)
                 new_law = pool.submit(_find, collection, vector, NEW_LAW_REGIME, self.new_law_results)
-                self._results = (current.result(), new_law.result())
-            self.log(f"embed {t1 - t0:.2f}s, search {time.perf_counter() - t1:.2f}s")
-        return self._results
+                results = (current.result(), new_law.result())
+            self.log(f"embed {t1 - t0:.2f}s, search {time.perf_counter() - t1:.2f}s, "
+                     f"{len(results[0])} current + {len(results[1])} new law")
+        self.__dict__["_regulation_results"] = results
+        return results
 
     def current_rules(self) -> list[Data]:
-        self.status = self._search()[0]
-        return self.status
+        rules = self._search()[0]
+        self.status = rules
+        return rules
 
     def new_law_rules(self) -> list[Data]:
         return self._search()[1]
