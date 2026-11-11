@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/logos/cekpkwt-logo-full-horizontal.svg" alt="CekPKWT" width="320"></p>
+<p align="center"><img src="assets/logos/cekpkwt-logo-readme-banner.svg" alt="CekPKWT" width="100%"></p>
 
 <p align="center"><b>Cek dulu, baru tanda tangan.</b><br>AI pemeriksa kontrak kerja waktu tertentu (PKWT) untuk fresh graduate, sebelum kontrak ditandatangani.</p>
 
@@ -15,16 +15,16 @@ CekPKWT membaca kontrak PKWT, menyamarkan data pribadi, lalu membandingkan setia
 
 > ⚠️ **Bukan nasihat hukum.** Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas dan bisa keliru. Untuk masalah serius, hubungi LBH atau Dinas Tenaga Kerja setempat.
 
-## Ringkasan untuk juri
+## Ringkasan proyek
 
-| Kriteria (bobot) | Bukti utama | Bagian |
+| Aspek | Bukti utama | Bagian |
 |---|---|---|
-| Kejelasan dan relevansi masalah (15%) | Pengangguran usia 15–24 tahun 16,89%, tiga kali angka nasional. 884 aduan Lapor Menaker dalam 8 hari, terbanyak soal hubungan kerja dan upah. UU ketenagakerjaan sedang berganti. | [1. Masalah](#1-masalah) |
-| Inovasi, kelayakan, dan monetisasi (20%) | Korpus yang sadar status dan rezim aturan, diperbarui bot setiap hari dengan tinjauan manusia. Sudah berjalan di produksi. Gratis bagi pekerja, dibiayai lisensi institusi. | [2. Solusi](#2-solusi-inovasi-dan-kelayakan) |
-| Dampak bagi pengguna (15%) | Pada satu kontrak contoh, lebih dari Rp12 juta hak upah dan kompensasi dipertaruhkan. Tindak lanjut ke HR lewat email atau WhatsApp. | [3. Dampak](#3-dampak-bagi-pengguna) |
-| Eksekusi teknis (20%) | Satu Langflow melayani IBM Bob, web app, dan CI. 79% masalah tertanam terdeteksi, 98% rujukan ada di korpus, 6 dari 6 suite uji lulus. Model dipilih lewat perbandingan di server. | [4. Eksekusi teknis](#4-eksekusi-teknis) |
-| Responsible AI (10%) | Data pribadi disamarkan sebelum sampai ke LLM, setiap temuan menunjuk ke pasal, agent tidak bisa mengirim email, dan perubahan korpus wajib ditinjau manusia. | [5. Responsible AI](#5-responsible-ai) |
-| Presentasi dan tanya jawab (20%) | Video pitch dan demo, alur demo 3 menit dengan kontrak contoh, dan identitas brand yang konsisten. | [6. Demo dan identitas](#6-demo-dan-identitas) |
+| Kejelasan dan relevansi masalah | Pengangguran usia 15–24 tahun 16,89%, tiga kali angka nasional. 884 aduan Lapor Menaker dalam 8 hari, terbanyak soal hubungan kerja dan upah. UU ketenagakerjaan sedang berganti. | [1. Masalah](#1-masalah) |
+| Inovasi, kelayakan, dan monetisasi | Korpus yang sadar status dan rezim aturan, diperbarui bot setiap hari dengan tinjauan manusia. Sudah berjalan di produksi. Gratis bagi pekerja, dibiayai lisensi institusi. | [2. Solusi](#2-solusi-inovasi-dan-kelayakan) |
+| Dampak bagi pengguna | Pada satu kontrak contoh, lebih dari Rp12 juta hak upah dan kompensasi dipertaruhkan. Tindak lanjut ke HR lewat email atau WhatsApp. | [3. Dampak](#3-dampak-bagi-pengguna) |
+| Eksekusi teknis | Satu Langflow melayani IBM Bob, web app, dan CI. 79% masalah tertanam terdeteksi, 98% rujukan ada di korpus, 6 dari 6 suite uji lulus. Model dipilih lewat perbandingan di server. | [4. Eksekusi teknis](#4-eksekusi-teknis) |
+| Responsible AI | Data pribadi disamarkan sebelum sampai ke LLM, setiap temuan menunjuk ke pasal, agent tidak bisa mengirim email, dan perubahan korpus wajib ditinjau manusia. | [5. Responsible AI](#5-responsible-ai) |
+| Demo dan identitas | Video pitch dan demo, alur demo 3 menit dengan kontrak contoh, dan identitas brand yang konsisten. | [6. Demo dan identitas](#6-demo-dan-identitas) |
 
 ## 1. Masalah
 
