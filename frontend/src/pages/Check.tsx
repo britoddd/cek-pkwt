@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
 import { checkContract, getRegions, type CheckResult } from '../api'
 import { Icon, Loading, Steps } from '../components'
 import { redact } from '../redact'
@@ -40,12 +40,36 @@ Perusahaan mendaftarkan Karyawan sebagai peserta BPJS Ketenagakerjaan dan BPJS K
 Pasal 7 – Pengakhiran
 Apabila Karyawan mengundurkan diri sebelum berakhirnya masa kontrak, Karyawan wajib membayar denda sebesar Rp20.000.000.`
 
+const MAX_PDF_BYTES = 10 * 1024 * 1024
+
+// Read the PDF in the browser, so the file never leaves the device; only the extracted text
+// goes through the same redaction preview as pasted text. pdf.js is loaded on first use.
+async function pdfToText(file: File): Promise<string> {
+  const [pdfjs, { default: workerSrc }] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+  ])
+  pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
+  const task = pdfjs.getDocument({ data: await file.arrayBuffer() })
+  const pdf = await task.promise
+  const pages: string[] = []
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const { items } = await (await pdf.getPage(i)).getTextContent()
+    pages.push(items.map((it) => ('str' in it ? it.str + (it.hasEOL ? '\n' : '') : '')).join(''))
+  }
+  await task.destroy() // also stops the worker
+  return pages.join('\n\n').replace(/[ \t]+\n/g, '\n').trim()
+}
+
 export default function Check({ onChecked }: { onChecked: (result: CheckResult) => void }) {
   const [contract, setContract] = useState('')
   const [region, setRegion] = useState('')
   const [regions, setRegions] = useState<string[]>([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [reading, setReading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const fileInput = useRef<HTMLInputElement>(null)
   const preview = redact(contract)
   // Read from the redacted text, so a masked home address never counts as the work location.
   const detected = detectRegion(preview.text, regions)
@@ -53,6 +77,38 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   useEffect(() => {
     getRegions().then(setRegions).catch(() => setRegions([]))
   }, [])
+
+  function pickPdf(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // let the same file be picked again
+    if (file) loadPdf(file)
+  }
+
+  function dropPdf(e: DragEvent) {
+    e.preventDefault()
+    setDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file && !reading && !loading) loadPdf(file)
+  }
+
+  async function loadPdf(file: File) {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) return setError('File harus berformat PDF.')
+    if (file.size > MAX_PDF_BYTES) return setError('File PDF terlalu besar. Maksimal 10 MB.')
+    setError('')
+    setReading(true)
+    try {
+      const text = await pdfToText(file)
+      if (text.length < MIN_CHARS) {
+        setError('Teks tidak terbaca dari PDF ini. Kemungkinan PDF hasil scan atau foto; salin teksnya secara manual.')
+      } else {
+        setContract(text)
+      }
+    } catch {
+      setError('PDF tidak bisa dibuka. Pastikan file tidak rusak atau dilindungi kata sandi.')
+    } finally {
+      setReading(false)
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -82,17 +138,22 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
       <div className="two-col">
         <div className="main stack-lg" style={{ gap: 24 }}>
           <form className="card card-raised card-accent stack-lg" onSubmit={submit} noValidate aria-label="Periksa kontrak">
-            <div className="field">
+            <div className="field" onDrop={dropPdf}
+              onDragOver={(e) => { if (e.dataTransfer.types.includes('Files')) { e.preventDefault(); setDragging(true) } }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false) }}>
               <div className="row-between" style={{ alignItems: 'baseline', gap: '4px 16px' }}>
                 <label htmlFor="kontrak" className="label kicker-label">Teks kontrak</label>
                 <span className="hint">{contract.length.toLocaleString('id-ID')} karakter</span>
               </div>
-              <textarea id="kontrak" className="textarea textarea-contract" rows={16} spellCheck={false}
+              <textarea id="kontrak" className={`textarea textarea-contract${dragging ? ' is-dragging' : ''}`} rows={16} spellCheck={false}
                 value={contract} onChange={(e) => setContract(e.target.value)} maxLength={MAX_CHARS + 1000}
-                placeholder="Tempel teks kontrak di sini…" aria-describedby="kontrak-hint" aria-invalid={!!error && !loading} />
-              <div className="row-between" style={{ alignItems: 'center', gap: '8px 16px' }}>
-                <span id="kontrak-hint" className="hint">Termasuk lampiran, kalau ada. PDF atau foto perlu disalin jadi teks dulu.</span>
+                placeholder="Tempel teks kontrak di sini, atau seret file PDF ke sini…" aria-invalid={!!error && !loading} />
+              <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setContract(SAMPLE)}>Pakai contoh kontrak</button>
+                <input ref={fileInput} type="file" accept="application/pdf,.pdf" hidden onChange={pickPdf} />
+                <button type="button" className="btn btn-primary btn-sm" disabled={reading || loading} onClick={() => fileInput.current?.click()}>
+                  <Icon name="upload" size={16} />{reading ? 'Membaca PDF…' : 'Unggah PDF'}
+                </button>
               </div>
             </div>
 

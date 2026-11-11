@@ -183,6 +183,7 @@ mark {
 }
 .textarea { padding: 16px 18px; resize: vertical; line-height: 1.65; }
 .textarea-contract { font-family: var(--font-quote); font-size: 15px; }
+.textarea-contract.is-dragging { outline: 3px dashed var(--color-primary); outline-offset: 3px; }
 .select { background: var(--color-surface); }
 .input[aria-invalid="true"], .textarea[aria-invalid="true"] { border-color: var(--color-error); }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding-top: 8px; border-top: 1px solid var(--color-border); }
