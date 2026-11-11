@@ -115,7 +115,8 @@ def findings(markdown: str) -> list[dict]:
         ref = _REF_LINE.match(s)
         if ref:
             prev = ""
-            for part in ref.group(1).split(";"):
+            # "[PP 35/2021] [Pasal 12]": regulation and article in separate brackets are one citation.
+            for part in re.sub(r"\]\s*\[\s*(Pasal\b)", r" | \1", ref.group(1)).split(";"):
                 # Headers pasted whole ("[UU 13/2003 | Pasal 88E | status: berlaku | ...], [PP 36/2021 | ...]") are one citation each.
                 headers = re.findall(r"\[([^\]]+)\]?", part)
                 part = part.strip()

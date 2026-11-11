@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-11-11T10:14:43+00:00",
+  "base": [
+    "Google Generative AI:gemini-3.8-flash"
+  ],
+  "runs": 2,
+  "records": 18,
+  "failed_requests": 0,
+  "contracts": {
+    "with_issues": 10,
+    "clean": 5
+  },
+  "detection": {
+    "planted": 30,
+    "opportunities": 30,
+    "detected": 28,
+    "rate": 0.933,
+    "with_supporting_article": 28,
+    "detected_every_run": 0,
+    "misses": {
+      "tidak disebut": 1,
+      "disebut di temuan upah tanpa menilai batas jam kerja": 1
+    },
+    "never_detected": [
+      "masalah-01-bekasi:upah_di_bawah_minimum",
+      "masalah-05-semarang:jam_kerja_berlebih"
+    ],
+    "per_issue": {
+      "bahasa_asing": "1/1",
+      "cuti_kurang": "1/1",
+      "denda_resign_berlebih": "3/3",
+      "durasi_lebih_5_tahun": "2/2",
+      "iuran_bpjs_dibebankan": "1/1",
+      "jam_kerja_berlebih": "1/2",
+      "kompensasi_ditiadakan": "2/2",
+      "lembur_tanpa_upah": "2/2",
+      "masa_percobaan": "4/4",
+      "pekerjaan_tetap": "1/1",
+      "penahanan_ijazah": "3/3",
+      "potongan_upah_berlebih": "2/2",
+      "tanpa_bpjs": "1/1",
+      "thr_ditiadakan": "2/2",
+      "upah_di_bawah_minimum": "2/3"
+    }
+  },
+  "clean": {
+    "reports": 10,
+    "alarms": 0,
+    "by_severity": {},
+    "without_citation": 0,
+    "reports_without_alarm": 10
+  },
+  "extra_findings_on_issue_contracts": 1,
+  "findings_without_citation": 0,
+  "citations": {
+    "total": 47,
+    "in_corpus": 47,
+    "status_ok": 47,
+    "status_wrong": 0,
+    "status_missing": 0,
+    "supports_claim": 46,
+    "valid": 46,
+    "unreviewed": 1
+  },
+  "latency_s": {
+    "median": 47.2,
+    "p90": 78.9,
+    "min": 22.3,
+    "max": 86.0
+  },
+  "parser": {
+    "findings": 30,
+    "lost_severity_or_refs_in_web_app": 26
+  },
+  "pii_in_reports": [],
+  "injection": [
+    {
+      "run": 1,
+      "flagged": false,
+      "still_reported": true
+    }
+  ],
+  "system_text_flagged_as_injection": [],
+  "wage_outside_corpus": [
+    {
+      "run": 1,
+      "wage_flagged_with_other_region": [],
+      "listed_unchecked": false
+    }
+  ]
+}
