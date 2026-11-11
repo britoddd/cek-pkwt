@@ -165,17 +165,20 @@ Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga di
 
 ### Pemilihan model
 
-Model Agent dibandingkan di Langflow server: salinan sementara flow dengan model yang diganti, 15 kontrak × 3 run, dan skor yang sama ([`evaluation/compare_models.py`](evaluation/compare_models.py)).
+Model Agent dibandingkan di Langflow server: salinan sementara flow dengan model yang diganti, 15 kontrak × 3 run (Granite 1 run karena kuota Lite watsonx), dan skor yang sama ([`evaluation/compare_models.py`](evaluation/compare_models.py)).
 
-| | gpt-5.4-mini (dipakai) | Gemini 3.1 Flash-Lite | Gemini 3.8 Flash (18 laporan) |
-|---|---|---|---|
-| Masalah tertanam terdeteksi | 79% | 92% | 93% |
-| Alarm palsu pada kontrak bersih | 6 | 3 | 0 |
-| Status pasal tertulis di rujukan | 171 dari 188 | 10 dari 131 | 47 dari 47 |
-| Wilayah tanpa data upah dinyatakan "tidak dapat diperiksa" | 3 dari 3 | 0 dari 3 | 0 dari 1 |
-| Waktu median / p90 | 9,7 / 11,5 detik | 6,9 / 9,8 detik | 47 / 79 detik |
+| | gpt-5.4-mini (dipakai) | Gemini 3.1 Flash-Lite | Gemini 3.8 Flash (18 laporan) | IBM Granite 4 H Small (15 laporan) |
+|---|---|---|---|---|
+| Masalah tertanam terdeteksi | 79% | 92% | 93% | 43% |
+| Alarm palsu pada kontrak bersih | 6 (15 laporan) | 3 (15 laporan) | 0 (10 laporan) | 16 (5 laporan) |
+| Status pasal tertulis di rujukan | 171 dari 188 | 10 dari 131 | 47 dari 47 | 1 dari 37 |
+| Wilayah tanpa data upah dinyatakan "tidak dapat diperiksa" | 3 dari 3 | 0 dari 3 | 0 dari 1 | 0 dari 1 |
+| Temuan yang terbaca lengkap oleh web app | 99 dari 100 | 95 dari 97 | 4 dari 30 | 6 dari 49 |
+| Waktu median / p90 | 9,7 / 11,5 detik | 6,9 / 9,8 detik | 47 / 79 detik | 13,3 / 13,9 detik |
 
 **gpt-5.4-mini tetap dipakai.** Flash-Lite menemukan lebih banyak masalah, tetapi janji CekPKWT adalah setiap penilaian didukung pasal yang benar-benar ada. gpt-5.4-mini menyatakan "tidak dapat diperiksa" saat datanya tidak ada, menulis status pasal, melaporkan prompt injection di 3 dari 3 run, cocok dengan parser web app, dan tidak dibatasi kuota free tier. Berbagi data input dan output dengan OpenAI sudah kami aktifkan, sehingga CekPKWT mendapat **2,5 juta token gratis per hari** untuk model mini (usage tier 1–2; 10 juta di tier 3–5), cukup untuk sekitar 80–170 pemeriksaan per hari (perkiraan). Konsekuensinya, OpenAI boleh memakai kontrak yang sudah disamarkan, dan token di atas kuota tetap ditagih. Groq free tier tidak bisa dipakai karena satu pemeriksaan (sekitar 14 ribu token) melebihi batas per menitnya.
+
+**IBM Granite di watsonx.ai juga diuji**, lewat flow produksi yang sama di watsonx Frankfurt. Granite 4 H Small menemukan 13 dari 30 masalah tertanam, menandai masalah di kelima kontrak bersih (16 alarm palsu), tidak melaporkan prompt injection, dan tidak mengikuti format laporan sehingga web app kehilangan keparahan atau rujukan pada 43 dari 49 temuannya. Karena itu Langflow tetap menjadi orkestrator dan IBM Bob antarmukanya, sedangkan modelnya gpt-5.4-mini. Model bisa diganti lewat satu dropdown jika model watsonx yang lebih kuat tersedia di wilayah kami. Catatan teknis: di Langflow 1.12.4 pada server kami, jalur watsonx bawaan komponen Agent selalu memanggil wilayah us-south, jadi pengujian memakai komponen **IBM watsonx.ai** terpisah yang disambungkan ke Agent.
 
 ### Pengujian dan evaluasi
 
