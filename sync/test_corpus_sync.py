@@ -112,6 +112,25 @@ def test_wage_row_and_flip():
     assert old["status"] == "berlaku", "the loaded corpus is never mutated"
 
 
+def test_bpk_searches_each_type():
+    import sources
+
+    def card(n, title, about):
+        return (f'<div class="card-body p-xl-10"><a href="/Details/{n}/x">{title}</a>'
+                f'<a href="/Details/{n}/x">{about}</a></div>')
+
+    class FakeBpk:  # like the live site: the unfiltered search never returns UU 27/2026
+        def get(self, url, **params):
+            if params.get("jenis") == "8":
+                return card(1, "Undang-undang (UU) Nomor 27 Tahun 2026", "Pelindungan Ketenagakerjaan")
+            return card(2, "Peraturan Pemerintah (PP) Nomor 27 Tahun 2026", "Pemberian Gelar")
+
+    uu = [i for i in sources.bpk(FakeBpk()) if "Undang" in i.title]
+    assert uu, "a UU only listed under its type must still be found"
+    key, prefix, _, _ = cs.classify(uu[0])
+    assert key == "uu-2026-27" and cs.relevant(uu[0], prefix, []) and cs.is_new_law(uu[0], prefix)
+
+
 def test_ingest_tweaks_the_servers_node_ids():
     import contextlib, io, json, os
     from argparse import Namespace
