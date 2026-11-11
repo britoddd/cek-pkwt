@@ -119,6 +119,63 @@ def parse_report(markdown: str) -> dict | None:
     return report
 
 
+# Regulation keys as citations and corpus rows both write them: "PP 35/2021", "UU 13/2003",
+# "Permenaker 7/2026", "Putusan MK 168/PUU-XXI/2023" -> "MK 168/2023".
+_REG = re.compile(r"\b(UU|PP|Permenaker|Perpres)\s*(?:No(?:mor)?\.?\s*)?(\d+)\s*(?:/|Tahun)\s*(\d{4})", re.I)
+_MK = re.compile(r"(\d+)\s*/\s*PUU-[IVXL]+\s*/\s*(\d{4})", re.I)
+_SE = re.compile(r"\bM/\d+/HK[\w./]*", re.I)
+_ARTICLE = re.compile(r"\bPasal\s+(\d+[A-Z]?)\b")
+
+
+def _reg_key(text: str) -> str | None:
+    if m := _MK.search(text):
+        return f"MK {m[1]}/{m[2]}"
+    if m := _SE.search(text):
+        return m[0].upper()
+    if m := _REG.search(text):
+        return f"{m[1].upper()} {m[2]}/{m[3]}"
+    return None
+
+
+def source_index(rows: list[dict]) -> dict:
+    """Official source URL per (regulation, article), per regulation, and per minimum-wage region."""
+    by_article, by_reg, by_region = {}, {}, {}
+    for row in rows:
+        url = row.get("source_url", "").strip()
+        if not url:
+            continue
+        if row.get("topic") == "upah_minimum" and row.get("region") not in ("", "nasional"):
+            # The wage in force wins over last year's or next year's row for the same region.
+            if row["region"] not in by_region or row.get("status") == "berlaku":
+                by_region[row["region"]] = url
+            continue
+        key = _reg_key(row.get("regulation", ""))
+        if not key:
+            continue
+        art = _ARTICLE.search(row.get("article", ""))
+        if art:
+            by_article.setdefault((key, art[1].upper()), url)
+        by_reg.setdefault(key, url)
+    # Longest region names first, so "Kota Tangerang Selatan" is tried before "Kota Tangerang".
+    regions = sorted(by_region.items(), key=lambda kv: -len(kv[0]))
+    return {"article": by_article, "reg": by_reg, "region": regions}
+
+
+def link_sources(report: dict, index: dict) -> dict:
+    """Add the official source URL of each cited article, or None when the citation matches no corpus row."""
+    for finding in report["findings"]:
+        for ref in finding["references"]:
+            label, url = ref["label"], None
+            if re.search(r"\b(UMP|UMK|upah minimum|Keputusan Gubernur|Kepgub)\b", label, re.I):
+                url = next((u for region, u in index["region"] if region.lower() in label.lower()), None)
+            key = _reg_key(label)
+            if not url and key:
+                art = _ARTICLE.search(label)
+                url = (index["article"].get((key, art[1].upper())) if art else None) or index["reg"].get(key)
+            ref["url"] = url
+    return report
+
+
 def parse_hr_draft(text: str) -> dict:
     """Split the draft_hr_questions reply into subject and body; fall back to the whole text."""
     subject, body = "", []

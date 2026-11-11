@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import type { CheckResult, Finding, Severity } from '../api'
-import { Citation, CitedText, CopyButton, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
+import { Citation, CitedText, CopyButton, Disclaimer, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
 import { TTL_MINUTES } from '../storage'
 
 const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
@@ -9,6 +9,21 @@ const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
   { level: 'sedang', label: 'Sedang', icon: 'triangleAlert' },
   { level: 'rendah', label: 'Rendah', icon: 'info' },
 ]
+
+// A public GitHub issue, prefilled with the finding's title and articles only: never the contract text,
+// which can still hold the reader's or the company's details.
+const ISSUES_URL = 'https://github.com/britoddd/cek-pkwt/issues/new'
+const reportErrorUrl = (f: Finding) => {
+  const body = [
+    `Temuan: ${f.title}`,
+    `Pasal yang dirujuk: ${f.references.map((r) => r.label).join('; ') || '-'}`,
+    '',
+    'Apa yang keliru menurutmu?',
+    '',
+    '(Jangan tempel isi kontrak atau data pribadi. Laporan ini bisa dilihat publik.)',
+  ].join('\n')
+  return `${ISSUES_URL}?${new URLSearchParams({ title: `Laporan kesalahan: ${f.title}`, labels: 'laporan-kesalahan', body })}`
+}
 
 const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
@@ -176,9 +191,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
             <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
           </section>
 
-          <p className="disclaimer">
-            {report.disclaimer || 'Ini bukan nasihat hukum. Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas dan bisa keliru. Untuk masalah serius, hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat.'}
-          </p>
+          <Disclaimer className="disclaimer" />
         </div>
 
         <aside className="aside report-aside no-print" aria-label="Tindakan dan filter laporan">
@@ -218,7 +231,8 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
 // Also the home page preview, so the example looks exactly like a real report.
 // defaultOpen=false (home preview) starts collapsed, showing the peek with its "Tampilkan detail" toggle.
-export function FindingCard({ finding: f, index, defaultOpen = true }: { finding: Finding; index: number; defaultOpen?: boolean }) {
+// example: the home page's sample finding, which has nothing to report as an error.
+export function FindingCard({ finding: f, index, defaultOpen = true, example = false }: { finding: Finding; index: number; defaultOpen?: boolean; example?: boolean }) {
   const missingQuote = !f.quote || /^tidak (disebutkan|ada)/i.test(f.quote)
   const [open, setOpen] = useState(defaultOpen)
   const showBtn = useRef<HTMLButtonElement>(null)
@@ -283,8 +297,11 @@ export function FindingCard({ finding: f, index, defaultOpen = true }: { finding
       {f.references.length > 0 && (
         <div className="finding-section">
           <span className="kicker">Pasal terkait</span>
-          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} label={r.label} status={null} />)}</div>
+          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} label={r.label} status={null} url={r.url} />)}</div>
         </div>
+      )}
+      {f.severity === 'tinggi' && (
+        <p className="confirm-note"><Icon name="info" size={18} />Konfirmasi dulu ke HR, atau ke LBH atau Disnaker, sebelum menolak atau menandatangani kontrak karena temuan ini.</p>
       )}
       {f.confidence && (
         <div className="finding-section confidence" data-level={f.confidence.toLowerCase()}>
@@ -306,6 +323,9 @@ export function FindingCard({ finding: f, index, defaultOpen = true }: { finding
           </div>
         </div>
       )}
+      {!example && <p className="report-error no-print">
+        Temuan ini keliru? <a href={reportErrorUrl(f)} target="_blank" rel="noopener noreferrer">Laporkan kesalahan</a> agar kami perbaiki.
+      </p>}
       <button type="button" className="finding-toggle no-print" aria-expanded={true} aria-controls={`temuan-${index}-isi`} onClick={hide}>
         <Icon name="chevronDown" size={18} />Sembunyikan detail
         <span className="sr-only">: {f.title}</span>

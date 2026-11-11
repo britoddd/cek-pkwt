@@ -52,12 +52,23 @@ const STATUS_LABEL: Record<string, string> = {
   catatan_sistem: 'catatan sistem',
 }
 
-export function Citation({ label, status }: Reference) {
+export function Citation({ label, status, url }: Reference) {
+  const text = <>{status && <span className="cite-dot" data-status={status} aria-hidden="true" />}{label}{status && ` · ${STATUS_LABEL[status] ?? status}`}</>
+  // Linked to the official PDF, so the reader can check the article themselves.
+  return url
+    ? <a className="cite cite-link" href={url} target="_blank" rel="noopener noreferrer">{text}<span className="sr-only"> (buka teks resmi)</span></a>
+    : <span className="cite">{text}</span>
+}
+
+// The same words everywhere: what CekPKWT is, what it stands behind, and where to go next. It states the
+// limits rather than waiving responsibility (a blanket waiver can be void under UU 8/1999 Pasal 18).
+export function Disclaimer({ className }: { className?: string }) {
   return (
-    <span className="cite">
-      {status && <span className="cite-dot" data-status={status} aria-hidden="true" />}
-      {label}{status && ` · ${STATUS_LABEL[status] ?? status}`}
-    </span>
+    <p className={className}>
+      <strong>CekPKWT memberi informasi hukum, bukan nasihat hukum.</strong> Setiap temuan menunjuk ke pasal resmi yang
+      bisa kamu cek sendiri, tetapi AI bisa keliru dan keputusan tetap di tanganmu. Untuk masalah serius, hubungi LBH
+      (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat. <a href="#/syarat">Syarat penggunaan</a>
+    </p>
   )
 }
 

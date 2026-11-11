@@ -4,6 +4,7 @@ export type Severity = 'tinggi' | 'sedang' | 'rendah'
 export interface Reference {
   label: string
   status: string | null
+  url?: string | null // the official document this article comes from
 }
 
 export interface Finding {

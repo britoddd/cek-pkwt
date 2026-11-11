@@ -61,6 +61,15 @@ async function pdfToText(file: File): Promise<string> {
   return pages.join('\n\n').replace(/[ \t]+\n/g, '\n').trim()
 }
 
+// Asked once per browser: kept outside the 30-minute report storage, and only a yes/no.
+const ACK_KEY = 'cekpkwt-ack'
+function readAck(): boolean {
+  try { return localStorage.getItem(ACK_KEY) === '1' } catch { return false }
+}
+function saveAck(on: boolean) {
+  try { if (on) localStorage.setItem(ACK_KEY, '1'); else localStorage.removeItem(ACK_KEY) } catch { /* blocked: ask again next visit */ }
+}
+
 export default function Check({ onChecked }: { onChecked: (result: CheckResult) => void }) {
   const [contract, setContract] = useState('')
   const [region, setRegion] = useState('')
@@ -70,6 +79,8 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   const [reading, setReading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  const [ack, setAck] = useState(readAck)
+  const [askAck] = useState(() => !readAck()) // stays visible after ticking, until the next visit
   const preview = redact(contract)
   // Read from the redacted text, so a masked home address never counts as the work location.
   const detected = detectRegion(preview.text, regions)
@@ -115,6 +126,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
     const text = contract.trim()
     if (text.length < MIN_CHARS) return setError('Teks kontrak terlalu pendek. Tempel seluruh isi kontrak, tanpa diringkas.')
     if (text.length > MAX_CHARS) return setError(`Teks kontrak terlalu panjang. Maksimal ${MAX_CHARS.toLocaleString('id-ID')} karakter.`)
+    if (!ack) return setError('Centang dulu pernyataan bahwa hasilnya informasi hukum, bukan nasihat hukum.')
     setError('')
     setLoading(true)
     try {
@@ -173,6 +185,13 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
               )}
             </div>
 
+            {askAck && (
+              <label className="ack">
+                <input type="checkbox" checked={ack} onChange={(e) => { setAck(e.target.checked); saveAck(e.target.checked) }} />
+                <span>Saya mengerti hasil CekPKWT adalah informasi hukum dari AI, bukan nasihat hukum, dan bisa keliru. Keputusan tetap di tangan saya. <a href="#/syarat">Syarat penggunaan</a></span>
+              </label>
+            )}
+
             {error && <div className="alert" role="alert"><Icon name="octagonAlert" />{error}</div>}
 
             <div className="form-actions">
@@ -181,7 +200,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
               </button>
               {loading
                 ? <Loading>Membaca setiap klausul dan mencocokkannya dengan pasal. Jangan tutup halaman ini.</Loading>
-                : <span className="hint">Hasilnya bukan nasihat hukum. Untuk masalah serius, hubungi LBH atau Disnaker.</span>}
+                : <span className="hint">Informasi hukum, bukan nasihat hukum. Untuk masalah serius, hubungi LBH atau Disnaker.</span>}
             </div>
           </form>
 
