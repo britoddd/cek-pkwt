@@ -51,9 +51,9 @@ Fresh graduate biasanya menandatangani kontrak PKWT pertama dalam waktu singkat,
 
 ### Cara kerja
 
-1. Pengguna menempelkan teks atau mengunggah PDF kontrak di web app (PDF dibaca di browser dan tidak pernah dikirim), atau menempelkannya di IBM Bob. Data pribadi disamarkan, dan web app menampilkan pratinjaunya sebelum mengirim.
-2. Agent di Langflow mengekstrak klausul, mengambil pasal dan upah minimum yang relevan, lalu menyusun laporan yang diurutkan menurut keparahan.
-3. Pengguna bertanya lebih lanjut di **Tanya aturan**, lalu mengubah temuan menjadi pertanyaan untuk HR yang ia kirim sendiri lewat Gmail, aplikasi email, atau WhatsApp.
+1. Pengguna menempelkan teks atau mengunggah PDF kontrak di web app (PDF dibaca di browser dan tidak pernah dikirim), atau menempelkannya di IBM Bob. Data pribadi disamarkan, dan web app menampilkan pratinjaunya sebelum mengirim. Lokasi kerja dikenali otomatis dari kontrak dan bisa diubah pengguna.
+2. Agent di Langflow mengekstrak klausul, mengambil pasal dan upah minimum yang relevan, lalu menyusun laporan yang diurutkan menurut keparahan. Di web app, temuan bisa difilter menurut keparahan dan dibuka per detail, semua pertanyaan untuk HR bisa disalin sekaligus, dan laporan bisa disimpan sebagai PDF atau dihapus kapan saja.
+3. Pengguna bertanya lebih lanjut di **Tanya aturan** (dengan contoh pertanyaan siap kirim; pertanyaan berbahasa Inggris dijawab dalam bahasa Inggris), lalu mengubah temuan menjadi pertanyaan untuk HR yang ia kirim sendiri lewat Gmail, aplikasi email, atau WhatsApp.
 
 ### Yang baru
 
@@ -103,6 +103,7 @@ Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga di
 | 1 Okt 2026 | MVP | Empat flow Langflow, korpus awal, integrasi IBM Bob; aksi kirim Gmail dimatikan di level komponen 80 menit setelah commit pertama |
 | 29–30 Okt | Web app dan produksi | FastAPI + React, deploy ke server dan Vercel, Langflow hanya lewat SSH tunnel, sinkronisasi korpus harian |
 | 31 Okt | Verifikasi | Draf email tanpa OAuth; baris korpus dicocokkan dengan dokumen resmi; evaluasi pertama (73% terdeteksi) |
+| 9 Nov | Keandalan | Workflow `keepalive` harian: satu pertanyaan uji lewat flow nyata menjaga Astra DB free tier tetap aktif sekaligus menjadi health check end-to-end; pesan error yang jelas saat database sedang tidur |
 | 10 Nov | Kualitas AI | Pencarian pasal per topik (pasal tepat naik dari 34% ke 77%), perbaikan redaksi, PR bot ditinjau dan di-merge, desain ulang laporan |
 | 11 Nov | Input PDF dan pemilihan model | Unggah PDF di browser; perbandingan model di Langflow server |
 | **Nov–Des 2026** | **Validasi** | Upah minimum 2027 lewat sinkronisasi; mengurangi alarm palsu upah minimum; pilot dengan 1–2 pusat karier kampus dan uji pengguna yang mengukur waktu review |
@@ -155,7 +156,7 @@ Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga di
 
 ![Flow check_work_contract di Langflow](docs/screenshots/check-work-contract-flow.png)
 
-**`check_work_contract`:** PII Redactor → Regulation Search (14 kueri topik tetap, aturan baru, dan semua upah minimum yang berlaku) → Prompt Template → Agent. Agent mengecek cakupan (hanya PKWT), mengekstrak klausul ke struktur tetap, dan menandai masalah hanya jika didukung teks pasal. **`answer_labor_rule_question`** menjawab hanya dari kutipan dan membantah klaim yang keliru di kalimat pertama. **`draft_hr_questions`** menulis email sopan tanpa akses email apa pun.
+**`check_work_contract`:** PII Redactor → Regulation Search (14 kueri topik tetap, aturan baru, dan semua upah minimum yang berlaku) → Prompt Template → Agent. Agent mengecek cakupan (hanya PKWT), mengekstrak klausul ke struktur tetap, dan menandai masalah hanya jika didukung teks pasal. **`answer_labor_rule_question`** menyamarkan data pribadi di pertanyaan, menjawab hanya dari kutipan, dan membantah klaim yang keliru di kalimat pertama. **`draft_hr_questions`** menulis email sopan tanpa akses email apa pun.
 
 **Korpus:** [`data/labor_corpus.csv`](data/labor_corpus.csv), 88 entri dengan header sitasi, status, rezim, sumber resmi, dan tanggal pengambilan. Mencakup UU 13/2003 beserta perubahan dan Putusan MK 168/2023, PP 35/2021, PP 36/2021 dan PP 49/2025, Permenaker 6/2016 dan 7/2026, UU BPJS, UU KIA, SE penahanan ijazah, serta upah minimum 2026 untuk 18 wilayah di Jawa.
 
@@ -193,7 +194,7 @@ Yang kami pelajari: retrieval dulu titik lemah utama (satu kueri untuk seluruh k
 ### Kualitas kode dan kesiapan produksi
 
 - **Version control:** lebih dari 20 pull request ter-merge, satu branch per fitur, CI `corpus-ci` di setiap PR, dan `CODEOWNERS` untuk perubahan korpus. Rahasia hanya ada di Global Variables Langflow dan `.env` yang di-ignore.
-- **Produksi:** frontend di Vercel; backend sebagai service systemd; Langflow dan PostgreSQL di Docker dengan restart otomatis. Hanya backend yang publik, dengan rate limit per pengunjung dan CORS hanya untuk domain frontend.
+- **Produksi:** frontend di Vercel; backend sebagai service systemd; Langflow dan PostgreSQL di Docker dengan restart otomatis. Hanya backend yang publik, dengan rate limit per pengunjung dan CORS hanya untuk domain frontend. Workflow `keepalive` menguji alur Langflow → Astra DB → LLM setiap pagi, sehingga kerusakan diketahui sebelum pengguna mengalaminya.
 - **Keterbatasan:** hanya PKWT; upah minimum baru 18 wilayah di Jawa; foto kontrak belum bisa dibaca (belum ada OCR); redaksi berbasis regex melewatkan beberapa format (nama dalam tabel, nomor paspor); 14 kueri topik tetap bisa melewatkan klausul di luar topik itu; satu server tanpa cadangan; belum ada uji pengguna formal.
 
 ## 5. Responsible AI
@@ -219,7 +220,7 @@ Desain CekPKWT mengikuti lima pilar AI tepercaya IBM, [SE Menkominfo No. 9/2023 
 ### Coba dalam 3 menit
 
 1. Buka https://cek-pkwt.briantedjo.my.id, pilih **Cek kontrak**, lalu **Pakai contoh kontrak**. Perhatikan pratinjau penyamaran data pribadi.
-2. Pilih wilayah kerja dan jalankan pemeriksaan. Temuan diurutkan dari keparahan tertinggi, masing-masing dengan pasal rujukan.
+2. Periksa lokasi kerja yang dikenali otomatis, lalu jalankan pemeriksaan. Temuan diurutkan dari keparahan tertinggi, masing-masing dengan pasal rujukan.
 3. Klik **Buat draf email ke HR**, lalu buka di Gmail atau kirim lewat WhatsApp.
 4. Di **Tanya aturan**, tulis "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?". Kalimat pertama jawabannya membantah klaim itu.
 
