@@ -91,16 +91,18 @@ async def run_flow(flow: str, text: str) -> str:
     # A fresh session per request keeps one visitor's messages out of another's agent memory.
     payload = {"input_value": text, "input_type": "chat", "output_type": "chat", "session_id": str(uuid.uuid4())}
     url = f"{LANGFLOW_URL}/api/v1/run/{FLOWS[flow]}"
+    # Every failure is a 503: Cloudflare replaces an origin's 502 and 504 with its own error page, which
+    # drops the CORS headers, so the browser would report a CORS error instead of this message.
     try:
         async with httpx.AsyncClient(timeout=LANGFLOW_TIMEOUT) as client:
             res = await client.post(url, json=payload, headers={"x-api-key": LANGFLOW_API_KEY})
     except httpx.TimeoutException as exc:
         # A hibernated Astra DB can also hang here while it wakes up.
         log.error("Langflow timed out after %ss at %s: %r", LANGFLOW_TIMEOUT, url, exc)
-        raise HTTPException(504, TIMED_OUT) from exc
+        raise HTTPException(503, TIMED_OUT) from exc
     except httpx.HTTPError as exc:
         log.error("Langflow unreachable at %s: %r", url, exc)
-        raise HTTPException(502, LANGFLOW_DOWN) from exc
+        raise HTTPException(503, LANGFLOW_DOWN) from exc
     if res.is_error:
         # Langflow's error body says why: unknown flow ID, rejected key, or a failing component.
         log.error("Langflow returned %s for %s: %s", res.status_code, url, res.text[:500])
@@ -109,13 +111,13 @@ async def run_flow(flow: str, text: str) -> str:
         body = res.text.lower()
         if "astra" in body or "hibernat" in body:
             raise HTTPException(503, DB_WAKING)
-        raise HTTPException(502, f"{UNAVAILABLE} (kode {res.status_code})")
+        raise HTTPException(503, f"{UNAVAILABLE} (kode {res.status_code})")
     try:
         return res.json()["outputs"][0]["outputs"][0]["results"]["message"]["text"]
     except (KeyError, IndexError, TypeError, ValueError) as exc:
         # Not logging the body: it holds the flow output, which can quote the contract.
         log.error("Unexpected Langflow response shape for flow %r: %r", flow, exc)
-        raise HTTPException(502, UNAVAILABLE) from exc
+        raise HTTPException(503, UNAVAILABLE) from exc
 
 
 @app.get("/api/regions")
