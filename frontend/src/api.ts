@@ -5,6 +5,10 @@ export interface Reference {
   label: string
   status: string | null
   url?: string | null // the official document this article comes from
+  regulation?: string // "PP 35/2021"; reports saved before this field existed only have `label`
+  article?: string // "Pasal 12"
+  topic?: string | null // "Masa percobaan"
+  text?: string | null // the article's own words, from the corpus
 }
 
 export interface Finding {

@@ -45,9 +45,9 @@ def test_report():
     assert one["title"] == "Masa percobaan pada PKWT"
     assert one["quote"] == "Karyawan menjalani masa percobaan selama 3 bulan."
     assert one["issue"].endswith("masa kerja tetap dihitung.")
-    assert one["references"] == [
-        {"label": "PP 35/2021 Pasal 12", "status": "berlaku"},
-        {"label": "UU 13/2003 Pasal 58", "status": "diubah"},
+    assert [(r["regulation"], r["article"], r["status"]) for r in one["references"]] == [
+        ("PP 35/2021", "Pasal 12", "berlaku"),
+        ("UU 13/2003", "Pasal 58", "diubah"),
     ]
     assert (one["severity"], one["confidence"]) == ("tinggi", "tinggi")
     assert (two["severity"], two["confidence"]) == ("rendah", "sedang")
@@ -90,13 +90,32 @@ def test_citations_link_to_official_sources():
         "UMP DKI Jakarta 2026",
         "Pasal 99 Peraturan Antah Berantah",
     )]
-    links = [r["url"] for r in link_sources({"findings": [{"references": refs}]}, index)["findings"][0]["references"]]
+    linked = link_sources({"findings": [{"references": refs}]}, index)["findings"][0]["references"]
+    links = [r["url"] for r in linked]
+    assert linked[0]["topic"] == "Masa percobaan" and linked[3]["topic"] == "Upah minimum"
+    # The article's own words, without the corpus citation header.
+    assert linked[0]["text"].startswith("(1) PKWT tidak dapat mensyaratkan adanya masa percobaan")
+    assert linked[5]["text"] is None
     assert "PP%20Nomor%2035%20Tahun%202021" in links[0]
     assert "Perpu-no-2-thn-2022" in links[1]  # the amended article, not the 2003 original
     assert "mkri.id" in links[2]
-    assert links[3] == dict(index["region"])["Kota Tangerang Selatan"]
+    assert links[3] == dict(index["region"])["Kota Tangerang Selatan"][0]
     assert "jdih.jakarta.go.id" in links[4]
     assert links[5] is None
+
+
+def test_citations_split_into_regulation_article_and_topic():
+    md = ("**Ringkasan:** x\n### 1. Upah\n- **Rujukan:** [Keputusan Gubernur Jawa Timur No. 1/2025 | UMK 2026 Kota Malang | "
+          "status: berlaku | rezim: current | wilayah: Kota Malang | topik: upah_minimum], "
+          "[UU 13/2003 | Pasal 88E | status: berlaku | topik: bpjs]")
+    refs = parse_report(md)["findings"][0]["references"]
+    assert [(r["regulation"], r["article"], r["status"], r["topic"]) for r in refs] == [
+        ("Keputusan Gubernur Jawa Timur No. 1/2025", "UMK 2026 Kota Malang", "berlaku", "Upah minimum"),
+        ("UU 13/2003", "Pasal 88E", "berlaku", "BPJS"),
+    ]
+    se = parse_report("**Ringkasan:** x\n### 1. A\n- **Rujukan:** Surat Edaran Menteri Ketenagakerjaan No. M/5/HK.04.00/V/2025, Angka 1 sampai 4")
+    assert [(r["regulation"], r["article"]) for r in se["findings"][0]["references"]] == [
+        ("Surat Edaran Menteri Ketenagakerjaan No. M/5/HK.04.00/V/2025", "Angka 1 sampai 4")]
 
 
 if __name__ == "__main__":
@@ -105,4 +124,5 @@ if __name__ == "__main__":
     test_out_of_scope_reply_is_not_a_report()
     test_hr_draft()
     test_citations_link_to_official_sources()
+    test_citations_split_into_regulation_article_and_topic()
     print("ok")

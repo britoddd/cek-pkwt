@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import type { CheckResult, Finding, Severity } from '../api'
-import { Citation, CitedText, CopyButton, Disclaimer, EmptyState, Icon, Paragraphs, SeverityBadge, Steps, type IconName } from '../components'
+import { CitedText, CopyButton, Disclaimer, EmptyState, Icon, Paragraphs, SeverityBadge, References, Steps, type IconName } from '../components'
 import { TTL_MINUTES } from '../storage'
 
 const LEVELS: { level: Severity; label: string; icon: IconName }[] = [
@@ -297,7 +297,7 @@ export function FindingCard({ finding: f, index, defaultOpen = true, example = f
       {f.references.length > 0 && (
         <div className="finding-section">
           <span className="kicker">Pasal terkait</span>
-          <div className="meta-row">{f.references.map((r, i) => <Citation key={i} label={r.label} status={null} url={r.url} />)}</div>
+          <References items={f.references} />
         </div>
       )}
       {f.severity === 'tinggi' && (
