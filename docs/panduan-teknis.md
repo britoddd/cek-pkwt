@@ -220,8 +220,8 @@ cd deploy && docker compose up -d        # perubahan di deploy/
 | Sinkronisasi harian dan unggah korpus | GitHub → Actions → run `corpus-sync` / `corpus-ci` (perlu login). Tabel sumber dan usulan ada di halaman ringkasan run. |
 | Status runner GitHub | `cd ~/actions-runner && sudo ./svc.sh status` |
 
-- **"Layanan CekPKWT sedang tidak tersedia" (502):** Langflow menolak permintaan. `journalctl` menunjukkan alasannya, biasanya API key yang salah (401/403) atau ID flow yang berubah (404).
-- **"Tidak bisa terhubung ke server" di browser:** biasanya CORS. Pastikan `FRONTEND_ORIGINS` sama persis dengan alamat frontend (dengan `https://`, tanpa path), lalu restart backend.
+- **"Layanan CekPKWT sedang tidak tersedia" (503):** Langflow menolak permintaan. `journalctl` menunjukkan alasannya, biasanya API key yang salah (401/403) atau ID flow yang berubah setelah flow diimpor ulang (404). Backend sengaja memakai 503, bukan 502 atau 504: Cloudflare mengganti respons 502 dan 504 dengan halaman error-nya sendiri tanpa header CORS, sehingga browser hanya melaporkan error CORS.
+- **"Tidak bisa terhubung ke server" atau error CORS di browser:** periksa status respons di tab Network. Jika statusnya berasal dari Cloudflare (502, 504, 524), CORS hanya gejala; lihat `journalctl`. Jika tidak, pastikan `FRONTEND_ORIGINS` sama persis dengan alamat frontend (dengan `https://`, tanpa path), lalu restart backend.
 - **Permintaan ke `/api/...` di domain frontend sendiri (404):** build frontend tidak memuat `VITE_API_BASE`. Periksa variabelnya di Vercel, lalu deploy ulang.
 - **Pemeriksaan kontrak yang panjang terputus (524):** setahu kami, Cloudflare memutus permintaan yang berjalan lebih dari sekitar 100 detik. Jika sering terjadi, turunkan `LANGFLOW_TIMEOUT` (default 90 detik) agar pengguna mendapat pesan error yang jelas.
 
