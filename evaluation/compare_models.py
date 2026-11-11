@@ -82,6 +82,11 @@ def make_copy(model: str, key_var: str) -> str:
     known = [o for o in agent["model"].get("options") or [] if o["provider"] == provider and o["name"] == name]
     agent["model"]["value"] = known[:1] or [{"name": name, "provider": provider, "icon": provider, "metadata": {"tool_calling": True}}]
     agent["api_key"]["value"], agent["api_key"]["load_from_db"] = key_var, True
+    # The Agent's hidden watsonx fields win over WATSONX_URL / WATSONX_PROJECT_ID, and the URL field
+    # defaults to us-south, so a project in any other region is "not found". Blank them.
+    for field in ("base_url_ibm_watsonx", "project_id"):
+        if field in agent:
+            agent[field]["value"] = ""
     status, res = langflow("POST", "/api/v1/flows/", {"name": f"eval-{slug(model)}-{uuid.uuid4().hex[:6]}",
                                                       "description": "Temporary copy for evaluation/compare_models.py; safe to delete.",
                                                       "data": data, "folder_id": flow.get("folder_id")})
@@ -137,7 +142,7 @@ def run(model: str, key_var: str, runs: int, only: list[str], pause: float) -> N
                 # Free-tier quota errors come back from Langflow as a 500 quoting Google's 429.
                 if re.search(r"PerDay|per day|TPD", out, re.I):
                     raise SystemExit("daily free quota reached; run again tomorrow to resume")
-                if re.search(r"model_not_found|Error code: 40[13]|Could not import", out):
+                if re.search(r"model_not_found|Error code: 40[13]|Could not import|Cannot set Project or Space", out):
                     raise SystemExit("the model or its provider is not usable on this server")
                 time.sleep(65)
             rec = {"case": case["id"], "run": n, "base": model, "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
