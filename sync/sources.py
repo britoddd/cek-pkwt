@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from functools import partial
+from itertools import product
 from urllib.parse import urljoin
 
 import httpx
@@ -122,12 +123,16 @@ def kemnaker(f: Fetcher) -> list[Item]:
 
 # S2: JDIH BPK. Search is full text, so a few queries cover UU/PP/Perpres on the corpus topics.
 BPK_QUERIES = ("ketenagakerjaan", "pengupahan", "perjanjian kerja")
+# "sort=terbaru" sorts by number, not date, and only the first 10 results come back, so an unfiltered search
+# buries (or drops) a new UU: UU 27/2026 only showed up filtered by type. "" = unfiltered, for ministerial rules.
+BPK_TYPES = ("", "8", "9", "10", "11")  # all, UU, Perpu, PP, Perpres
 
 
 def bpk(f: Fetcher) -> list[Item]:
     items = []
-    for query in BPK_QUERIES:
-        page = f.get("https://peraturan.bpk.go.id/Search", keywords=query, sort="terbaru")
+    for query, jenis in product(BPK_QUERIES, BPK_TYPES):
+        params = {"keywords": query, "sort": "terbaru"} | ({"jenis": jenis} if jenis else {})
+        page = f.get("https://peraturan.bpk.go.id/Search", **params)
         for card in page.split('<div class="card-body p-xl-10')[1:]:
             links = re.findall(r'href="(/Details/\d+/[^"]+)">(.*?)</a>', card, re.S)  # title, then "tentang"
             if links:
