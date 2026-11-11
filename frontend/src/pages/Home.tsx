@@ -14,7 +14,7 @@ const EXAMPLE_FINDING: Finding = {
   title: 'Masa percobaan dalam PKWT',
   quote: 'Karyawan menjalani masa percobaan selama 3 (tiga) bulan.',
   issue: 'PKWT tidak dapat mensyaratkan masa percobaan. Jika tetap disyaratkan, masa percobaan itu batal demi hukum dan masa kerja tetap dihitung.',
-  references: [{ label: 'PP 35/2021 · Pasal 12', status: 'berlaku' }],
+  references: [{ label: 'PP 35/2021 Pasal 12', status: 'berlaku', regulation: 'PP 35/2021', article: 'Pasal 12', topic: 'Masa percobaan', text: '(1) PKWT tidak dapat mensyaratkan adanya masa percobaan kerja. (2) Dalam hal disyaratkan masa percobaan kerja, masa percobaan kerja yang disyaratkan tersebut batal demi hukum dan masa kerja tetap dihitung.', url: 'https://peraturan.bpk.go.id/Download/154582/PP%20Nomor%2035%20Tahun%202021.pdf' }],
   severity: 'tinggi',
   confidence: 'tinggi',
   hr_question: 'Apakah masa percobaan 3 bulan di Pasal 4 bisa dihapus, karena kontrak ini PKWT?',

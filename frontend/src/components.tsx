@@ -21,6 +21,7 @@ const ICONS = {
   upload: <><path d="M12 3v12" /><path d="m17 8-5-5-5 5" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></>,
   download: <><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></>,
   messageCircle: <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
+  externalLink: <><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></>,
 }
 
 export type IconName = keyof typeof ICONS
@@ -45,19 +46,48 @@ export function SeverityBadge({ level }: { level: Severity }) {
   return <span className={`badge sev-${level}`}><Icon name={s.icon} size={16} />Keparahan: {s.label}</span>
 }
 
-// Corpus status codes in words a reader understands.
-const STATUS_LABEL: Record<string, string> = {
-  dimaknai_putusan_mk: 'dimaknai Putusan MK',
-  berlaku_imbauan: 'imbauan',
-  catatan_sistem: 'catatan sistem',
+// One cited article per row: regulation and article, its topic underneath, and the official text on the
+// right. Status, regime and region stay out: the reader acts on the article, not on corpus metadata.
+export function References({ items }: { items: Reference[] }) {
+  return <ul className="ref-list">{items.map((r, i) => <ReferenceRow key={i} r={r} />)}</ul>
 }
 
-export function Citation({ label, status, url }: Reference) {
-  const text = <>{status && <span className="cite-dot" data-status={status} aria-hidden="true" />}{label}{status && ` · ${STATUS_LABEL[status] ?? status}`}</>
-  // Linked to the official PDF, so the reader can check the article themselves.
-  return url
-    ? <a className="cite cite-link" href={url} target="_blank" rel="noopener noreferrer">{text}<span className="sr-only"> (buka teks resmi)</span></a>
-    : <span className="cite">{text}</span>
+// Long articles start as a three-line excerpt; printing always shows them in full.
+const LONG_TEXT = 240
+
+function ReferenceRow({ r }: { r: Reference }) {
+  const [open, setOpen] = useState(false)
+  const name = `${r.regulation ?? r.label} ${r.article ?? ''}`.trim()
+  // "(1) … (2) …" reads as one block in the corpus; start each numbered ayat on its own line. Only after a
+  // sentence ends, so an in-text "ayat (1) dan ayat (2)" stays on one line.
+  const text = r.text?.replace(/(?<=[.;:])\s+(?=\(\d+\)\s)/g, '\n')
+  const long = (text?.length ?? 0) > LONG_TEXT
+  return (
+    <li className="ref-row">
+      <span className="ref-text">
+        <span className="ref-name">
+          {r.regulation ?? r.label}{r.regulation && r.article && <>, <strong>{r.article}</strong></>}
+        </span>
+        {r.topic && <span className="ref-topic">{r.topic}</span>}
+      </span>
+      {r.url && (
+        <a className="ref-source" href={r.url} target="_blank" rel="noopener noreferrer">
+          Teks resmi<Icon name="externalLink" size={16} />
+          <span className="sr-only">: {name}</span>
+        </a>
+      )}
+      {text && (
+        <div className="ref-body">
+          <p className={long && !open ? 'ref-quote is-clamped' : 'ref-quote'}>{text}</p>
+          {long && (
+            <button type="button" className="link-btn small no-print" aria-expanded={open} onClick={() => setOpen(!open)}>
+              {open ? 'Ringkas' : 'Baca selengkapnya'}<span className="sr-only">: {name}</span>
+            </button>
+          )}
+        </div>
+      )}
+    </li>
+  )
 }
 
 // The same words everywhere: what CekPKWT is, what it stands behind, and where to go next. It states the
