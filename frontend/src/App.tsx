@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import logo from '../../assets/logos/cekpkwt-logo-full-horizontal.svg'
 import logoReversed from '../../assets/logos/cekpkwt-logo-full-horizontal-reversed.svg'
 import type { CheckResult, HrDraft } from './api'
-import { Icon } from './components'
+import { Disclaimer, Icon } from './components'
 import { clearStored, useStoredState } from './storage'
 import Ask from './pages/Ask'
 import Check from './pages/Check'
 import Home from './pages/Home'
 import HrEmail from './pages/HrEmail'
 import Report from './pages/Report'
+import Terms from './pages/Terms'
 
 // Hash routes ("#/cek") keep the build a static bundle; plain anchors ("#cara-kerja") stay on the home page.
 const currentRoute = () => (location.hash.startsWith('#/') ? location.hash.slice(1) : '/')
@@ -59,6 +60,7 @@ export default function App() {
     case '/laporan': page = <Report result={result} onClear={onClear} />; break
     case '/email-hr': page = <HrEmail result={result} draft={draft} onDraft={setDraft} />; break
     case '/tanya': page = <Ask />; break
+    case '/syarat': page = <Terms />; break
     default: page = <Home />
   }
 
@@ -117,10 +119,7 @@ function Footer({ home }: { home: boolean }) {
       <div className="footer-base">
         <div className="container">
           <img src={logoReversed} alt="CekPKWT" width={139} height={32} />
-          <p>
-            <strong>Ini bukan nasihat hukum.</strong> Hasil CekPKWT dibuat oleh AI dari basis regulasi yang terbatas
-            dan bisa keliru. Untuk masalah serius, hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja setempat.
-          </p>
+          <Disclaimer />
           <p>Dibangun dengan IBM Bob dan IBM Langflow · Education &amp; Future of Work</p>
         </div>
       </div>

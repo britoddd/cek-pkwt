@@ -152,6 +152,13 @@ mark {
 .cite-dot[data-status="berlaku"] { background: var(--color-severity-ok); }
 .cite-dot[data-status="diubah"], .cite-dot[data-status="disisipkan"] { background: var(--color-severity-medium); }
 .cite-dot[data-status="dimaknai_putusan_mk"] { background: var(--color-severity-low); }
+.cite-link { text-decoration: none; }
+.cite-link::after { content: "↗"; font-size: 0.9em; }
+.cite-link:hover { border-color: currentColor; text-decoration: underline; text-underline-offset: 2px; }
+.confirm-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius-md); background: var(--color-severity-unchecked-bg); font-size: 14px; }
+.report-error { font-size: 13px; color: var(--color-text-muted); }
+.ack { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.ack input { flex: none; width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--color-primary); cursor: pointer; }
 .cite-inline { font-family: var(--font-mono); font-size: 0.85em; color: var(--citation-text); }
 
 /* Surfaces */

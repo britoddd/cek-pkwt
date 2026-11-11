@@ -52,7 +52,7 @@ Fresh graduate biasanya menandatangani kontrak PKWT pertama dalam waktu singkat,
 ### Cara kerja
 
 1. Pengguna menempelkan teks atau mengunggah PDF kontrak di web app (PDF dibaca di browser dan tidak pernah dikirim), atau menempelkannya di IBM Bob. Data pribadi disamarkan, dan web app menampilkan pratinjaunya sebelum mengirim. Lokasi kerja dikenali otomatis dari kontrak dan bisa diubah pengguna.
-2. Agent di Langflow mengekstrak klausul, mengambil pasal dan upah minimum yang relevan, lalu menyusun laporan yang diurutkan menurut keparahan. Di web app, temuan bisa difilter menurut keparahan dan dibuka per detail, semua pertanyaan untuk HR bisa disalin sekaligus, dan laporan bisa disimpan sebagai PDF atau dihapus kapan saja.
+2. Agent di Langflow mengekstrak klausul, mengambil pasal dan upah minimum yang relevan, lalu menyusun laporan yang diurutkan menurut keparahan. Di web app, temuan bisa difilter menurut keparahan dan dibuka per detail, semua pertanyaan untuk HR bisa disalin sekaligus, dan laporan bisa disimpan sebagai PDF atau dihapus kapan saja. Setiap pasal rujukan tertaut ke dokumen resminya, dan setiap temuan punya tombol **Laporkan kesalahan**.
 3. Pengguna bertanya lebih lanjut di **Tanya aturan** (dengan contoh pertanyaan siap kirim; pertanyaan berbahasa Inggris dijawab dalam bahasa Inggris), lalu mengubah temuan menjadi pertanyaan untuk HR yang ia kirim sendiri lewat Gmail, aplikasi email, atau WhatsApp.
 
 ### Yang baru
@@ -94,6 +94,8 @@ Fresh graduate biasanya menandatangani kontrak PKWT pertama dalam waktu singkat,
 | UMKM | Memeriksa template kontrak sebelum merekrut | Langganan atau bayar per template |
 | Serikat pekerja dan LBH | Penyaringan awal sebelum pendampingan | Gratis atau bersubsidi |
 
+**Mengapa kampus mau membayar:** pusat karier dinilai dari keterserapan dan kesejahteraan lulusan, tetapi tidak punya staf hukum untuk memeriksa kontrak setiap lulusan. CekPKWT memberi layanan pendampingan yang bisa dipakai ribuan lulusan sekaligus, dengan laporan yang bisa dibawa ke konselor karier. Platform lowongan kerja membayar untuk kepercayaan: pencari kerja lebih berani melamar di platform yang membantu mereka memahami kontrak.
+
 Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga ditetapkan setelah biaya per pemeriksaan diukur pada pilot.
 
 ### Perjalanan pengembangan dan roadmap
@@ -106,7 +108,8 @@ Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga di
 | 9 Nov | Keandalan | Workflow `keepalive` harian: satu pertanyaan uji lewat flow nyata menjaga Astra DB free tier tetap aktif sekaligus menjadi health check end-to-end; pesan error yang jelas saat database sedang tidur |
 | 10 Nov | Kualitas AI | Pencarian pasal per topik (pasal tepat naik dari 34% ke 77%), perbaikan redaksi, PR bot ditinjau dan di-merge, desain ulang laporan |
 | 11 Nov | Input PDF dan pemilihan model | Unggah PDF di browser; perbandingan model di Langflow server |
-| **Nov–Des 2026** | **Validasi** | Upah minimum 2027 lewat sinkronisasi; mengurangi alarm palsu upah minimum; pilot dengan 1–2 pusat karier kampus dan uji pengguna yang mengukur waktu review |
+| **Nov–Des 2026** | **Validasi** | Tinjauan praktisi hukum atas 45 laporan evaluasi dan perbandingan dengan chatbot umum ([kit tinjauan](evaluation/legal_review/README.md)); upah minimum 2027 lewat sinkronisasi; mengurangi alarm palsu upah minimum; pilot dengan 1–2 pusat karier kampus dan uji pengguna yang mengukur waktu review |
+| Sebelum pendapatan pertama | Kepatuhan | Badan hukum; pendaftaran PSE Lingkup Privat (PP 71/2019, Permenkominfo 5/2020); pemberitahuan privasi dan DPIA (UU 27/2022 Pasal 34) |
 | Q1 2027 | Rezim baru | Pasal UU Pelindungan Ketenagakerjaan ditinjau, lalu flow pindah ke rezim baru saat berlaku; upah minimum di luar Jawa |
 | Q2–Q3 2027 | Perluasan | PKWTT, magang, alih daya; OCR untuk foto kontrak; API untuk platform lowongan kerja |
 | Q4 2027 | Skala | Server cadangan, kuota dan akun pengguna, pemeriksaan template untuk UMKM |
@@ -129,7 +132,7 @@ Biaya utama adalah panggilan LLM per pemeriksaan, Astra DB, dan server. Harga di
 
 **Inklusivitas:** gratis, tanpa akun, dan berjalan di browser ponsel; bahasa Indonesia sehari-hari; tindak lanjut lewat WhatsApp. Tingkat keparahan tidak hanya ditandai warna, fokus keyboard dan pembaca layar didukung, dan preferensi kurangi gerakan dihormati. Data upah minimum baru mencakup 18 wilayah di Jawa; wilayah lain mendapat "Tidak dapat diperiksa", bukan tebakan.
 
-**Validasi:** kualitas diukur pada 15 kontrak uji (lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi)). Uji pengguna formal dan pengukuran waktu review dijadwalkan pada pilot November–Desember 2026.
+**Validasi:** kualitas diukur pada 15 kontrak uji (lihat [Pengujian dan evaluasi](#pengujian-dan-evaluasi)). Tinjauan praktisi hukum, uji pengguna formal, dan pengukuran waktu review dijadwalkan pada pilot November–Desember 2026.
 
 ## 4. Eksekusi teknis
 
@@ -205,13 +208,30 @@ Desain CekPKWT mengikuti lima pilar AI tepercaya IBM, [SE Menkominfo No. 9/2023 
 |---|---|
 | **Keadilan** | Kontrak dinilai hanya terhadap teks pasal. Nama, alamat, dan tempat/tanggal lahir, yang bisa mengungkap gender, usia, atau asal daerah, disamarkan sebelum model membacanya. Bahasanya netral: "mungkin bertentangan dengan", bukan "ilegal". |
 | **Privasi** | Redaksi sebelum LLM; kontrak tidak masuk basis data vektor atau riwayat pesan Langflow; backend tidak mencatat teks kontrak; browser menyimpan laporan paling lama 30 menit dan tidak pernah menyimpan kontrak mentah; PDF dibaca di browser. |
-| **Transparansi** | Setiap rujukan menyebut regulasi dan pasalnya; setiap entri korpus mencatat sumber resmi dan tanggal pengambilan; prompt lengkap terbuka di `langflow/*.json`; keterbatasan ditulis terbuka. |
+| **Transparansi** | Setiap rujukan menyebut regulasi dan pasalnya, dan di web app tertaut ke dokumen resminya; setiap entri korpus mencatat sumber resmi dan tanggal pengambilan; prompt lengkap terbuka di `langflow/*.json`; keterbatasan ditulis terbuka. |
 | **Explainability** | Setiap temuan memuat kutipan kontrak, penjelasan, pasal rujukan, keparahan, dan keyakinan. Klausul yang tidak dapat diperiksa juga dicantumkan. |
 | **Pengawasan manusia** | Agent tidak punya akses email; pengguna meninjau dan mengirim sendiri. Setiap perubahan korpus, termasuk dari bot, melewati pull request yang ditinjau manusia, dan CI menolak baris `pending_review`. |
 | **Ketahanan** | Teks kontrak diperlakukan sebagai data; upaya perintah dilaporkan di "Catatan". Cakupan dibatasi ke PKWT. Bot menolak teks yang tidak ada kata per kata di PDF resmi. |
-| **Akuntabilitas** | Setiap laporan ditutup dengan disclaimer "bukan nasihat hukum" dan rujukan ke LBH atau Disnaker. |
+| **Akuntabilitas** | Pengguna menyatakan memahami bahwa hasilnya informasi hukum, bukan nasihat hukum, sebelum pemeriksaan pertama. [Syarat penggunaan](https://cek-pkwt.briantedjo.my.id/#/syarat) menjelaskan apa yang kami tanggung dan apa yang tetap di tangan pengguna. Temuan berkeparahan tinggi meminta konfirmasi ke HR, LBH, atau Disnaker, dan setiap temuan bisa dilaporkan jika keliru. |
 
 **Dijamin kode, bukan prompt:** redaksi data pribadi, tidak adanya tool email, kontrak yang tidak disimpan, Langflow yang hanya bisa diakses dari server, dan validator korpus di CI. **Bergantung pada prompt, karena itu ikut dievaluasi:** hanya memakai pasal dari korpus, "tidak dapat diperiksa" saat tidak ada pasal, bahasa yang tidak menghakimi, dan pelaporan prompt injection.
+
+### Siapa yang bertanggung jawab
+
+Dalam hukum Indonesia, CekPKWT adalah sistem elektronik dan agent-nya adalah *agen elektronik*. Tanggung jawabnya ada pada **penyelenggara, yaitu tim CekPKWT**, bukan pada penyedia model (OpenAI) atau platform (IBM).
+
+| Pihak | Bertanggung jawab atas |
+|---|---|
+| Tim CekPKWT (penyelenggara) | Keakuratan korpus dan statusnya, sitasi yang benar, keandalan sistem, dan pelindungan data pribadi |
+| Pengguna | Keputusan akhir atas kontrak, dan memberikan teks kontrak yang lengkap |
+| HR, LBH, atau Disnaker | Penilaian hukum atas kasus nyata |
+
+- **UU ITE Pasal 15 dan 21** (UU 11/2008 beserta perubahannya): penyelenggara sistem elektronik wajib menjalankan sistemnya secara andal dan aman serta bertanggung jawab atas beroperasinya sistem itu, termasuk tindakan agen elektroniknya, kecuali jika kerugian terbukti akibat keadaan memaksa atau kesalahan dan kelalaian pengguna. Karena itu perlindungan utama kami adalah keandalan yang bisa dibuktikan (sitasi, "tidak dapat diperiksa", tinjauan manusia atas korpus, dan evaluasi terbuka), bukan disclaimer.
+- **UU 8/1999 Pasal 18 ayat (1) huruf a dan ayat (3):** klausula baku yang mengalihkan tanggung jawab pelaku usaha batal demi hukum. Disclaimer dan syarat penggunaan CekPKWT karena itu menjelaskan batasan, bukan melepaskan tanggung jawab.
+- **Informasi hukum, bukan jasa hukum:** Putusan MK 006/PUU-II/2004 membatalkan ancaman pidana Pasal 31 UU Advokat bagi bantuan hukum oleh non-advokat, dan Putusan MK 015/PUU-IV/2006 menegaskan bahwa mewakili klien di pengadilan tetap memerlukan advokat. CekPKWT tidak mewakili siapa pun dan selalu merujuk kasus serius ke LBH atau Disnaker.
+- **UU 27/2022 (PDP) Pasal 10:** subjek data berhak menolak keputusan yang semata-mata berdasarkan pemrosesan otomatis. CekPKWT tidak memutuskan apa pun bagi pengguna; keputusannya tetap pada manusia.
+
+Rangkuman ini disusun tim, bukan pendapat hukum. Teks pasal perlu dicocokkan dengan salinan resmi di JDIH, dan kerangkanya akan ditinjau praktisi hukum pada tahap validasi.
 
 **Risiko yang masih ada:** redaksi regex melewatkan format tidak umum; log transaksi Langflow 1.12.4 tidak bisa dimatikan (dibatasi satu entri terbaru per flow); dan alarm palsu upah minimum masih muncul.
 

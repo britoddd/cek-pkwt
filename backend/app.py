@@ -15,7 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict, Field
 
-from report import parse_hr_draft, parse_report
+from report import link_sources, parse_hr_draft, parse_report, source_index
 
 # uvicorn's own logger, so these lines show up in the server console.
 log = logging.getLogger("uvicorn.error")
@@ -41,10 +41,13 @@ log.info("Forwarding to Langflow at %s, flows %s", LANGFLOW_URL, FLOWS)
 # Minimum-wage regions come from the same corpus the flows search, so the list never drifts.
 # A region has one row per year once next year's wage is added (sync/corpus_sync.py), hence the dedupe.
 with open(Path(__file__).parent.parent / "data" / "labor_corpus.csv", encoding="utf-8") as f:
-    REGIONS = list(dict.fromkeys(
-        row["region"] for row in csv.DictReader(f)
-        if row["topic"] == "upah_minimum" and row["region"] != "nasional" and row["status"] in ("berlaku", "belum_berlaku")
-    ))
+    CORPUS = list(csv.DictReader(f))
+REGIONS = list(dict.fromkeys(
+    row["region"] for row in CORPUS
+    if row["topic"] == "upah_minimum" and row["region"] != "nasional" and row["status"] in ("berlaku", "belum_berlaku")
+))
+# Each citation in a report links to the official document it comes from.
+SOURCES = source_index(CORPUS)
 
 UNAVAILABLE = "Layanan CekPKWT sedang tidak tersedia. Coba lagi beberapa saat lagi."
 DB_WAKING = ("Basis data regulasi sedang dibangunkan setelah lama tidak aktif. "
@@ -126,7 +129,8 @@ async def check(body: CheckIn):
         raise HTTPException(422, "Lokasi kerja tidak dikenal.")
     text = f"{body.contract}\n\nLokasi kerja (dipilih pengguna): {body.region}" if body.region else body.contract
     markdown = await run_flow("check", text)
-    return {"markdown": markdown, "report": parse_report(markdown)}
+    report = parse_report(markdown)
+    return {"markdown": markdown, "report": link_sources(report, SOURCES) if report else None}
 
 
 @app.post("/api/ask")

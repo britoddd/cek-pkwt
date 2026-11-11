@@ -84,7 +84,7 @@ export default function Home() {
               ))}
             </ul>
           </div>
-          <FindingCard finding={EXAMPLE_FINDING} index={1} defaultOpen={false} />
+          <FindingCard finding={EXAMPLE_FINDING} index={1} defaultOpen={false} example />
         </figure>
       </section>
 

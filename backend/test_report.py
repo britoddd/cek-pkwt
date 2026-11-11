@@ -1,6 +1,9 @@
 """Run: python test_report.py (or pytest)."""
 
-from report import parse_hr_draft, parse_report
+import csv
+from pathlib import Path
+
+from report import link_sources, parse_hr_draft, parse_report, source_index
 
 REPORT = """**Ringkasan:** Ditemukan 2 potensi masalah (1 tinggi, 0 sedang, 1 rendah). Rezim aturan: UU 13/2003
 sebagaimana diubah UU 6/2023, PP 35/2021, dan Putusan MK 168/PUU-XXI/2023 (rezim "current").
@@ -75,9 +78,31 @@ def test_hr_draft():
     assert parse_hr_draft("Maaf, terjadi kesalahan.") == {"subject": "", "body": "Maaf, terjadi kesalahan."}
 
 
+def test_citations_link_to_official_sources():
+    # Against the real corpus, so a renamed regulation or a moved PDF fails here, not silently in the app.
+    with open(Path(__file__).parent.parent / "data" / "labor_corpus.csv", encoding="utf-8") as f:
+        index = source_index(list(csv.DictReader(f)))
+    refs = [{"label": label, "status": None} for label in (
+        "PP 35/2021 Pasal 12",
+        "[UU 13/2003 sebagaimana diubah UU 6/2023 | Pasal 58 | status: diubah]",
+        "Putusan MK No. 168/PUU-XXI/2023",
+        "Keputusan Gubernur Banten No. 703 Tahun 2025, UMK 2026 Kota Tangerang Selatan",
+        "UMP DKI Jakarta 2026",
+        "Pasal 99 Peraturan Antah Berantah",
+    )]
+    links = [r["url"] for r in link_sources({"findings": [{"references": refs}]}, index)["findings"][0]["references"]]
+    assert "PP%20Nomor%2035%20Tahun%202021" in links[0]
+    assert "Perpu-no-2-thn-2022" in links[1]  # the amended article, not the 2003 original
+    assert "mkri.id" in links[2]
+    assert links[3] == dict(index["region"])["Kota Tangerang Selatan"]
+    assert "jdih.jakarta.go.id" in links[4]
+    assert links[5] is None
+
+
 if __name__ == "__main__":
     test_report()
     test_findings_sorted_by_severity()
     test_out_of_scope_reply_is_not_a_report()
     test_hr_draft()
+    test_citations_link_to_official_sources()
     print("ok")
