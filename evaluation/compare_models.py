@@ -6,6 +6,7 @@ with the same input the backend sends, and the copy is deleted afterwards. The p
 is never changed. Scoring is run_eval.py's, unchanged.
 
   python evaluation/compare_models.py run "Google Generative AI:gemini-3.1-flash-lite" --key-var GOOGLE_API_KEY
+  python evaluation/compare_models.py run "IBM WatsonX:ibm/granite-4-h-small" --key-var WATSONX_APIKEY       --watsonx-url https://eu-de.ml.cloud.ibm.com --watsonx-project <project id>
   python evaluation/compare_models.py score "Google Generative AI:gemini-3.1-flash-lite"
   python evaluation/compare_models.py table        # results/models/comparison.md, with production gpt-5.4-mini
 
@@ -73,20 +74,50 @@ def production_flow() -> dict:
     return flow
 
 
-def make_copy(model: str, key_var: str) -> str:
+WATSONX_COMPONENT = "ext:ibm:WatsonxAIComponent@official"
+
+
+def add_watsonx_model(data: dict, agent_node: dict, name: str, key_var: str, url: str, project_id: str) -> None:
+    """Feed the Agent from a standalone IBM watsonx.ai component instead of its built-in model picker.
+
+    On the server's Langflow 1.12.4 the Agent's built-in watsonx path always calls IBM's default
+    endpoint (us-south), whatever WATSONX_URL or the Agent's endpoint field says, so a project in
+    another region is "not found". The standalone component honours its own endpoint.
+    """
+    status, catalogue = langflow("GET", "/api/v1/all", timeout=120)
+    assert status == 200, f"could not read the component catalogue: HTTP {status}"
+    comp = copy.deepcopy(next(c[WATSONX_COMPONENT] for c in catalogue.values() if isinstance(c, dict) and WATSONX_COMPONENT in c))
+    t = comp["template"]
+    t["api_key"].update(value=key_var, load_from_db=True)
+    t["base_url"]["value"] = url
+    t["project_id"]["value"] = project_id
+    t["model_name"].update(value=name, options=[name])
+    wid = f"WatsonxAI-{uuid.uuid4().hex[:5]}"
+    pos = agent_node.get("position", {"x": 0, "y": 0})
+    data["nodes"].append({"id": wid, "type": "genericNode", "position": {"x": pos["x"] - 400, "y": pos["y"] + 300},
+                          "data": {"id": wid, "type": WATSONX_COMPONENT, "node": comp, "selected_output": "model_output"}})
+    src = {"dataType": WATSONX_COMPONENT, "id": wid, "name": "model_output", "output_types": ["LanguageModel"]}
+    tgt = {"fieldName": "model", "id": agent_node["id"], "inputTypes": ["LanguageModel"], "type": "model"}
+    enc = lambda h: json.dumps(h, separators=(",", ":")).replace('"', "œ")  # noqa: E731  Langflow's handle encoding
+    data["edges"].append({"id": f"reactflow__edge-{wid}{enc(src)}-{agent_node['id']}{enc(tgt)}", "source": wid,
+                          "target": agent_node["id"], "sourceHandle": enc(src), "targetHandle": enc(tgt),
+                          "data": {"sourceHandle": src, "targetHandle": tgt}, "animated": False, "className": "", "selected": False})
+
+
+def make_copy(model: str, key_var: str, watsonx_url: str | None = None, watsonx_project: str | None = None) -> str:
     """Import check_work_contract with only the Agent's model changed; returns the copy's id."""
     provider, _, name = model.partition(":")
     flow = production_flow()
     data = copy.deepcopy(flow["data"])
-    agent = next(n for n in data["nodes"] if n["data"]["type"] == "Agent")["data"]["node"]["template"]
-    known = [o for o in agent["model"].get("options") or [] if o["provider"] == provider and o["name"] == name]
-    agent["model"]["value"] = known[:1] or [{"name": name, "provider": provider, "icon": provider, "metadata": {"tool_calling": True}}]
-    agent["api_key"]["value"], agent["api_key"]["load_from_db"] = key_var, True
-    # The Agent's hidden watsonx fields win over WATSONX_URL / WATSONX_PROJECT_ID, and the URL field
-    # defaults to us-south, so a project in any other region is "not found". Blank them.
-    for field in ("base_url_ibm_watsonx", "project_id"):
-        if field in agent:
-            agent[field]["value"] = ""
+    agent_node = next(n for n in data["nodes"] if n["data"]["type"] == "Agent")
+    agent = agent_node["data"]["node"]["template"]
+    if watsonx_url:
+        assert watsonx_project, "--watsonx-project is required with --watsonx-url"
+        add_watsonx_model(data, agent_node, name, key_var, watsonx_url, watsonx_project)
+    else:
+        known = [o for o in agent["model"].get("options") or [] if o["provider"] == provider and o["name"] == name]
+        agent["model"]["value"] = known[:1] or [{"name": name, "provider": provider, "icon": provider, "metadata": {"tool_calling": True}}]
+        agent["api_key"]["value"], agent["api_key"]["load_from_db"] = key_var, True
     status, res = langflow("POST", "/api/v1/flows/", {"name": f"eval-{slug(model)}-{uuid.uuid4().hex[:6]}",
                                                       "description": "Temporary copy for evaluation/compare_models.py; safe to delete.",
                                                       "data": data, "folder_id": flow.get("folder_id")})
@@ -119,7 +150,8 @@ def use(model: str) -> Path:
     return d
 
 
-def run(model: str, key_var: str, runs: int, only: list[str], pause: float) -> None:
+def run(model: str, key_var: str, runs: int, only: list[str], pause: float,
+        watsonx_url: str | None = None, watsonx_project: str | None = None) -> None:
     use(model)
     done = {(r["case"], r["run"]) for r in run_eval.load_raw() if r.get("markdown")}
     cases = [c for c in run_eval.load_cases()["cases"] if not only or c["id"] in only]
@@ -127,7 +159,7 @@ def run(model: str, key_var: str, runs: int, only: list[str], pause: float) -> N
     if not todo:
         print("nothing to run")
         return
-    flow_id = make_copy(model, key_var)
+    flow_id = make_copy(model, key_var, watsonx_url, watsonx_project)
     print(f"temporary flow {flow_id}", flush=True)
     try:
         for n, case in todo:
@@ -198,12 +230,15 @@ if __name__ == "__main__":
     r.add_argument("--runs", type=int, default=3)
     r.add_argument("--only", nargs="*", default=[])
     r.add_argument("--pause", type=float, default=6, help="seconds between checks, to stay under free-tier per-minute limits")
+    r.add_argument("--watsonx-url", help="IBM watsonx: run the model through the standalone watsonx.ai component at this endpoint, "
+                                         "e.g. https://eu-de.ml.cloud.ibm.com (the Agent's own watsonx path always calls us-south)")
+    r.add_argument("--watsonx-project", help="IBM watsonx project ID in that region")
     s = sub.add_parser("score")
     s.add_argument("model")
     sub.add_parser("table")
     a = p.parse_args()
     if a.cmd == "run":
-        run(a.model, a.key_var, a.runs, a.only, a.pause)
+        run(a.model, a.key_var, a.runs, a.only, a.pause, a.watsonx_url, a.watsonx_project)
     elif a.cmd == "score":
         score(a.model)
     else:
