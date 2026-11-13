@@ -150,22 +150,27 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
               <textarea id="kontrak" className={`textarea textarea-contract${dragging ? ' is-dragging' : ''}`} rows={16} spellCheck={false}
                 value={contract} onChange={(e) => setContract(e.target.value)} maxLength={MAX_CHARS + 1000}
                 placeholder="Tempel teks kontrak di sini, atau seret file PDF ke sini…" aria-invalid={!!error && !loading} />
-              <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setContract(SAMPLE)}>Pakai contoh kontrak</button>
-                <input ref={fileInput} type="file" accept="application/pdf,.pdf" hidden onChange={pickPdf} />
-                <button type="button" className="btn btn-primary btn-sm" disabled={reading || loading} onClick={() => fileInput.current?.click()}>
-                  <Icon name="upload" size={16} />{reading ? 'Membaca PDF…' : 'Unggah PDF'}
-                </button>
-              </div>
             </div>
 
-            <div className="field" style={{ maxWidth: 420 }}>
-              <label htmlFor="lokasi" className="label kicker-label">Lokasi kerja</label>
-              <select id="lokasi" className="select" value={region} onChange={(e) => setRegion(e.target.value)} aria-describedby="lokasi-hint">
-                <option value="">{detected ? `${detected} (Deteksi otomatis)` : '(Deteksi otomatis dari kontrak)'}</option>
-                {regions.map((r) => <option key={r} value={r}>{r}</option>)}
-                <option value={OTHER}>Lainnya (di luar daftar)</option>
-              </select>
+            {/* Lokasi on the left, the contract's helper buttons on the right, on one line (wraps on phones). */}
+            <div className="field">
+              <div className="row-between" style={{ gap: '12px 16px' }}>
+                <div className="field" style={{ flex: '1 1 260px', maxWidth: 420 }}>
+                  <label htmlFor="lokasi" className="label kicker-label">Lokasi kerja</label>
+                  <select id="lokasi" className="select" style={{ minHeight: 44 }} value={region} onChange={(e) => setRegion(e.target.value)} aria-describedby="lokasi-hint">
+                    <option value="">{detected ? `${detected} (Deteksi otomatis)` : '(Deteksi otomatis dari kontrak)'}</option>
+                    {regions.map((r) => <option key={r} value={r}>{r}</option>)}
+                    <option value={OTHER}>Lainnya (di luar daftar)</option>
+                  </select>
+                </div>
+                <div className="row" style={{ gap: 8 }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setContract(SAMPLE)}>Pakai contoh kontrak</button>
+                  <input ref={fileInput} type="file" accept="application/pdf,.pdf" hidden onChange={pickPdf} />
+                  <button type="button" className="btn btn-primary btn-sm" disabled={reading || loading} onClick={() => fileInput.current?.click()}>
+                    <Icon name="upload" size={16} />{reading ? 'Membaca PDF…' : 'Unggah PDF'}
+                  </button>
+                </div>
+              </div>
               <span id="lokasi-hint" className="hint">Dipakai untuk membandingkan upah dengan upah minimum 2026.</span>
               {region === OTHER && (
                 <div className="notice-unchecked" role="status">
