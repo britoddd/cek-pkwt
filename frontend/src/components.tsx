@@ -52,16 +52,24 @@ export function References({ items }: { items: Reference[] }) {
   return <ul className="ref-list">{items.map((r, i) => <ReferenceRow key={i} r={r} />)}</ul>
 }
 
-// Long articles start as a three-line excerpt; printing always shows them in full.
-const LONG_TEXT = 240
-
+// Articles start as a three-line excerpt; printing always shows them in full.
 function ReferenceRow({ r }: { r: Reference }) {
   const [open, setOpen] = useState(false)
   const name = `${r.regulation ?? r.label} ${r.article ?? ''}`.trim()
   // "(1) … (2) …" reads as one block in the corpus; start each numbered ayat on its own line. Only after a
   // sentence ends, so an in-text "ayat (1) dan ayat (2)" stays on one line.
   const text = r.text?.replace(/(?<=[.;:])\s+(?=\(\d+\)\s)/g, '\n')
-  const long = (text?.length ?? 0) > LONG_TEXT
+  // The toggle shows only when the excerpt actually cuts text off, re-measured whenever the width changes.
+  const quote = useRef<HTMLParagraphElement>(null)
+  const [clipped, setClipped] = useState(false)
+  useEffect(() => {
+    const el = quote.current
+    if (!el) return
+    const measure = () => { if (el.classList.contains('is-clamped')) setClipped(el.scrollHeight > el.clientHeight + 1) }
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [text])
   return (
     <li className="ref-row">
       <span className="ref-text">
@@ -78,8 +86,8 @@ function ReferenceRow({ r }: { r: Reference }) {
       )}
       {text && (
         <div className="ref-body">
-          <p className={long && !open ? 'ref-quote is-clamped' : 'ref-quote'}>{text}</p>
-          {long && (
+          <p ref={quote} className={open ? 'ref-quote' : 'ref-quote is-clamped'}>{text}</p>
+          {(open || clipped) && (
             <button type="button" className="link-btn small no-print" aria-expanded={open} onClick={() => setOpen(!open)}>
               {open ? 'Ringkas' : 'Baca selengkapnya'}<span className="sr-only">: {name}</span>
             </button>
