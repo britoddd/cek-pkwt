@@ -196,7 +196,7 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
         <aside className="aside report-aside no-print" aria-label="Tindakan dan filter laporan">
           <section className="card summary-actions" aria-label="Tindakan">
-            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf email ke HR</a>}
+            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf konfirmasi ke HR</a>}
             {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
             <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
             <p className="hint">

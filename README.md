@@ -244,7 +244,7 @@ Rangkuman ini disusun tim, bukan pendapat hukum. Teks pasal perlu dicocokkan den
 
 1. Buka https://cek-pkwt.briantedjo.my.id, pilih **Cek kontrak**, lalu **Pakai contoh kontrak**. Perhatikan pratinjau penyamaran data pribadi.
 2. Periksa lokasi kerja yang dikenali otomatis, lalu jalankan pemeriksaan. Temuan diurutkan dari keparahan tertinggi, masing-masing dengan pasal rujukan.
-3. Klik **Buat draf email ke HR**, lalu buka di Gmail atau kirim lewat WhatsApp.
+3. Klik **Buat draf konfirmasi ke HR**, lalu buka di Gmail atau kirim lewat WhatsApp.
 4. Di **Tanya aturan**, tulis "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?". Kalimat pertama jawabannya membantah klaim itu.
 
 | Tempel kontrak | Laporan | Tanya aturan |
