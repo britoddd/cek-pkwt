@@ -237,7 +237,18 @@ mark {
 .filter-panel .panel-title { margin-bottom: 8px; }
 .filter-option { display: flex; align-items: center; gap: 10px; width: calc(100% + 16px); min-height: 32px; margin-inline: -8px; padding: 2px 8px; border-radius: var(--radius-sm); font-size: 14px; cursor: pointer; }
 .filter-option:hover { background: var(--primitive-color-tinta-50); }
-.filter-option input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
+.filter-option input {
+  flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin: 0; cursor: pointer;
+  appearance: none; border: 1.5px solid var(--color-text-muted); border-radius: 7px; background: var(--color-surface);
+}
+.filter-option input:checked {
+  border-color: var(--color-primary);
+  background: var(--color-primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+.filter-option input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.send-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.send-row .input { flex: 1 1 220px; width: auto; }
+.send-row .btn { flex: none; }
 .filter-option .filter-icon { display: inline-flex; background: none; border: 0; } /* colour only, not the chip fill or border */
 .filter-label { flex: 1 1 auto; }
 /* Pinned (top clears the header island) only when the window is tall enough to show the panel whole. */
