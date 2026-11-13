@@ -110,7 +110,7 @@ Buka http://localhost:5173. Uji parser laporan dengan `python test_report.py` di
 
 Catatan:
 
-- **Draf email tidak dibuat otomatis di Gmail.** Integrasi Composio Gmail dihapus karena aplikasi OAuth Google dalam mode testing hanya bisa dipakai akun yang didaftarkan sebagai test user. Web app membuka jendela tulis Gmail di akun pengguna sendiri (tanpa login ke CekPKWT), aplikasi email lewat `mailto:`, atau WhatsApp lewat `wa.me`. Di IBM Bob, draf ditampilkan sebagai teks untuk disalin.
+- **Draf email tidak dibuat otomatis di Gmail.** Integrasi Composio Gmail dihapus karena aplikasi OAuth Google dalam mode testing hanya bisa dipakai akun yang didaftarkan sebagai test user. Web app membuka jendela tulis Gmail di akun pengguna sendiri (tanpa login ke CekPKWT) atau WhatsApp lewat `wa.me`, dengan nomor HR bila diisi. Di IBM Bob, draf ditampilkan sebagai teks untuk disalin.
 - **Laporan, draf email, dan percakapan Tanya aturan disimpan sementara di `localStorage` browser** agar tidak hilang saat halaman dimuat ulang atau tab tertutup tidak sengaja. Data terhapus otomatis 30 menit setelah terakhir dibuka (`TTL_MINUTES` di `frontend/src/storage.ts`) dan bisa dihapus manual lewat tombol "Hapus sekarang" di laporan. Teks kontrak mentah tidak pernah disimpan karena masih berisi data pribadi. Backend tidak menyimpan isi permintaan, dan Langflow tidak menyimpan riwayat pesan (lihat [Risiko yang masih ada](../README.md#5-responsible-ai) untuk log transaksinya).
 - **Untuk produksi**, frontend dan backend berjalan di domain berbeda. Lihat [Deploy](#deploy).
 

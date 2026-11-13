@@ -53,7 +53,7 @@ Fresh graduate biasanya menandatangani kontrak PKWT pertama dalam waktu singkat,
 
 1. Pengguna menempelkan teks atau mengunggah PDF kontrak di web app (PDF dibaca di browser dan tidak pernah dikirim), atau menempelkannya di IBM Bob. Data pribadi disamarkan, dan web app menampilkan pratinjaunya sebelum mengirim. Lokasi kerja dikenali otomatis dari kontrak dan bisa diubah pengguna.
 2. Agent di Langflow mengekstrak klausul, mengambil pasal dan upah minimum yang relevan, lalu menyusun laporan yang diurutkan menurut keparahan. Di web app, temuan bisa difilter menurut keparahan dan dibuka per detail, semua pertanyaan untuk HR bisa disalin sekaligus, dan laporan bisa disimpan sebagai PDF atau dihapus kapan saja. Setiap pasal rujukan tertaut ke dokumen resminya, dan setiap temuan punya tombol **Laporkan kesalahan**.
-3. Pengguna bertanya lebih lanjut di **Tanya aturan** (dengan contoh pertanyaan siap kirim; pertanyaan berbahasa Inggris dijawab dalam bahasa Inggris), lalu mengubah temuan menjadi pertanyaan untuk HR yang ia kirim sendiri lewat Gmail, aplikasi email, atau WhatsApp.
+3. Pengguna bertanya lebih lanjut di **Tanya aturan** (dengan contoh pertanyaan siap kirim; pertanyaan berbahasa Inggris dijawab dalam bahasa Inggris), lalu mengubah temuan menjadi pertanyaan untuk HR yang ia kirim sendiri lewat Gmail atau WhatsApp.
 
 ### Yang baru
 
@@ -215,7 +215,7 @@ Desain CekPKWT mengikuti lima pilar AI tepercaya IBM, [SE Menkominfo No. 9/2023 
 | **Explainability** | Setiap temuan memuat kutipan kontrak, penjelasan, pasal rujukan, keparahan, dan keyakinan. Klausul yang tidak dapat diperiksa juga dicantumkan. |
 | **Pengawasan manusia** | Agent tidak punya akses email; pengguna meninjau dan mengirim sendiri. Setiap perubahan korpus, termasuk dari bot, melewati pull request yang ditinjau manusia, dan CI menolak baris `pending_review`. |
 | **Ketahanan** | Teks kontrak diperlakukan sebagai data; upaya perintah dilaporkan di "Catatan". Cakupan dibatasi ke PKWT. Bot menolak teks yang tidak ada kata per kata di PDF resmi. |
-| **Akuntabilitas** | Pengguna menyatakan memahami bahwa hasilnya informasi hukum, bukan nasihat hukum, sebelum pemeriksaan pertama. [Syarat penggunaan](https://cek-pkwt.briantedjo.my.id/#/syarat) menjelaskan apa yang kami tanggung dan apa yang tetap di tangan pengguna. Temuan berkeparahan tinggi meminta konfirmasi ke HR, LBH, atau Disnaker, dan setiap temuan bisa dilaporkan jika keliru. |
+| **Akuntabilitas** | Pengguna menyatakan memahami bahwa hasilnya informasi hukum, bukan nasihat hukum, sebelum setiap pemeriksaan. [Syarat penggunaan](https://cek-pkwt.briantedjo.my.id/#/syarat) menjelaskan apa yang kami tanggung dan apa yang tetap di tangan pengguna. Temuan berkeparahan tinggi meminta konfirmasi ke HR, LBH, atau Disnaker, dan setiap temuan bisa dilaporkan jika keliru. |
 
 **Dijamin kode, bukan prompt:** redaksi data pribadi, tidak adanya tool email, kontrak yang tidak disimpan, Langflow yang hanya bisa diakses dari server, dan validator korpus di CI. **Bergantung pada prompt, karena itu ikut dievaluasi:** hanya memakai pasal dari korpus, "tidak dapat diperiksa" saat tidak ada pasal, bahasa yang tidak menghakimi, dan pelaporan prompt injection.
 
@@ -244,7 +244,7 @@ Rangkuman ini disusun tim, bukan pendapat hukum. Teks pasal perlu dicocokkan den
 
 1. Buka https://cek-pkwt.briantedjo.my.id, pilih **Cek kontrak**, lalu **Pakai contoh kontrak**. Perhatikan pratinjau penyamaran data pribadi.
 2. Periksa lokasi kerja yang dikenali otomatis, lalu jalankan pemeriksaan. Temuan diurutkan dari keparahan tertinggi, masing-masing dengan pasal rujukan.
-3. Klik **Buat draf konfirmasi ke HR**, lalu buka di Gmail atau kirim lewat WhatsApp.
+3. Klik **Draf konfirmasi ke HR**, lalu buka di Gmail atau kirim lewat WhatsApp.
 4. Di **Tanya aturan**, tulis "Katanya kontrak PKWT boleh pakai masa percobaan 3 bulan, bener kan?". Kalimat pertama jawabannya membantah klaim itu.
 
 | Tempel kontrak | Laporan | Tanya aturan |

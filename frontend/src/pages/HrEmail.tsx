@@ -4,6 +4,12 @@ import { CopyButton, EmptyState, Icon, Loading, Steps } from '../components'
 
 const SUBJECT = 'Pertanyaan Terkait Draf Kontrak Kerja (PKWT)'
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+const NAME = '[Nama Anda]'
+// The name as a whole word only, so "Ani" never matches inside "Anita".
+const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const nameRe = (name: string) => new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(name)}(?![\\p{L}\\p{N}])`, 'gu')
+// "0812-3456-7890" or "+62 812…" -> "628123456789", the form wa.me expects.
+const waNumber = (phone: string) => phone.replace(/\D/g, '').replace(/^0/, '62')
 
 // The input format draft_hr_questions expects: one numbered block per finding.
 const findingsText = (findings: Finding[]) =>
@@ -25,6 +31,9 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
   const findings = result?.report?.findings ?? []
   const [error, setError] = useState('')
   const [hrEmail, setHrEmail] = useState('')
+  const [hrPhone, setHrPhone] = useState('')
+  // Kept in memory only, like the HR contacts: the stored draft keeps the [Nama Anda] placeholder.
+  const [name, setName] = useState('')
   const requested = useRef(false)
 
   const generate = useCallback(async () => {
@@ -55,11 +64,14 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
   }
 
   const to = EMAIL.test(hrEmail.trim()) ? hrEmail.trim() : ''
-  const mailto = draft && `mailto:${to}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
+  const who = name.trim()
+  // The textarea shows the body with the name filled in; edits are stored with the placeholder back in place.
+  const body = draft ? (who ? draft.body.split(NAME).join(who) : draft.body) : ''
+  const editBody = (text: string) => draft && onDraft({ ...draft, body: who ? text.replace(nameRe(who), NAME) : text })
   // Gmail's compose window in the browser's signed-in account; no Google login or API access needed.
-  const gmail = draft && `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`
-  // WhatsApp asks which chat to send to; many HR teams reply there rather than by email.
-  const whatsapp = draft && `https://wa.me/?text=${encodeURIComponent(draft.body)}`
+  const gmail = draft && `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(body)}`
+  // Many HR teams reply on WhatsApp rather than by email. Without a number, WhatsApp asks which chat to use.
+  const whatsapp = draft && `https://wa.me/${waNumber(hrPhone)}?text=${encodeURIComponent(body)}`
 
   return (
     <div className="container page" style={{ gap: 28 }}>
@@ -93,10 +105,28 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
           <div className="two-col">
             <section className="main card card-raised card-accent stack-lg" aria-label="Email">
               <div className="field">
+                <label htmlFor="nama" className="label">Nama kamu</label>
+                <input id="nama" className="input" autoComplete="name" placeholder="Nama lengkap"
+                  value={name} onChange={(e) => setName(e.target.value)} aria-describedby="nama-hint" />
+                <span id="nama-hint" className="hint">Otomatis mengisi <mark className="mono">{NAME}</mark> di isi email. Tidak dikirim ke server CekPKWT.</span>
+              </div>
+              <div className="field">
                 <label htmlFor="hr-email" className="label">Email HR <span className="muted" style={{ fontWeight: 500 }}>(opsional)</span></label>
-                <input id="hr-email" type="email" className="input" autoComplete="off" placeholder="hr@perusahaan.co.id"
-                  value={hrEmail} onChange={(e) => setHrEmail(e.target.value)} aria-describedby="hr-email-hint" />
-                <span id="hr-email-hint" className="hint">Hanya dipakai untuk membuka Gmail atau aplikasi email kamu. Tidak dikirim ke server CekPKWT.</span>
+                <div className="send-row">
+                  <input id="hr-email" type="email" className="input" autoComplete="off" placeholder="hr@perusahaan.co.id"
+                    value={hrEmail} onChange={(e) => setHrEmail(e.target.value)} aria-describedby="hr-email-hint" />
+                  <a href={gmail ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-primary"><Icon name="mail" />Buka di Gmail</a>
+                </div>
+                <span id="hr-email-hint" className="hint">Hanya dipakai untuk membuka Gmail. Tidak dikirim ke server CekPKWT.</span>
+              </div>
+              <div className="field">
+                <label htmlFor="hr-wa" className="label">WhatsApp HR <span className="muted" style={{ fontWeight: 500 }}>(opsional)</span></label>
+                <div className="send-row">
+                  <input id="hr-wa" type="tel" inputMode="tel" className="input" autoComplete="off" placeholder="0812 3456 7890"
+                    value={hrPhone} onChange={(e) => setHrPhone(e.target.value)} aria-describedby="hr-wa-hint" />
+                  <a href={whatsapp ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-primary"><Icon name="messageCircle" />Kirim lewat WhatsApp</a>
+                </div>
+                <span id="hr-wa-hint" className="hint">Kosongkan untuk memilih kontak di WhatsApp. Tidak dikirim ke server CekPKWT.</span>
               </div>
               <div className="field">
                 <label htmlFor="subjek" className="label">Subjek</label>
@@ -104,15 +134,12 @@ export default function HrEmail({ result, draft, onDraft }: Props) {
               </div>
               <div className="field">
                 <label htmlFor="isi-email" className="label">Isi email</label>
-                <textarea id="isi-email" className="textarea" rows={18} value={draft.body}
-                  onChange={(e) => onDraft({ ...draft, body: e.target.value })} aria-describedby="isi-hint" />
-                <span id="isi-hint" className="hint"><mark className="mono">[Nama Anda]</mark> Ganti dengan namamu sebelum mengirim.</span>
+                <textarea id="isi-email" className="textarea" rows={18} value={body}
+                  onChange={(e) => editBody(e.target.value)} aria-describedby="isi-hint" />
+                {body.includes(NAME) && <span id="isi-hint" className="hint"><mark className="mono">{NAME}</mark> Isi namamu di atas, atau ganti sebelum mengirim.</span>}
               </div>
               <div className="row">
-                <a href={gmail ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-lg"><Icon name="mail" />Buka di Gmail</a>
-                <a href={whatsapp ?? undefined} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-lg"><Icon name="messageCircle" />Kirim lewat WhatsApp</a>
-                <a href={mailto ?? undefined} className="btn btn-secondary btn-lg">Buka di aplikasi email</a>
-                <CopyButton text={`Subjek: ${draft.subject}\n\n${draft.body}`} label="Salin teks" className="btn btn-secondary btn-lg" />
+                <CopyButton text={`Subjek: ${draft.subject}\n\n${body}`} label="Salin teks" className="btn btn-secondary btn-lg" />
               </div>
             </section>
 

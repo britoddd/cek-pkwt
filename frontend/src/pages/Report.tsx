@@ -25,6 +25,18 @@ const reportErrorUrl = (f: Finding) => {
   return `${ISSUES_URL}?${new URLSearchParams({ title: `Laporan kesalahan: ${f.title}`, labels: 'laporan-kesalahan', body })}`
 }
 
+// Only the clause itself: the model sometimes adds its reasoning and raw citations after a colon, a dash,
+// a second sentence, ", karena …", or a "sesuai [UU … | Pasal …]".
+const EXTRA = /:\*?\s|\s[–—-]\s|\.\s+(?=[A-Z])|,\s+karena\s|,?\s+(?:(?:sesuai|selaras|dirujuk|konsisten|mengacu)\s+(?:dengan\s+|ke\s+|pada\s+)?)?\[/
+const clauseOnly = (item: string) => item.split(EXTRA)[0].replace(/^\*+|[*.\s]+$/g, '').trim()
+// "Tidak ada klausul yang masuk kategori ini…" is the model saying the list is empty, not an item.
+// Real items such as "Tidak ada klausul yang jelas tentang komponen upah" are kept.
+const NONE = /^tidak ada (?:klausul|temuan) yang\b.*\b(?:bagian ini|kategori|(?:dapat|bisa) diperiksa|di luar|memerlukan pemeriksaan|(?:berdasarkan|dari) data)/i
+const clauses = (items: string[]) => items.filter((i) => !NONE.test(i)).map(clauseOnly).filter(Boolean)
+// The disclaimer at the bottom of the page already says this: drop the sentence that mentions "nasihat
+// hukum" and anything after it ("Ini bukan nasihat hukum. …", "Saya tidak memberikan nasihat hukum; …").
+const withoutDisclaimer = (note: string) => note.replace(/(^|[.!?]\s+)[^.!?]*\bnasihat hukum\b[\s\S]*$/i, '$1').trim()
+
 const questionsText = (findings: Finding[]) =>
   ['Pertanyaan terkait draf kontrak PKWT:', ...findings.map((f, i) => `${i + 1}. ${f.hr_question}`)].join('\n')
 
@@ -69,14 +81,17 @@ export default function Report({ result, onClear }: { result: CheckResult | null
   const regime = regimeAt >= 0 ? report.summary.slice(regimeAt).replace(/^rezim aturan\s*:\s*/i, '') : ''
   const findings = report.findings // sorted most severe first by the backend
   const questions = findings.filter((f) => f.hr_question)
+  const noIssues = clauses(report.no_issues)
+  const unchecked = clauses(report.unchecked)
+  const notes = report.notes.map(withoutDisclaimer).filter(Boolean)
 
   const chips = [
     ...LEVELS.map(({ level, label, icon }) => ({
       key: level as string, cls: `sev-${level}`, icon, label,
       count: findings.filter((f) => f.severity === level).length,
     })),
-    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: report.no_issues.length },
-    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: report.unchecked.length },
+    { key: 'ok', cls: 'sev-ok', icon: 'circleCheck' as IconName, label: 'Tanpa masalah', count: noIssues.length },
+    { key: 'unchecked', cls: 'sev-unchecked', icon: 'circleDashed' as IconName, label: 'Tidak dapat diperiksa', count: unchecked.length },
   ].filter((c) => c.count > 0)
   const toggle = (key: string) => setHidden((off) => (off.includes(key) ? off.filter((k) => k !== key) : [...off, key]))
   // A finding without a severity has no checkbox, so it only shows while nothing is hidden.
@@ -151,44 +166,48 @@ export default function Report({ result, onClear }: { result: CheckResult | null
                 <span style={{ color: 'var(--color-severity-ok)', display: 'inline-flex' }}><Icon name="circleCheck" /></span>
                 <span>
                   Tidak ada potensi masalah yang ditemukan dari pasal di basis regulasi kami.
-                  {report.unchecked.length > 0 && ' Tetap baca bagian “Tidak dapat diperiksa” di bawah.'}
+                  {unchecked.length > 0 && ' Tetap baca bagian “Tidak dapat diperiksa” di bawah.'}
                 </span>
               </p>
             ) : visible.map(({ f, n }) => <FindingCard key={n} finding={f} index={n} />)}
           </section>}
 
-          {report.no_issues.length > 0 && shows('ok') && (
+          {noIssues.length > 0 && shows('ok') && (
             <section id="bagian-aman" className="stack jump-target" aria-labelledby="aman-title" tabIndex={-1}>
               <h2 id="aman-title" className="section-title title-icon title-ok"><Icon name="circleCheck" size={24} />Klausul tanpa masalah yang ditemukan</h2>
               <ul className="check-list">
-                {report.no_issues.map((item, i) => <li key={i}><Icon name="circleCheck" /><span><CitedText text={item} /></span></li>)}
+                {noIssues.map((item, i) => <li key={i}><Icon name="circleCheck" /><span><CitedText text={item} /></span></li>)}
               </ul>
             </section>
           )}
 
-          {report.unchecked.length > 0 && shows('unchecked') && (
+          {unchecked.length > 0 && shows('unchecked') && (
             <section id="bagian-tidak" className="stack jump-target" aria-labelledby="tidak-title" tabIndex={-1}>
               <div className="stack-sm" style={{ gap: 4 }}>
                 <h2 id="tidak-title" className="section-title title-icon title-unchecked"><Icon name="circleDashed" size={24} />Tidak dapat diperiksa</h2>
                 <p className="muted">Klausul ini tidak cocok dengan pasal mana pun di basis regulasi kami. Ini bukan berarti aman atau bermasalah.</p>
               </div>
               <ul className="unchecked-list">
-                {report.unchecked.map((item, i) => <li key={i}><Icon name="circleDashed" /><span><CitedText text={item} /></span></li>)}
+                {unchecked.map((item, i) => <li key={i}><Icon name="circleDashed" /><span><CitedText text={item} /></span></li>)}
               </ul>
             </section>
           )}
 
-          {report.notes.length > 0 && (
+          {notes.length > 0 && (
             <section id="bagian-catatan" className="stack-sm jump-target" aria-labelledby="catatan-title" tabIndex={-1}>
               <h2 id="catatan-title" className="card-title">Catatan</h2>
-              {report.notes.map((note, i) => <p key={i} className="muted"><CitedText text={note} /></p>)}
+              {notes.map((note, i) => <p key={i} className="muted"><CitedText text={note} /></p>)}
             </section>
           )}
 
           <section className="card-sunken stack-sm no-print" aria-labelledby="bantuan-title">
             <h2 id="bantuan-title" className="card-title" style={{ fontSize: 15 }}>Masih ragu?</h2>
-            <p className="small muted">Tanyakan aturannya, atau hubungi LBH (Lembaga Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.</p>
-            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>Tanya soal aturan</a>
+            <p className="small muted">
+              <strong>Tanya AI soal aturan</strong> membuka chatbot AI yang menjawab dari basis regulasi CekPKWT. Chatbot ini tidak
+              menghubungkanmu ke LBH atau Disnaker, dan jawabannya bisa keliru. Untuk pendampingan, hubungi langsung LBH (Lembaga
+              Bantuan Hukum) atau Dinas Tenaga Kerja di kota tempatmu bekerja.
+            </p>
+            <a href="#/tanya" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}><Icon name="messageCircle" size={16} />Tanya AI soal aturan</a>
           </section>
 
           <Disclaimer className="disclaimer" />
@@ -196,9 +215,10 @@ export default function Report({ result, onClear }: { result: CheckResult | null
 
         <aside className="aside report-aside no-print" aria-label="Tindakan dan filter laporan">
           <section className="card summary-actions" aria-label="Tindakan">
-            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Buat draf konfirmasi ke HR</a>}
+            {findings.length > 0 && <a href="#/email-hr" className="btn btn-highlight"><Icon name="mail" />Draf konfirmasi ke HR</a>}
             {questions.length > 0 && <CopyButton text={questionsText(questions)} label="Salin semua pertanyaan" className="btn btn-secondary" />}
             <button type="button" className="btn btn-secondary" onClick={() => print()}><Icon name="download" size={18} />Simpan sebagai PDF</button>
+            <a href="#/tanya" className="btn btn-secondary"><Icon name="messageCircle" size={18} />Tanya AI soal aturan</a>
             <p className="hint">
               Tersimpan sementara di browser ini, tidak di server kami, dan terhapus {TTL_MINUTES} menit setelah terakhir dibuka.{' '}
               <button type="button" className="link-btn" onClick={() => confirm('Hapus laporan, draf email, dan percakapan Tanya aturan dari browser ini?') && onClear()}>
