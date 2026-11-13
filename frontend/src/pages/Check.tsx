@@ -61,15 +61,6 @@ async function pdfToText(file: File): Promise<string> {
   return pages.join('\n\n').replace(/[ \t]+\n/g, '\n').trim()
 }
 
-// Asked once per browser: kept outside the 30-minute report storage, and only a yes/no.
-const ACK_KEY = 'cekpkwt-ack'
-function readAck(): boolean {
-  try { return localStorage.getItem(ACK_KEY) === '1' } catch { return false }
-}
-function saveAck(on: boolean) {
-  try { if (on) localStorage.setItem(ACK_KEY, '1'); else localStorage.removeItem(ACK_KEY) } catch { /* blocked: ask again next visit */ }
-}
-
 export default function Check({ onChecked }: { onChecked: (result: CheckResult) => void }) {
   const [contract, setContract] = useState('')
   const [region, setRegion] = useState('')
@@ -79,8 +70,7 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
   const [reading, setReading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  const [ack, setAck] = useState(readAck)
-  const [askAck] = useState(() => !readAck()) // stays visible after ticking, until the next visit
+  const [ack, setAck] = useState(false) // asked on every check, never remembered
   const preview = redact(contract)
   // Read from the redacted text, so a masked home address never counts as the work location.
   const detected = detectRegion(preview.text, regions)
@@ -185,12 +175,10 @@ export default function Check({ onChecked }: { onChecked: (result: CheckResult) 
               )}
             </div>
 
-            {askAck && (
-              <label className="ack">
-                <input type="checkbox" checked={ack} onChange={(e) => { setAck(e.target.checked); saveAck(e.target.checked) }} />
+            <label className="ack">
+                <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} />
                 <span>Saya mengerti hasil CekPKWT adalah informasi hukum dari AI, bukan nasihat hukum, dan bisa keliru. Keputusan tetap di tangan saya. <a href="#/syarat">Syarat penggunaan</a></span>
               </label>
-            )}
 
             {error && <div className="alert" role="alert"><Icon name="octagonAlert" />{error}</div>}
 
